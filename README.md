@@ -3,7 +3,7 @@
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz)
 [![GitHub Release](https://img.shields.io/github/v/release/kayloehmann/ha-gardena-smart-system)](https://github.com/kayloehmann/ha-gardena-smart-system/releases)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.12%2B-blue)](https://www.home-assistant.io/)
-[![License](https://img.shields.io/github/license/kayloehmann/ha-gardena-smart-system)](LICENSE)
+[![License](https://img.shields.io/github/license/kayloehmann/ha-gardena-smart-system)](https://github.com/kayloehmann/ha-gardena-smart-system/blob/main/LICENSE)
 
 A Home Assistant custom integration for **Gardena Smart System** devices using the [Husqvarna Gardena Smart System API v2](https://developer.husqvarnagroup.cloud/apis/GARDENA+smart+system+API). Device states are updated in real time via a cloud WebSocket connection, with automatic fallback to polling if the WebSocket connection is interrupted.
 
