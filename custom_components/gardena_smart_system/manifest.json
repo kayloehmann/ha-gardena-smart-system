@@ -1,0 +1,15 @@
+{
+  "domain": "gardena_smart_system",
+  "name": "Gardena Smart System",
+  "codeowners": ["@kaygee500"],
+  "config_flow": true,
+  "documentation": "https://github.com/kaygee500/ha-gardena-smart-system",
+  "integration_type": "hub",
+  "iot_class": "cloud_push",
+  "loggers": ["aiogardenasmart"],
+  "quality_scale": "platinum",
+  "requirements": ["aiogardenasmart==0.1.0"],
+  "typed": true,
+  "single_config_entry": false,
+  "version": "0.1.0"
+}

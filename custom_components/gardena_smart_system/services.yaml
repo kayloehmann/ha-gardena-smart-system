@@ -1,0 +1,44 @@
+start_watering:
+  target:
+    entity:
+      domain: valve
+      integration: gardena_smart_system
+  fields:
+    duration:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 1440
+          unit_of_measurement: minutes
+          mode: box
+
+turn_on_for:
+  target:
+    entity:
+      domain: switch
+      integration: gardena_smart_system
+  fields:
+    duration:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 1440
+          unit_of_measurement: minutes
+          mode: box
+
+override_schedule:
+  target:
+    entity:
+      domain: lawn_mower
+      integration: gardena_smart_system
+  fields:
+    duration:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 480
+          unit_of_measurement: minutes
+          mode: box

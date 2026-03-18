@@ -1,0 +1,146 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Gardena Smart System",
+        "description": "Enter the credentials from your application on the [Husqvarna Developer Portal](https://developer.husqvarnagroup.cloud).",
+        "data": {
+          "client_id": "Application Key (Client ID)",
+          "client_secret": "Application Secret"
+        },
+        "data_description": {
+          "client_id": "The application key from your Husqvarna developer account.",
+          "client_secret": "The application secret from your Husqvarna developer account."
+        }
+      },
+      "location": {
+        "title": "Select your garden",
+        "description": "Multiple gardens were found on your account. Select the one you want to add.",
+        "data": {
+          "location_id": "Garden"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Gardena Smart System",
+        "description": "Your Gardena credentials are no longer valid. Please enter your application credentials again.",
+        "data": {
+          "client_id": "Application Key (Client ID)",
+          "client_secret": "Application Secret"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Gardena Smart System",
+        "data": {
+          "client_id": "Application Key (Client ID)",
+          "client_secret": "Application Secret"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid credentials. Check your application key and secret on the Husqvarna Developer Portal.",
+      "cannot_connect": "Unable to connect to the Gardena API. Check your network connection and try again.",
+      "unknown": "An unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This garden is already configured.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Battery"
+      },
+      "rf_link_level": {
+        "name": "Signal strength"
+      },
+      "soil_humidity": {
+        "name": "Soil moisture"
+      },
+      "soil_temperature": {
+        "name": "Soil temperature"
+      },
+      "ambient_temperature": {
+        "name": "Ambient temperature"
+      },
+      "light_intensity": {
+        "name": "Light intensity"
+      },
+      "mower_operating_hours": {
+        "name": "Operating hours"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Battery low"
+      },
+      "valve_error": {
+        "name": "Valve error"
+      },
+      "mower_error": {
+        "name": "Mower error"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Power"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Valve"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Mower"
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Start watering",
+      "description": "Start watering a valve for a specific duration, overriding the schedule.",
+      "fields": {
+        "duration": {
+          "name": "Duration",
+          "description": "Duration in minutes (1–1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Turn on for",
+      "description": "Turn on a smart power socket for a specific duration.",
+      "fields": {
+        "duration": {
+          "name": "Duration",
+          "description": "Duration in minutes (1–1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Override schedule",
+      "description": "Force the mower to mow for a specific duration, ignoring its schedule.",
+      "fields": {
+        "duration": {
+          "name": "Duration",
+          "description": "Duration in minutes (1–480)."
+        }
+      }
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "Gardena real-time connection lost",
+      "description": "The WebSocket connection to the Gardena Smart System cloud has failed. The integration is now relying on polling (every 60 seconds) for device updates instead of real-time push. Check your internet connection and the Husqvarna service status. The issue will be resolved automatically when the connection is re-established."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Failed to send command to Gardena device: {error}"
+    },
+    "device_unavailable": {
+      "message": "The Gardena device is currently unavailable."
+    }
+  }
+}

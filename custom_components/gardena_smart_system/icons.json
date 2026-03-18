@@ -1,0 +1,61 @@
+{
+  "entity": {
+    "sensor": {
+      "soil_humidity": {
+        "default": "mdi:water-percent"
+      },
+      "soil_temperature": {
+        "default": "mdi:thermometer"
+      },
+      "ambient_temperature": {
+        "default": "mdi:thermometer"
+      },
+      "light_intensity": {
+        "default": "mdi:weather-sunny"
+      },
+      "mower_operating_hours": {
+        "default": "mdi:clock-outline"
+      },
+      "rf_link_level": {
+        "default": "mdi:signal"
+      }
+    },
+    "binary_sensor": {
+      "valve_error": {
+        "default": "mdi:pipe-leak"
+      },
+      "mower_error": {
+        "default": "mdi:robot-mower-outline"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "default": "mdi:power-socket-eu",
+        "state": {
+          "on": "mdi:power-socket-eu",
+          "off": "mdi:power-socket-eu"
+        }
+      }
+    },
+    "valve": {
+      "valve": {
+        "default": "mdi:sprinkler-variant",
+        "state": {
+          "open": "mdi:sprinkler",
+          "closed": "mdi:sprinkler-variant"
+        }
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "default": "mdi:robot-mower",
+        "state": {
+          "mowing": "mdi:robot-mower",
+          "docked": "mdi:robot-mower-outline",
+          "paused": "mdi:pause",
+          "error": "mdi:alert-circle-outline"
+        }
+      }
+    }
+  }
+}
