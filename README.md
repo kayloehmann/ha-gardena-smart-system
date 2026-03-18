@@ -221,4 +221,4 @@ This indicates the WebSocket connection to the Gardena cloud has failed. The int
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
