@@ -101,6 +101,14 @@ class GardenaClient:
                     raise GardenaForbiddenError(
                         "API key not authorized — check application connection on developer portal"
                     )
+                if resp.status == 429:
+                    body = await resp.text()
+                    if "not authorized" in body.lower():
+                        raise GardenaForbiddenError(
+                            "API key not authorized — ensure the Gardena Smart System API "
+                            "is connected to your application in the Husqvarna Developer Portal"
+                        )
+                    raise GardenaRequestError(resp.status, body)
                 if resp.status >= 400:
                     body = await resp.text()
                     raise GardenaRequestError(resp.status, body)

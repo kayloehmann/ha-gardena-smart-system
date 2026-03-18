@@ -8,7 +8,7 @@
   "iot_class": "cloud_push",
   "loggers": ["aiogardenasmart"],
   "quality_scale": "platinum",
-  "requirements": ["aiogardenasmart==0.1.0"],
+  "requirements": ["aiogardenasmart==0.1.1"],
   "typed": true,
   "single_config_entry": false,
   "version": "0.1.0"

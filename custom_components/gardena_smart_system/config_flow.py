@@ -8,7 +8,11 @@ from typing import Any
 import aiohttp
 import voluptuous as vol
 from aiogardenasmart import GardenaAuth, GardenaClient
-from aiogardenasmart.exceptions import GardenaAuthenticationError, GardenaConnectionError
+from aiogardenasmart.exceptions import (
+    GardenaAuthenticationError,
+    GardenaConnectionError,
+    GardenaForbiddenError,
+)
 
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -228,6 +232,8 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
             )
         except GardenaAuthenticationError:
             return [], "invalid_auth"
+        except GardenaForbiddenError:
+            return [], "forbidden"
         except GardenaConnectionError:
             return [], "cannot_connect"
         except Exception:  # noqa: BLE001
