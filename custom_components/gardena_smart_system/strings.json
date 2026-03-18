@@ -3,11 +3,7 @@
     "step": {
       "user": {
         "title": "Connect to Gardena Smart System",
-        "description": "Enter the credentials from your application on the [{husqvarna_portal}]({husqvarna_portal_url}).",
-        "description_placeholders": {
-          "husqvarna_portal": "Husqvarna Developer Portal",
-          "husqvarna_portal_url": "https://developer.husqvarnagroup.cloud"
-        },
+        "description": "Enter the credentials from your application on the Husqvarna Developer Portal.",
         "data": {
           "client_id": "Application Key (Client ID)",
           "client_secret": "Application Secret"
