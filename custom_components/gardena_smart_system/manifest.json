@@ -6,10 +6,9 @@
   "documentation": "https://github.com/kayloehmann/ha-gardena-smart-system",
   "integration_type": "hub",
   "iot_class": "cloud_push",
+  "issue_tracker": "https://github.com/kayloehmann/ha-gardena-smart-system/issues",
   "loggers": ["aiogardenasmart"],
-  "quality_scale": "platinum",
   "requirements": ["aiogardenasmart==0.1.2"],
-  "typed": true,
   "single_config_entry": false,
-  "version": "0.1.0"
+  "version": "0.1.2"
 }

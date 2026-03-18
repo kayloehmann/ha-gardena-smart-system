@@ -1,6 +1,5 @@
 {
   "name": "Gardena Smart System",
-  "documentation": "https://github.com/kayloehmann/ha-gardena-smart-system",
   "issue_tracker": "https://github.com/kayloehmann/ha-gardena-smart-system/issues",
   "iot_class": "cloud_push",
   "render_readme": true
