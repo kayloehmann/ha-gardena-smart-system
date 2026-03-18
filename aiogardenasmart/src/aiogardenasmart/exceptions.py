@@ -17,6 +17,10 @@ class GardenaForbiddenError(GardenaException):
     """
 
 
+class GardenaRateLimitError(GardenaException):
+    """Raised when the API returns HTTP 429 (rate limited or temporarily blocked)."""
+
+
 class GardenaRequestError(GardenaException):
     """Raised when a REST API request fails with a non-retryable error."""
 

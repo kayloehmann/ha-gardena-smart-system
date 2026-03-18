@@ -7,6 +7,7 @@ from .exceptions import (
     GardenaConnectionError,
     GardenaException,
     GardenaForbiddenError,
+    GardenaRateLimitError,
     GardenaRequestError,
     GardenaWebSocketError,
 )
@@ -29,6 +30,7 @@ __all__ = [
     "GardenaAuthenticationError",
     "GardenaConnectionError",
     "GardenaForbiddenError",
+    "GardenaRateLimitError",
     "GardenaRequestError",
     "GardenaWebSocketError",
     "CommonService",

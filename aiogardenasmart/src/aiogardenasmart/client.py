@@ -19,6 +19,7 @@ from .exceptions import (
     GardenaAuthenticationError,
     GardenaConnectionError,
     GardenaForbiddenError,
+    GardenaRateLimitError,
     GardenaRequestError,
 )
 from .models import (
@@ -103,12 +104,11 @@ class GardenaClient:
                     )
                 if resp.status == 429:
                     body = await resp.text()
-                    if "not authorized" in body.lower():
-                        raise GardenaForbiddenError(
-                            "API key not authorized — ensure the Gardena Smart System API "
-                            "is connected to your application in the Husqvarna Developer Portal"
-                        )
-                    raise GardenaRequestError(resp.status, body)
+                    raise GardenaRateLimitError(
+                        "API rate limit reached or API key temporarily blocked. "
+                        "Wait a few minutes and try again, or create a new application "
+                        "in the Husqvarna Developer Portal."
+                    )
                 if resp.status >= 400:
                     body = await resp.text()
                     raise GardenaRequestError(resp.status, body)

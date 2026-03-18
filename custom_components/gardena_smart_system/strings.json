@@ -39,6 +39,7 @@
     "error": {
       "invalid_auth": "Invalid credentials. Check your application key and secret on the Husqvarna Developer Portal.",
       "forbidden": "API access denied. Ensure the Gardena Smart System API is connected to your application in the Husqvarna Developer Portal.",
+      "rate_limited": "API rate limit reached or temporarily blocked. Wait a few minutes and try again, or create a new application in the Husqvarna Developer Portal.",
       "cannot_connect": "Unable to connect to the Gardena API. Check your network connection and try again.",
       "unknown": "An unexpected error occurred."
     },

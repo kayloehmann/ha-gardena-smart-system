@@ -12,6 +12,7 @@ from aiogardenasmart.exceptions import (
     GardenaAuthenticationError,
     GardenaConnectionError,
     GardenaForbiddenError,
+    GardenaRateLimitError,
 )
 
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult
@@ -234,6 +235,8 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
             return [], "invalid_auth"
         except GardenaForbiddenError:
             return [], "forbidden"
+        except GardenaRateLimitError:
+            return [], "rate_limited"
         except GardenaConnectionError:
             return [], "cannot_connect"
         except Exception:  # noqa: BLE001
