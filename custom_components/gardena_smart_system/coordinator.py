@@ -12,6 +12,7 @@ from aiogardenasmart import (
     GardenaAuthenticationError,
     GardenaClient,
     GardenaConnectionError,
+    GardenaRateLimitError,
     GardenaWebSocket,
     Location,
 )
@@ -22,7 +23,14 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr, issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_LOCATION_ID, DOMAIN, SCAN_INTERVAL
+from .const import (
+    CONF_CLIENT_ID,
+    CONF_CLIENT_SECRET,
+    CONF_LOCATION_ID,
+    DOMAIN,
+    RATE_LIMIT_COOLDOWN,
+    SCAN_INTERVAL,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -95,8 +103,25 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
             devices = await self._client.async_get_devices(self._location_id)
         except GardenaAuthenticationError as err:
             raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
+        except GardenaRateLimitError as err:
+            self.update_interval = RATE_LIMIT_COOLDOWN
+            _LOGGER.warning(
+                "Rate limited by Gardena API, backing off to %s",
+                RATE_LIMIT_COOLDOWN,
+            )
+            raise UpdateFailed(
+                f"Rate limited by Gardena API, retrying in {RATE_LIMIT_COOLDOWN}: {err}"
+            ) from err
         except GardenaConnectionError as err:
             raise UpdateFailed(f"Cannot connect to Gardena API: {err}") from err
+
+        # Restore normal polling interval after a successful fetch
+        if self.update_interval != SCAN_INTERVAL:
+            _LOGGER.debug(
+                "Gardena API responded successfully, restoring poll interval to %s",
+                SCAN_INTERVAL,
+            )
+            self.update_interval = SCAN_INTERVAL
 
         # Start WebSocket on first successful fetch
         if not self._ws_connected:
@@ -136,7 +161,7 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
         """Request a WebSocket URL and start listening for real-time updates."""
         try:
             ws_url = await self._client.async_get_websocket_url(self._location_id)
-        except (GardenaAuthenticationError, GardenaConnectionError) as err:
+        except (GardenaAuthenticationError, GardenaConnectionError, GardenaRateLimitError) as err:
             _LOGGER.warning(
                 "Could not obtain WebSocket URL, will rely on polling: %s", err
             )

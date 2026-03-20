@@ -13,7 +13,7 @@ from .const import (
     REQUEST_TIMEOUT,
     TOKEN_REFRESH_BUFFER_SECONDS,
 )
-from .exceptions import GardenaAuthenticationError, GardenaConnectionError
+from .exceptions import GardenaAuthenticationError, GardenaConnectionError, GardenaRateLimitError
 
 
 class GardenaAuth:
@@ -111,6 +111,8 @@ class GardenaAuth:
                     )
                 if resp.status == 401:
                     raise GardenaAuthenticationError("Token refresh rejected — re-authentication required")
+                if resp.status == 429:
+                    raise GardenaRateLimitError("Rate limited by Husqvarna auth endpoint")
                 resp.raise_for_status()
                 token_data: dict[str, Any] = await resp.json()
         except aiohttp.ClientError as err:

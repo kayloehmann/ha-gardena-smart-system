@@ -13,6 +13,9 @@ CONF_LOCATION_ID = "location_id"
 # Polling fallback interval (WebSocket is primary; polling only if WS fails)
 SCAN_INTERVAL = timedelta(seconds=60)
 
+# Cooldown interval when the API returns HTTP 429 (rate limited)
+RATE_LIMIT_COOLDOWN = timedelta(minutes=5)
+
 PLATFORMS: list[Platform] = [
     Platform.SENSOR,
     Platform.BINARY_SENSOR,
