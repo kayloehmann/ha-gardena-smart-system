@@ -130,6 +130,17 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
             )
             self.update_interval = normal_interval
 
+        # Enrich devices with schedule data (best-effort, never blocks)
+        try:
+            schedules_by_device = await self._client.async_get_schedules(
+                self._location_id
+            )
+            for device_id, schedules in schedules_by_device.items():
+                if device_id in devices:
+                    devices[device_id].schedules = schedules
+        except Exception:  # noqa: BLE001
+            _LOGGER.debug("Schedule fetch failed, skipping", exc_info=True)
+
         # Start WebSocket on first successful fetch
         if not self._ws_connected:
             await self._async_start_websocket(devices)

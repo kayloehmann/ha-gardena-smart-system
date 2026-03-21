@@ -107,6 +107,35 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
         return device.valves.get(self._service_id)
 
     @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Expose schedule data filtered for this valve."""
+        device = self._device
+        if device is None or not device.schedules:
+            return None
+        valve_idx = (
+            int(self._service_id.split(":")[-1])
+            if ":" in self._service_id
+            else 0
+        )
+        valve_schedules = [
+            s for s in device.schedules if s.valve_id == valve_idx
+        ]
+        if not valve_schedules:
+            return None
+        return {
+            "scheduled_events": [
+                {
+                    "start_at": s.start_at,
+                    "end_at": s.end_at,
+                    "weekdays": s.weekdays,
+                    "paused": s.is_paused,
+                    **({"paused_until": s.paused_until_date} if s.paused_until_date else {}),
+                }
+                for s in valve_schedules
+            ]
+        }
+
+    @property
     def is_closed(self) -> bool | None:
         """Return True if the valve is closed."""
         valve = self._valve

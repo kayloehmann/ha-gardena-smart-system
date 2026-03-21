@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -263,6 +264,54 @@ class PowerSocketService:
 
 
 @dataclass
+class Schedule:
+    """A scheduled event for a Gardena device."""
+
+    schedule_id: str
+    start_at: str
+    end_at: str
+    weekdays: list[str]
+    valve_id: int | None
+    paused_until: str | None = None
+
+    @property
+    def is_paused(self) -> bool:
+        """True if this schedule is currently paused."""
+        if not self.paused_until:
+            return False
+        try:
+            ts = datetime.fromisoformat(self.paused_until.replace("Z", "+00:00"))
+            return ts > datetime.now(timezone.utc)
+        except ValueError:
+            return False
+
+    @property
+    def paused_until_date(self) -> str | None:
+        """Return the pause end date, or None if paused indefinitely or not paused."""
+        if not self.is_paused:
+            return None
+        try:
+            ts = datetime.fromisoformat(self.paused_until.replace("Z", "+00:00"))
+            if ts.year >= 2038:
+                return None
+            return self.paused_until
+        except ValueError:
+            return None
+
+    @classmethod
+    def from_api(cls, data: dict[str, Any]) -> Schedule:
+        """Parse from a schedule object in the device response."""
+        recurrence = data.get("recurrence", {})
+        return cls(
+            schedule_id=str(data.get("id", "")),
+            start_at=data.get("start_at", ""),
+            end_at=data.get("end_at", ""),
+            weekdays=recurrence.get("weekdays", []),
+            valve_id=data.get("valve_id"),
+        )
+
+
+@dataclass
 class Device:
     """A Gardena physical device with all its associated services."""
 
@@ -274,6 +323,7 @@ class Device:
     valve_set: ValveSetService | None = None
     sensor: SensorService | None = None
     power_socket: PowerSocketService | None = None
+    schedules: list[Schedule] = field(default_factory=list)
 
     @property
     def name(self) -> str:

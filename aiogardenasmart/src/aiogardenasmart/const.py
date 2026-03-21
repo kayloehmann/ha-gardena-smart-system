@@ -4,6 +4,7 @@ AUTH_TOKEN_URL = "https://api.authentication.husqvarnagroup.dev/v1/oauth2/token"
 AUTH_REVOKE_URL = "https://api.authentication.husqvarnagroup.dev/v1/oauth2/revoke"
 
 API_BASE_URL = "https://api.smart.gardena.dev/v2"
+SCHEDULE_API_BASE_URL = "https://bff-api.sg.dss.husqvarnagroup.net"
 
 # Token refresh buffer: refresh token this many seconds before actual expiry
 TOKEN_REFRESH_BUFFER_SECONDS = 300

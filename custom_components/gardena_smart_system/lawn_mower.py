@@ -127,6 +127,17 @@ class GardenaLawnMowerEntity(GardenaEntity, LawnMowerEntity):
         if device.common is not None:
             if device.common.battery_state is not None:
                 attrs["battery_state"] = device.common.battery_state
+        if device.schedules:
+            attrs["scheduled_events"] = [
+                {
+                    "start_at": s.start_at,
+                    "end_at": s.end_at,
+                    "weekdays": s.weekdays,
+                    "paused": s.is_paused,
+                    **({"paused_until": s.paused_until_date} if s.paused_until_date else {}),
+                }
+                for s in device.schedules
+            ]
         return attrs if attrs else None
 
     async def async_start_mowing(self) -> None:

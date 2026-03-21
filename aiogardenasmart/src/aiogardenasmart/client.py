@@ -13,6 +13,7 @@ from .const import (
     AUTHORIZATION_PROVIDER,
     CONTENT_TYPE_JSON_API,
     REQUEST_TIMEOUT,
+    SCHEDULE_API_BASE_URL,
     ServiceType,
 )
 from .exceptions import (
@@ -28,6 +29,7 @@ from .models import (
     Location,
     MowerService,
     PowerSocketService,
+    Schedule,
     SensorService,
     ValveService,
     ValveSetService,
@@ -149,6 +151,48 @@ class GardenaClient:
         )
         return str(data["data"]["attributes"]["url"])
 
+    async def async_get_schedules(
+        self, location_id: str
+    ) -> dict[str, list[Schedule]]:
+        """Fetch device schedules, keyed by device ID.
+
+        Uses the same auth token. Returns an empty dict on any error
+        so that normal operation is never disrupted.
+        """
+        token = await self._auth.async_ensure_valid_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json",
+        }
+        url = f"{SCHEDULE_API_BASE_URL}/v1/devices"
+        try:
+            async with self._websession.get(
+                url,
+                headers=headers,
+                params={"locationId": location_id},
+                timeout=aiohttp.ClientTimeout(total=REQUEST_TIMEOUT),
+            ) as resp:
+                if resp.status != 200:
+                    return {}
+                data = await resp.json(content_type=None)
+        except (aiohttp.ClientError, TimeoutError):
+            return {}
+
+        result: dict[str, list[Schedule]] = {}
+        for device_data in data.get("devices", []):
+            device_id = device_data.get("id", "")
+            raw_schedules = device_data.get("scheduled_events", [])
+            if not raw_schedules:
+                continue
+            pause_map = _parse_pause_settings(device_data.get("settings", []))
+            schedules = []
+            for s in raw_schedules:
+                schedule = Schedule.from_api(s)
+                schedule.paused_until = pause_map.get(schedule.valve_id)
+                schedules.append(schedule)
+            result[device_id] = schedules
+        return result
+
     async def async_send_command(
         self,
         service_id: str,
@@ -181,6 +225,34 @@ class GardenaClient:
             json=payload,
             include_content_type=True,
         )
+
+
+def _parse_pause_settings(
+    settings: list[dict[str, Any]],
+) -> dict[int | None, str | None]:
+    """Extract pause timestamps from device settings.
+
+    Returns a mapping of valve_id -> paused_until timestamp.
+    valve_id=None is used for non-valve devices (mower, power socket).
+    Empty or past timestamps mean the schedule is active.
+    """
+    result: dict[int | None, str | None] = {}
+    for setting in settings:
+        name = setting.get("name", "")
+        if not name.startswith("schedules_paused_until"):
+            continue
+        value = setting.get("value", "")
+        if not value:
+            continue
+        # "schedules_paused_until" -> valve_id=None (mower/power)
+        # "schedules_paused_until_1" -> valve_id=1
+        parts = name.split("_")
+        if parts[-1].isdigit():
+            valve_id: int | None = int(parts[-1])
+        else:
+            valve_id = None
+        result[valve_id] = value
+    return result
 
 
 def _parse_devices(
