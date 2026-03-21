@@ -78,6 +78,14 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
         super().__init__(coordinator, device, "power_socket")
 
     @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Expose detailed Gardena API fields for frontend cards."""
+        device = self._device
+        if device is not None and device.power_socket is not None and device.power_socket.activity is not None:
+            return {"activity": device.power_socket.activity}
+        return None
+
+    @property
     def is_on(self) -> bool | None:
         """Return True if the socket is on."""
         device = self._device

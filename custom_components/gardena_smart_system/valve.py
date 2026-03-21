@@ -107,6 +107,14 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
         return device.valves.get(self._service_id)
 
     @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Expose detailed Gardena API fields for frontend cards."""
+        valve = self._valve
+        if valve is not None and valve.activity is not None:
+            return {"activity": valve.activity}
+        return None
+
+    @property
     def is_closed(self) -> bool | None:
         """Return True if the valve is closed."""
         valve = self._valve
