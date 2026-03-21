@@ -7,13 +7,6 @@ from typing import Any
 
 import aiohttp
 import voluptuous as vol
-from aioautomower import AutomowerClient
-from aioautomower.exceptions import (
-    AutomowerAuthenticationError,
-    AutomowerConnectionError,
-    AutomowerForbiddenError,
-    AutomowerRateLimitError,
-)
 from aiogardenasmart import GardenaAuth, GardenaClient
 from aiogardenasmart.exceptions import (
     GardenaAuthenticationError,
@@ -362,6 +355,14 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
         client_secret: str,
     ) -> str:
         """Test Automower API access. Returns error key or empty string."""
+        from aioautomower import AutomowerClient
+        from aioautomower.exceptions import (
+            AutomowerAuthenticationError,
+            AutomowerConnectionError,
+            AutomowerForbiddenError,
+            AutomowerRateLimitError,
+        )
+
         auth = GardenaAuth(client_id, client_secret, session)
         client = AutomowerClient(auth, session)
         try:

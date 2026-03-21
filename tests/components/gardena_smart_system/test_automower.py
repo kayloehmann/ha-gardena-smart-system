@@ -2299,7 +2299,7 @@ class TestAutomowerDiagnostics:
 
 _PATCH_CF_AUTH = "custom_components.gardena_smart_system.config_flow.GardenaAuth"
 _PATCH_CF_CLIENT = "custom_components.gardena_smart_system.config_flow.GardenaClient"
-_PATCH_CF_AM_CLIENT = "custom_components.gardena_smart_system.config_flow.AutomowerClient"
+_PATCH_CF_AM_CLIENT = "aioautomower.AutomowerClient"
 
 
 class TestConfigFlowAdditional:
