@@ -18,6 +18,7 @@ from homeassistant.helpers import entity_platform as ep
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import GardenaConfigEntry
+from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
 from .coordinator import GardenaCoordinator
 from .entity import GardenaEntity
 
@@ -32,6 +33,12 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Gardena switch entities from a config entry."""
+    if entry.data.get(CONF_API_TYPE) == API_TYPE_AUTOMOWER:
+        from .automower_switch import async_setup_entry as automower_setup
+
+        await automower_setup(hass, entry, async_add_entities)
+        return
+
     coordinator = entry.runtime_data
     known_device_ids: set[str] = set()
 

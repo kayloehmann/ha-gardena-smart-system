@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Connect to Gardena Smart System",
+        "title": "Connect to Husqvarna",
         "description": "Enter the credentials from your application on the Husqvarna Developer Portal.",
         "data": {
           "client_id": "Application Key (Client ID)",
@@ -13,6 +13,13 @@
           "client_secret": "The application secret from your Husqvarna developer account."
         }
       },
+      "api_type": {
+        "title": "Select API",
+        "description": "Choose which Husqvarna API to connect. You can add both by setting up the integration twice.",
+        "data": {
+          "api_type": "API"
+        }
+      },
       "location": {
         "title": "Select your garden",
         "description": "Multiple gardens were found on your account. Select the one you want to add.",
@@ -21,15 +28,15 @@
         }
       },
       "reauth_confirm": {
-        "title": "Re-authenticate Gardena Smart System",
-        "description": "Your Gardena credentials are no longer valid. Please enter your application credentials again.",
+        "title": "Re-authenticate",
+        "description": "Your credentials are no longer valid. Please enter your application credentials again.",
         "data": {
           "client_id": "Application Key (Client ID)",
           "client_secret": "Application Secret"
         }
       },
       "reconfigure": {
-        "title": "Reconfigure Gardena Smart System",
+        "title": "Reconfigure",
         "data": {
           "client_id": "Application Key (Client ID)",
           "client_secret": "Application Secret"
@@ -39,12 +46,13 @@
     "error": {
       "invalid_auth": "Invalid credentials. Check your application key and secret on the Husqvarna Developer Portal.",
       "forbidden": "API access denied. Ensure the Gardena Smart System API is connected to your application in the Husqvarna Developer Portal.",
+      "automower_not_connected": "The Automower Connect API is not connected to your application. Enable it in the Husqvarna Developer Portal under Connected APIs.",
       "rate_limited": "API rate limit reached or temporarily blocked. Wait a few minutes and try again, or create a new application in the Husqvarna Developer Portal.",
-      "cannot_connect": "Unable to connect to the Gardena API. Check your network connection and try again.",
+      "cannot_connect": "Unable to connect to the API. Check your network connection and try again.",
       "unknown": "An unexpected error occurred."
     },
     "abort": {
-      "already_configured": "This garden is already configured.",
+      "already_configured": "This configuration already exists.",
       "reauth_successful": "Re-authentication was successful."
     }
   },
@@ -70,6 +78,36 @@
       },
       "mower_operating_hours": {
         "name": "Operating hours"
+      },
+      "automower_battery_level": {
+        "name": "Battery"
+      },
+      "automower_cutting_height": {
+        "name": "Cutting height"
+      },
+      "automower_next_start": {
+        "name": "Next start"
+      },
+      "automower_total_cutting_time": {
+        "name": "Total cutting time"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Charging cycles"
+      },
+      "automower_total_collisions": {
+        "name": "Collisions"
+      },
+      "automower_total_drive_distance": {
+        "name": "Total drive distance"
+      },
+      "automower_blade_usage_time": {
+        "name": "Blade usage time"
+      },
+      "automower_total_running_time": {
+        "name": "Total running time"
+      },
+      "automower_total_searching_time": {
+        "name": "Total searching time"
       }
     },
     "binary_sensor": {
@@ -81,11 +119,23 @@
       },
       "mower_error": {
         "name": "Mower error"
+      },
+      "automower_error": {
+        "name": "Error"
+      },
+      "automower_connected": {
+        "name": "Connected"
       }
     },
     "switch": {
       "power_socket": {
         "name": "Power"
+      },
+      "automower_headlight": {
+        "name": "Headlight"
+      },
+      "automower_stay_out_zone": {
+        "name": "Stay-out zone: {zone_name}"
       }
     },
     "valve": {
@@ -96,6 +146,27 @@
     "lawn_mower": {
       "mower": {
         "name": "Mower"
+      },
+      "automower": {
+        "name": "Mower"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Cutting height"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Cutting height: {work_area}"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Position"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Mowing schedule"
       }
     }
   },
@@ -135,17 +206,21 @@
     "websocket_connection_failed": {
       "title": "Gardena real-time connection lost",
       "description": "The WebSocket connection to the Gardena Smart System cloud has failed. The integration is now relying on polling (every 30 minutes) for device updates instead of real-time push. Check your internet connection and the Husqvarna service status. The issue will be resolved automatically when the connection is re-established."
+    },
+    "automower_websocket_connection_failed": {
+      "title": "Automower real-time connection lost",
+      "description": "The WebSocket connection to the Automower Connect cloud has failed. The integration is now relying on polling (every 15 minutes) for device updates instead of real-time push. Check your internet connection and the Husqvarna service status. The issue will be resolved automatically when the connection is re-established."
     }
   },
   "exceptions": {
     "command_failed": {
-      "message": "Failed to send command to Gardena device: {error}"
+      "message": "Failed to send command to device: {error}"
     },
     "device_unavailable": {
-      "message": "The Gardena device is currently unavailable."
+      "message": "The device is currently unavailable."
     },
     "command_throttled": {
-      "message": "Commands are being sent too quickly. Please wait a few seconds between commands to avoid exceeding the Gardena API rate limit."
+      "message": "Commands are being sent too quickly. Please wait a few seconds between commands to avoid exceeding the API rate limit."
     }
   }
 }

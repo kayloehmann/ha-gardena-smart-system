@@ -1,0 +1,1305 @@
+"""Tests for the Automower integration components."""
+
+from __future__ import annotations
+
+import time
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
+from typing import Any
+from unittest.mock import AsyncMock, patch
+
+import pytest
+from homeassistant.const import STATE_UNAVAILABLE
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import entity_registry as er
+
+try:
+    from tests.common import MockConfigEntry
+except ImportError:
+    from pytest_homeassistant_custom_component.common import MockConfigEntry  # type: ignore[no-redef]
+
+from aioautomower.const import HeadlightMode, MowerActivity, MowerState
+from aioautomower.exceptions import (
+    AutomowerAuthenticationError,
+    AutomowerConnectionError,
+    AutomowerException,
+    AutomowerRateLimitError,
+)
+from aioautomower.models import (
+    AutomowerDevice,
+    BatteryInfo,
+    CalendarInfo,
+    CapabilitiesInfo,
+    MetadataInfo,
+    MowerInfo,
+    PlannerInfo,
+    PlannerOverride,
+    Position,
+    ScheduleTask,
+    SettingsInfo,
+    StatisticsInfo,
+    StayOutZone,
+    SystemInfo,
+    WorkArea,
+)
+
+from custom_components.gardena_smart_system.const import DOMAIN
+
+_PATCH_AM_CLIENT = (
+    "custom_components.gardena_smart_system.automower_coordinator.AutomowerClient"
+)
+_PATCH_AM_AUTH = (
+    "custom_components.gardena_smart_system.automower_coordinator.GardenaAuth"
+)
+_PATCH_AM_WS = (
+    "custom_components.gardena_smart_system.automower_coordinator.AutomowerWebSocket"
+)
+
+AUTOMOWER_ENTRY_DATA: dict[str, str] = {
+    "client_id": "test-client-id",
+    "client_secret": "test-client-secret",
+    "api_type": "automower",
+}
+
+# Entity IDs are derived from device name + translation/device_class.
+# With has_entity_name=True and device name "Test Mower":
+#   - sensor with device_class=BATTERY -> sensor.test_mower_battery
+#   - sensor without device_class (cutting_height) -> sensor.test_mower (first), _2, _3...
+#   - binary_sensor with device_class=PROBLEM -> binary_sensor.test_mower_problem
+#   - binary_sensor with device_class=CONNECTIVITY -> binary_sensor.test_mower_connectivity
+#   - lawn_mower -> lawn_mower.test_mower
+#   - switch (headlight, no device_class) -> switch.test_mower
+#   - number (cutting_height, no device_class) -> number.test_mower
+#   - device_tracker -> device_tracker.test_mower
+#   - calendar -> calendar.test_mower
+
+
+def make_mock_automower_device(
+    mower_id: str = "mower-uuid-1",
+    name: str = "Test Mower",
+    model: str = "HUSQVARNA AUTOMOWER 450XH",
+    serial_number: str = "AM-SN-001",
+    battery_level: int = 75,
+    mower_mode: str = "MAIN_AREA",
+    mower_activity: str = MowerActivity.MOWING,
+    mower_state: str = MowerState.IN_OPERATION,
+    error_code: int = 0,
+    connected: bool = True,
+    cutting_height: int = 5,
+    headlight_mode: str = HeadlightMode.ALWAYS_OFF,
+    has_headlights: bool = True,
+    has_work_areas: bool = False,
+    has_stay_out_zones: bool = False,
+    has_position: bool = True,
+    positions: list[Position] | None = None,
+    work_areas: dict[int, WorkArea] | None = None,
+    stay_out_zones: dict[str, StayOutZone] | None = None,
+    tasks: list[ScheduleTask] | None = None,
+    next_start_timestamp: datetime | None = None,
+    restricted_reason: str = "NONE",
+    override_action: str = "NOT_ACTIVE",
+    total_cutting_time: int = 36000,
+    number_of_collisions: int = 150,
+    number_of_charging_cycles: int = 200,
+    total_drive_distance: int = 50000,
+    cutting_blade_usage_time: int = 18000,
+    total_running_time: int = 72000,
+    total_searching_time: int = 7200,
+) -> AutomowerDevice:
+    """Build a real AutomowerDevice dataclass instance for testing."""
+    if positions is None:
+        positions = [Position(latitude=52.5200, longitude=13.4050)]
+    if work_areas is None:
+        work_areas = {}
+    if stay_out_zones is None:
+        stay_out_zones = {}
+    if tasks is None:
+        tasks = []
+
+    return AutomowerDevice(
+        mower_id=mower_id,
+        system=SystemInfo(name=name, model=model, serial_number=serial_number),
+        battery=BatteryInfo(level=battery_level),
+        mower=MowerInfo(
+            mode=mower_mode,
+            activity=mower_activity,
+            state=mower_state,
+            error_code=error_code,
+            error_code_timestamp=None,
+            inactive_reason=None,
+            is_error_confirmable=False,
+        ),
+        calendar=CalendarInfo(tasks=tasks),
+        planner=PlannerInfo(
+            next_start_timestamp=next_start_timestamp,
+            override=PlannerOverride(action=override_action),
+            restricted_reason=restricted_reason,
+        ),
+        metadata=MetadataInfo(
+            connected=connected,
+            status_timestamp=datetime(2025, 6, 15, 12, 0, 0, tzinfo=timezone.utc),
+        ),
+        positions=positions,
+        statistics=StatisticsInfo(
+            cutting_blade_usage_time=cutting_blade_usage_time,
+            number_of_charging_cycles=number_of_charging_cycles,
+            number_of_collisions=number_of_collisions,
+            total_charging_time=10000,
+            total_cutting_time=total_cutting_time,
+            total_drive_distance=total_drive_distance,
+            total_running_time=total_running_time,
+            total_searching_time=total_searching_time,
+        ),
+        settings=SettingsInfo(
+            cutting_height=cutting_height,
+            headlight_mode=headlight_mode,
+        ),
+        capabilities=CapabilitiesInfo(
+            headlights=has_headlights,
+            work_areas=has_work_areas,
+            stay_out_zones=has_stay_out_zones,
+            position=has_position,
+            can_confirm_error=False,
+        ),
+        work_areas=work_areas,
+        stay_out_zones=stay_out_zones,
+    )
+
+
+@asynccontextmanager
+async def _setup_automower(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    devices: dict[str, AutomowerDevice],
+) -> AsyncGenerator[AsyncMock, None]:
+    """Set up the integration with Automower devices and yield the mock client."""
+    with (
+        patch(_PATCH_AM_CLIENT) as mock_client_cls,
+        patch(_PATCH_AM_AUTH),
+        patch(_PATCH_AM_WS) as mock_ws_cls,
+    ):
+        mock_client = AsyncMock()
+        mock_client.async_get_mowers = AsyncMock(return_value=devices)
+        mock_client.async_start = AsyncMock()
+        mock_client.async_pause = AsyncMock()
+        mock_client.async_park_until_next_schedule = AsyncMock()
+        mock_client.async_park_until_further_notice = AsyncMock()
+        mock_client.async_resume_schedule = AsyncMock()
+        mock_client.async_set_headlight_mode = AsyncMock()
+        mock_client.async_set_stay_out_zone = AsyncMock()
+        mock_client.async_set_cutting_height = AsyncMock()
+        mock_client.async_set_work_area_cutting_height = AsyncMock()
+        mock_client_cls.return_value = mock_client
+
+        mock_ws = AsyncMock()
+        mock_ws.async_connect = AsyncMock()
+        mock_ws.async_disconnect = AsyncMock()
+        mock_ws_cls.return_value = mock_ws
+
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        yield mock_client
+
+
+def _find_entity_id(hass: HomeAssistant, domain: str, unique_id_substr: str) -> str:
+    """Find an entity ID by domain and unique_id substring."""
+    entity_reg = er.async_get(hass)
+    for entry in entity_reg.entities.values():
+        if (
+            entry.domain == domain
+            and entry.platform == DOMAIN
+            and unique_id_substr in (entry.unique_id or "")
+        ):
+            return entry.entity_id
+    raise AssertionError(
+        f"No {domain} entity found with unique_id containing '{unique_id_substr}'"
+    )
+
+
+@pytest.fixture
+def automower_config_entry() -> MockConfigEntry:
+    """Return a MockConfigEntry for the Automower integration."""
+    return MockConfigEntry(
+        domain=DOMAIN,
+        data=AUTOMOWER_ENTRY_DATA,
+        title="Automower",
+        version=2,
+    )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 1. Platform Routing
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestPlatformRouting:
+    """Test that platforms correctly delegate based on api_type."""
+
+    async def test_sensor_platform_delegates_to_automower(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("sensor.test_mower_battery")
+            assert state is not None
+            assert state.state == "75"
+
+    async def test_binary_sensor_platform_delegates_to_automower(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            # device_class=PROBLEM generates entity_id suffix "_problem"
+            state = hass.states.get("binary_sensor.test_mower_problem")
+            assert state is not None
+
+    async def test_lawn_mower_platform_delegates_to_automower(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+
+    async def test_automower_only_platforms_noop_for_gardena(
+        self, hass: HomeAssistant
+    ) -> None:
+        """device_tracker, number, calendar do nothing for gardena entries."""
+        from .conftest import ENTRY_DATA, make_mock_device
+
+        gardena_entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=ENTRY_DATA,
+            title="My Garden",
+        )
+
+        device = make_mock_device()
+        devices_gardena = {device.device_id: device}
+
+        _PATCH_CLIENT = (
+            "custom_components.gardena_smart_system.coordinator.GardenaClient"
+        )
+        _PATCH_AUTH = (
+            "custom_components.gardena_smart_system.coordinator.GardenaAuth"
+        )
+        _PATCH_WS = (
+            "custom_components.gardena_smart_system.coordinator.GardenaWebSocket"
+        )
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices_gardena)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            gardena_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(gardena_entry.entry_id)
+            await hass.async_block_till_done()
+
+        entity_reg = er.async_get(hass)
+        for check_domain in ("device_tracker", "number", "calendar"):
+            entities = [
+                e
+                for e in entity_reg.entities.values()
+                if e.domain == check_domain and e.platform == DOMAIN
+            ]
+            assert len(entities) == 0, f"Expected no {check_domain} entities for Gardena"
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 2. Automower Sensor Platform
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerSensor:
+    """Test Automower sensor entities."""
+
+    async def test_battery_level_sensor(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(battery_level=75)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("sensor.test_mower_battery")
+            assert state is not None
+            assert state.state == "75"
+
+    async def test_cutting_height_sensor(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(cutting_height=7)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            # No device_class, so HA uses the translation_key name or falls back
+            # Find by unique_id
+            entity_id = _find_entity_id(hass, "sensor", "cutting_height")
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == "7"
+
+    async def test_total_cutting_time_sensor_converts_to_hours(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        # 36000 seconds // 3600 = 10 hours
+        device = make_mock_automower_device(total_cutting_time=36000)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "sensor", "total_cutting_time")
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == "10"
+
+    async def test_total_collisions_sensor(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(number_of_collisions=150)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "sensor", "total_collisions")
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == "150"
+
+    async def test_next_start_timestamp_sensor(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        next_start = datetime(2025, 6, 16, 8, 0, 0, tzinfo=timezone.utc)
+        device = make_mock_automower_device(next_start_timestamp=next_start)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            # device_class=TIMESTAMP -> entity_id suffix "_timestamp"
+            state = hass.states.get("sensor.test_mower_timestamp")
+            assert state is not None
+            assert state.state != "unknown"
+
+    async def test_sensor_unique_id(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_reg = er.async_get(hass)
+            entry = entity_reg.async_get("sensor.test_mower_battery")
+            assert entry is not None
+            assert entry.unique_id == "AM-SN-001_battery_level"
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 3. Automower Binary Sensor Platform
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerBinarySensor:
+    """Test Automower binary sensor entities."""
+
+    async def test_error_binary_sensor_on_when_error_state(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(mower_state=MowerState.ERROR)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("binary_sensor.test_mower_problem")
+            assert state is not None
+            assert state.state == "on"
+
+    async def test_error_binary_sensor_on_when_fatal_error_state(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(mower_state=MowerState.FATAL_ERROR)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("binary_sensor.test_mower_problem")
+            assert state is not None
+            assert state.state == "on"
+
+    async def test_error_binary_sensor_off_when_normal_state(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(mower_state=MowerState.IN_OPERATION)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("binary_sensor.test_mower_problem")
+            assert state is not None
+            assert state.state == "off"
+
+    async def test_connected_binary_sensor_on_when_connected(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(connected=True)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("binary_sensor.test_mower_connectivity")
+            assert state is not None
+            assert state.state == "on"
+
+    async def test_connected_binary_sensor_unavailable_when_disconnected(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(connected=False)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            # When disconnected, AutomowerEntity.available returns False,
+            # so the entity becomes STATE_UNAVAILABLE.
+            state = hass.states.get("binary_sensor.test_mower_connectivity")
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 4. Automower Lawn Mower Platform
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerLawnMower:
+    """Test Automower lawn mower entities."""
+
+    async def test_activity_mowing_maps_to_mowing(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            mower_activity=MowerActivity.MOWING,
+            mower_state=MowerState.IN_OPERATION,
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            assert state.state == "mowing"
+
+    async def test_activity_charging_maps_to_docked(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            mower_activity=MowerActivity.CHARGING,
+            mower_state=MowerState.IN_OPERATION,
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            assert state.state == "docked"
+
+    async def test_state_paused_maps_to_paused(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            mower_activity=MowerActivity.MOWING,
+            mower_state=MowerState.PAUSED,
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            assert state.state == "paused"
+
+    async def test_state_error_maps_to_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            mower_activity=MowerActivity.MOWING,
+            mower_state=MowerState.ERROR,
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            assert state.state == "error"
+
+    async def test_activity_leaving_maps_to_mowing(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            mower_activity=MowerActivity.LEAVING,
+            mower_state=MowerState.IN_OPERATION,
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            assert state.state == "mowing"
+
+    async def test_activity_parked_in_cs_maps_to_docked(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            mower_activity=MowerActivity.PARKED_IN_CS,
+            mower_state=MowerState.IN_OPERATION,
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            assert state.state == "docked"
+
+    async def test_activity_stopped_in_garden_maps_to_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            mower_activity=MowerActivity.STOPPED_IN_GARDEN,
+            mower_state=MowerState.IN_OPERATION,
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            assert state.state == "error"
+
+    async def test_extra_state_attributes_include_activity_state_mode(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            mower_activity=MowerActivity.MOWING,
+            mower_state=MowerState.IN_OPERATION,
+            mower_mode="MAIN_AREA",
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            assert "activity" in state.attributes
+            assert "state" in state.attributes
+            assert "mode" in state.attributes
+            assert state.attributes["activity"] == MowerActivity.MOWING
+            assert state.attributes["state"] == MowerState.IN_OPERATION
+
+    async def test_extra_state_attributes_include_error_code_when_nonzero(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            mower_state=MowerState.ERROR,
+            error_code=18,
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            assert state.attributes["error_code"] == 18
+
+    async def test_extra_state_attributes_no_error_code_when_zero(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(error_code=0)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            assert "error_code" not in state.attributes
+
+
+class TestAutomowerLawnMowerCommands:
+    """Test Automower lawn mower commands."""
+
+    async def test_start_mowing_calls_client(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            await hass.services.async_call(
+                "lawn_mower",
+                "start_mowing",
+                {"entity_id": "lawn_mower.test_mower"},
+                blocking=True,
+            )
+
+            mock_client.async_start.assert_called_once_with(device.mower_id)
+
+    async def test_dock_calls_client(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            await hass.services.async_call(
+                "lawn_mower",
+                "dock",
+                {"entity_id": "lawn_mower.test_mower"},
+                blocking=True,
+            )
+
+            mock_client.async_park_until_next_schedule.assert_called_once_with(
+                device.mower_id
+            )
+
+    async def test_pause_calls_client(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            await hass.services.async_call(
+                "lawn_mower",
+                "pause",
+                {"entity_id": "lawn_mower.test_mower"},
+                blocking=True,
+            )
+
+            mock_client.async_pause.assert_called_once_with(device.mower_id)
+
+    async def test_auth_error_raises_exception(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            mock_client.async_start.side_effect = AutomowerAuthenticationError(
+                "token expired"
+            )
+
+            with pytest.raises(Exception):
+                await hass.services.async_call(
+                    "lawn_mower",
+                    "start_mowing",
+                    {"entity_id": "lawn_mower.test_mower"},
+                    blocking=True,
+                )
+
+    async def test_api_error_raises_ha_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            mock_client.async_start.side_effect = AutomowerException("API error")
+
+            with pytest.raises(HomeAssistantError):
+                await hass.services.async_call(
+                    "lawn_mower",
+                    "start_mowing",
+                    {"entity_id": "lawn_mower.test_mower"},
+                    blocking=True,
+                )
+
+
+class TestAutomowerLawnMowerUnavailability:
+    """Test lawn mower unavailability."""
+
+    async def test_mower_unavailable_when_disconnected(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(connected=False)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+    async def test_mower_unavailable_when_removed_from_coordinator(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            assert state.state != STATE_UNAVAILABLE
+
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 5. Automower Switch Platform
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerHeadlightSwitch:
+    """Test Automower headlight switch."""
+
+    async def test_headlight_switch_is_on_when_not_always_off(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            headlight_mode=HeadlightMode.ALWAYS_ON, has_headlights=True
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "switch", "headlight")
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == "on"
+
+    async def test_headlight_switch_is_off_when_always_off(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            headlight_mode=HeadlightMode.ALWAYS_OFF, has_headlights=True
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "switch", "headlight")
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == "off"
+
+    async def test_headlight_turn_on_calls_set_headlight_mode(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            headlight_mode=HeadlightMode.ALWAYS_OFF, has_headlights=True
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            entity_id = _find_entity_id(hass, "switch", "headlight")
+            await hass.services.async_call(
+                "switch",
+                "turn_on",
+                {"entity_id": entity_id},
+                blocking=True,
+            )
+
+            mock_client.async_set_headlight_mode.assert_called_once_with(
+                device.mower_id, HeadlightMode.ALWAYS_ON
+            )
+
+    async def test_headlight_turn_off_calls_set_headlight_mode(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            headlight_mode=HeadlightMode.ALWAYS_ON, has_headlights=True
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            entity_id = _find_entity_id(hass, "switch", "headlight")
+            await hass.services.async_call(
+                "switch",
+                "turn_off",
+                {"entity_id": entity_id},
+                blocking=True,
+            )
+
+            mock_client.async_set_headlight_mode.assert_called_once_with(
+                device.mower_id, HeadlightMode.ALWAYS_OFF
+            )
+
+    async def test_no_headlight_switch_without_capability(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(has_headlights=False)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_reg = er.async_get(hass)
+            headlight_entities = [
+                e
+                for e in entity_reg.entities.values()
+                if e.platform == DOMAIN
+                and e.domain == "switch"
+                and "headlight" in (e.unique_id or "")
+            ]
+            assert len(headlight_entities) == 0
+
+
+class TestAutomowerStayOutZoneSwitch:
+    """Test Automower stay-out zone switch."""
+
+    async def test_stay_out_zone_switch_reflects_enabled(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        zone = StayOutZone(zone_id="zone-1", name="Garden Pond", enabled=True)
+        device = make_mock_automower_device(
+            has_stay_out_zones=True,
+            stay_out_zones={"zone-1": zone},
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "switch", "soz_zone-1")
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == "on"
+
+    async def test_stay_out_zone_switch_disabled_zone(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        zone = StayOutZone(zone_id="zone-2", name="Flower Bed", enabled=False)
+        device = make_mock_automower_device(
+            has_stay_out_zones=True,
+            stay_out_zones={"zone-2": zone},
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "switch", "soz_zone-2")
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == "off"
+
+    async def test_stay_out_zone_toggle_calls_client(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        zone = StayOutZone(zone_id="zone-1", name="Garden Pond", enabled=False)
+        device = make_mock_automower_device(
+            has_stay_out_zones=True,
+            stay_out_zones={"zone-1": zone},
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            entity_id = _find_entity_id(hass, "switch", "soz_zone-1")
+            await hass.services.async_call(
+                "switch",
+                "turn_on",
+                {"entity_id": entity_id},
+                blocking=True,
+            )
+
+            mock_client.async_set_stay_out_zone.assert_called_once_with(
+                device.mower_id, "zone-1", True
+            )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 6. Automower Number Platform
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerNumber:
+    """Test Automower number entities."""
+
+    async def test_cutting_height_number_shows_value(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(cutting_height=7)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "number", "cutting_height")
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == "7.0"
+
+    async def test_setting_cutting_height_calls_client(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(cutting_height=5)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            entity_id = _find_entity_id(hass, "number", "cutting_height")
+            await hass.services.async_call(
+                "number",
+                "set_value",
+                {"entity_id": entity_id, "value": 8},
+                blocking=True,
+            )
+
+            mock_client.async_set_cutting_height.assert_called_once_with(
+                device.mower_id, 8
+            )
+
+    async def test_work_area_cutting_height_shows_value(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        wa = WorkArea(work_area_id=1, name="Front Yard", cutting_height=60, enabled=True)
+        device = make_mock_automower_device(
+            has_work_areas=True,
+            work_areas={1: wa},
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "number", "wa_1_height")
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == "60.0"
+
+    async def test_setting_work_area_height_calls_client(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        wa = WorkArea(work_area_id=1, name="Front Yard", cutting_height=60, enabled=True)
+        device = make_mock_automower_device(
+            has_work_areas=True,
+            work_areas={1: wa},
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            entity_id = _find_entity_id(hass, "number", "wa_1_height")
+            await hass.services.async_call(
+                "number",
+                "set_value",
+                {"entity_id": entity_id, "value": 80},
+                blocking=True,
+            )
+
+            mock_client.async_set_work_area_cutting_height.assert_called_once_with(
+                device.mower_id, 1, 80
+            )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 7. Automower Device Tracker
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerDeviceTracker:
+    """Test Automower device tracker entities."""
+
+    async def test_tracker_shows_latitude_longitude(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            has_position=True,
+            positions=[Position(latitude=52.5200, longitude=13.4050)],
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("device_tracker.test_mower")
+            assert state is not None
+            assert state.attributes["latitude"] == 52.5200
+            assert state.attributes["longitude"] == 13.4050
+
+    async def test_no_tracker_when_position_capability_false(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(has_position=False)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_reg = er.async_get(hass)
+            tracker_entities = [
+                e
+                for e in entity_reg.entities.values()
+                if e.domain == "device_tracker" and e.platform == DOMAIN
+            ]
+            assert len(tracker_entities) == 0
+
+    async def test_tracker_returns_none_when_no_positions(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            has_position=True,
+            positions=[],
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("device_tracker.test_mower")
+            assert state is not None
+            # latitude/longitude are None when no positions
+            assert state.attributes.get("latitude") is None
+            assert state.attributes.get("longitude") is None
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 8. Automower Calendar
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerCalendar:
+    """Test Automower calendar entities."""
+
+    async def test_calendar_entity_created(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_reg = er.async_get(hass)
+            cal_entries = [
+                e
+                for e in entity_reg.entities.values()
+                if e.domain == "calendar" and e.platform == DOMAIN
+            ]
+            assert len(cal_entries) == 1
+
+    async def test_async_get_events_generates_events_from_tasks(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        task = ScheduleTask(
+            start=480,  # 8:00 AM in minutes
+            duration=120,  # 2 hours
+            monday=True,
+            tuesday=False,
+            wednesday=True,
+            thursday=False,
+            friday=True,
+            saturday=False,
+            sunday=False,
+            work_area_id=None,
+        )
+        device = make_mock_automower_device(tasks=[task])
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            from homeassistant.util import dt as dt_util
+
+            # Test _generate_events directly via the entity
+            calendar_entity_id = _find_entity_id(hass, "calendar", "schedule")
+            entity_reg = er.async_get(hass)
+            entry = entity_reg.async_get(calendar_entity_id)
+            assert entry is not None
+
+            # Use the automower_calendar module directly to test _generate_events
+            from custom_components.gardena_smart_system.automower_calendar import (
+                AutomowerCalendarEntity,
+            )
+
+            start = datetime(2025, 6, 16, 0, 0, 0, tzinfo=dt_util.DEFAULT_TIME_ZONE)
+            end = datetime(2025, 6, 22, 23, 59, 59, tzinfo=dt_util.DEFAULT_TIME_ZONE)
+            events = AutomowerCalendarEntity._generate_events(device, start, end)
+            # Monday=16, Wednesday=18, Friday=20 = 3 events
+            assert len(events) == 3
+            assert "Mowing" in events[0].summary
+
+    async def test_no_events_when_tasks_empty(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(tasks=[])
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            from custom_components.gardena_smart_system.automower_calendar import (
+                AutomowerCalendarEntity,
+            )
+            from homeassistant.util import dt as dt_util
+
+            start = datetime(2025, 6, 16, 0, 0, 0, tzinfo=dt_util.DEFAULT_TIME_ZONE)
+            end = datetime(2025, 6, 22, 23, 59, 59, tzinfo=dt_util.DEFAULT_TIME_ZONE)
+            events = AutomowerCalendarEntity._generate_events(device, start, end)
+            assert len(events) == 0
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 9. Automower Coordinator
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerCoordinator:
+    """Test the AutomowerCoordinator behavior."""
+
+    async def test_rate_limit_backoff_sets_cooldown_interval(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        from custom_components.gardena_smart_system.const import (
+            AUTOMOWER_RATE_LIMIT_COOLDOWN,
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        with (
+            patch(_PATCH_AM_CLIENT) as mock_client_cls,
+            patch(_PATCH_AM_AUTH),
+            patch(_PATCH_AM_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            # First call succeeds (initial setup), second raises rate limit
+            mock_client.async_get_mowers = AsyncMock(
+                side_effect=[devices, AutomowerRateLimitError("rate limited")]
+            )
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            automower_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(automower_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = automower_config_entry.runtime_data
+
+            # Trigger an update that will get rate limited
+            await coordinator.async_refresh()
+            await hass.async_block_till_done()
+
+            assert coordinator.update_interval == AUTOMOWER_RATE_LIMIT_COOLDOWN
+
+    async def test_successful_fetch_restores_ws_interval(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        from custom_components.gardena_smart_system.const import (
+            AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED,
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            # After setup, WS should have been started and interval set
+            # to the WS-connected interval
+            assert coordinator.update_interval == AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED
+
+    async def test_command_throttle_raises_when_too_fast(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            # First call should succeed
+            coordinator.check_command_throttle()
+
+            # Second call immediately should raise
+            with pytest.raises(HomeAssistantError):
+                coordinator.check_command_throttle()
+
+    async def test_command_throttle_allows_after_interval(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        from custom_components.gardena_smart_system.const import (
+            MIN_COMMAND_INTERVAL_SECONDS,
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            coordinator.check_command_throttle()
+
+            # Simulate enough time passing by resetting the internal timer
+            coordinator._last_command_time = (
+                time.monotonic() - MIN_COMMAND_INTERVAL_SECONDS - 1
+            )
+
+            # Should not raise
+            coordinator.check_command_throttle()
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 10. Device Info and Unique IDs
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerDeviceInfo:
+    """Test device info registration for Automower entities."""
+
+    async def test_lawn_mower_unique_id(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_reg = er.async_get(hass)
+            entry = entity_reg.async_get("lawn_mower.test_mower")
+            assert entry is not None
+            assert entry.unique_id == "AM-SN-001_automower"
+
+    async def test_headlight_switch_unique_id(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(has_headlights=True)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_reg = er.async_get(hass)
+            headlight_entry = None
+            for entry in entity_reg.entities.values():
+                if entry.platform == DOMAIN and "headlight" in (entry.unique_id or ""):
+                    headlight_entry = entry
+                    break
+            assert headlight_entry is not None
+            assert headlight_entry.unique_id == "AM-SN-001_headlight"
+
+    async def test_cutting_height_number_unique_id(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_reg = er.async_get(hass)
+            num_entry = None
+            for entry in entity_reg.entities.values():
+                if (
+                    entry.platform == DOMAIN
+                    and entry.domain == "number"
+                    and "cutting_height" in (entry.unique_id or "")
+                ):
+                    num_entry = entry
+                    break
+            assert num_entry is not None
+            assert num_entry.unique_id == "AM-SN-001_cutting_height"
+
+    async def test_device_tracker_unique_id(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(has_position=True)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_reg = er.async_get(hass)
+            tracker_entry = None
+            for entry in entity_reg.entities.values():
+                if entry.domain == "device_tracker" and entry.platform == DOMAIN:
+                    tracker_entry = entry
+                    break
+            assert tracker_entry is not None
+            assert tracker_entry.unique_id == "AM-SN-001_position"
+
+    async def test_entities_linked_to_same_device(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(has_headlights=True, has_position=True)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_reg = er.async_get(hass)
+            mower_entry = entity_reg.async_get("lawn_mower.test_mower")
+            sensor_entry = entity_reg.async_get("sensor.test_mower_battery")
+
+            assert mower_entry is not None
+            assert sensor_entry is not None
+
+            # All entities share the same device
+            assert mower_entry.device_id == sensor_entry.device_id
+            assert mower_entry.device_id is not None

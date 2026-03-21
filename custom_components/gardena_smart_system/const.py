@@ -9,27 +9,46 @@ DOMAIN = "gardena_smart_system"
 CONF_CLIENT_ID = "client_id"
 CONF_CLIENT_SECRET = "client_secret"
 CONF_LOCATION_ID = "location_id"
+CONF_API_TYPE = "api_type"
 
-# Polling fallback interval (WebSocket is primary; polling only if WS fails).
-# The Husqvarna API allows ~3 000 requests/month (~1 every 15 min).
+API_TYPE_GARDENA = "gardena"
+API_TYPE_AUTOMOWER = "automower"
+
+# ── Gardena polling intervals ──────────────────────────────────────
+# The Husqvarna Gardena API allows ~3 000 requests/month (~1 every 15 min).
 # 30 min keeps us well within budget even without WebSocket.
 SCAN_INTERVAL = timedelta(minutes=30)
-
-# When the WebSocket is connected and delivering real-time updates, polling
-# serves only as a rare health-check. Use a long interval to conserve quota.
 SCAN_INTERVAL_WS_CONNECTED = timedelta(hours=6)
-
-# Cooldown interval when the API returns HTTP 429 (rate limited)
 RATE_LIMIT_COOLDOWN = timedelta(hours=1)
+
+# ── Automower polling intervals ───────────────────────────────────
+# The Automower API allows ~10 000 requests/month (~330/day).
+# 15 min fallback, 6h with WS, 1h on rate limit.
+AUTOMOWER_SCAN_INTERVAL = timedelta(minutes=15)
+AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED = timedelta(hours=6)
+AUTOMOWER_RATE_LIMIT_COOLDOWN = timedelta(hours=1)
 
 # Minimum seconds between consecutive API commands (mower/valve/power socket)
 # to avoid burning through the API quota with rapid-fire automations.
 MIN_COMMAND_INTERVAL_SECONDS = 5
 
-PLATFORMS: list[Platform] = [
+GARDENA_PLATFORMS: list[Platform] = [
     Platform.SENSOR,
     Platform.BINARY_SENSOR,
     Platform.VALVE,
     Platform.SWITCH,
     Platform.LAWN_MOWER,
 ]
+
+AUTOMOWER_PLATFORMS: list[Platform] = [
+    Platform.SENSOR,
+    Platform.BINARY_SENSOR,
+    Platform.LAWN_MOWER,
+    Platform.SWITCH,
+    Platform.NUMBER,
+    Platform.DEVICE_TRACKER,
+    Platform.CALENDAR,
+]
+
+# Keep PLATFORMS as the union for backward compat during migration
+PLATFORMS = list(set(GARDENA_PLATFORMS + AUTOMOWER_PLATFORMS))

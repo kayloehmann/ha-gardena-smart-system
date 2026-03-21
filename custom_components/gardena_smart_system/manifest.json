@@ -7,8 +7,8 @@
   "integration_type": "hub",
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/kayloehmann/ha-gardena-smart-system/issues",
-  "loggers": ["aiogardenasmart"],
-  "requirements": ["aiogardenasmart==0.1.2"],
+  "loggers": ["aiogardenasmart", "aioautomower"],
+  "requirements": ["aiogardenasmart==0.1.2", "aioautomower==0.1.0"],
   "single_config_entry": false,
-  "version": "0.1.2"
+  "version": "0.2.0"
 }
