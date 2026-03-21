@@ -1,0 +1,226 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Husqvarna",
+        "description": "Enter the credentials from your application on the Husqvarna Developer Portal.",
+        "data": {
+          "client_id": "Application Key (Client ID)",
+          "client_secret": "Application Secret"
+        },
+        "data_description": {
+          "client_id": "The application key from your Husqvarna developer account.",
+          "client_secret": "The application secret from your Husqvarna developer account."
+        }
+      },
+      "api_type": {
+        "title": "Select API",
+        "description": "Choose which Husqvarna API to connect. You can add both by setting up the integration twice.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Select your garden",
+        "description": "Multiple gardens were found on your account. Select the one you want to add.",
+        "data": {
+          "location_id": "Garden"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate",
+        "description": "Your credentials are no longer valid. Please enter your application credentials again.",
+        "data": {
+          "client_id": "Application Key (Client ID)",
+          "client_secret": "Application Secret"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure",
+        "data": {
+          "client_id": "Application Key (Client ID)",
+          "client_secret": "Application Secret"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid credentials. Check your application key and secret on the Husqvarna Developer Portal.",
+      "forbidden": "API access denied. Ensure the Gardena Smart System API is connected to your application in the Husqvarna Developer Portal.",
+      "automower_not_connected": "The Automower Connect API is not connected to your application. Enable it in the Husqvarna Developer Portal under Connected APIs.",
+      "rate_limited": "API rate limit reached or temporarily blocked. Wait a few minutes and try again, or create a new application in the Husqvarna Developer Portal.",
+      "cannot_connect": "Unable to connect to the API. Check your network connection and try again.",
+      "unknown": "An unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This configuration already exists.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Battery"
+      },
+      "rf_link_level": {
+        "name": "Signal strength"
+      },
+      "soil_humidity": {
+        "name": "Soil moisture"
+      },
+      "soil_temperature": {
+        "name": "Soil temperature"
+      },
+      "ambient_temperature": {
+        "name": "Ambient temperature"
+      },
+      "light_intensity": {
+        "name": "Light intensity"
+      },
+      "mower_operating_hours": {
+        "name": "Operating hours"
+      },
+      "automower_battery_level": {
+        "name": "Battery"
+      },
+      "automower_cutting_height": {
+        "name": "Cutting height"
+      },
+      "automower_next_start": {
+        "name": "Next start"
+      },
+      "automower_total_cutting_time": {
+        "name": "Total cutting time"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Charging cycles"
+      },
+      "automower_total_collisions": {
+        "name": "Collisions"
+      },
+      "automower_total_drive_distance": {
+        "name": "Total drive distance"
+      },
+      "automower_blade_usage_time": {
+        "name": "Blade usage time"
+      },
+      "automower_total_running_time": {
+        "name": "Total running time"
+      },
+      "automower_total_searching_time": {
+        "name": "Total searching time"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Battery low"
+      },
+      "valve_error": {
+        "name": "Valve error"
+      },
+      "mower_error": {
+        "name": "Mower error"
+      },
+      "automower_error": {
+        "name": "Error"
+      },
+      "automower_connected": {
+        "name": "Connected"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Power"
+      },
+      "automower_headlight": {
+        "name": "Headlight"
+      },
+      "automower_stay_out_zone": {
+        "name": "Stay-out zone: {zone_name}"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Valve"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Mower"
+      },
+      "automower": {
+        "name": "Mower"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Cutting height"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Cutting height: {work_area}"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Position"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Mowing schedule"
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Start watering",
+      "description": "Start watering a valve for a specific duration, overriding the schedule.",
+      "fields": {
+        "duration": {
+          "name": "Duration",
+          "description": "Duration in minutes (1–1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Turn on for",
+      "description": "Turn on a smart power socket for a specific duration.",
+      "fields": {
+        "duration": {
+          "name": "Duration",
+          "description": "Duration in minutes (1–1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Override schedule",
+      "description": "Force the mower to mow for a specific duration, ignoring its schedule.",
+      "fields": {
+        "duration": {
+          "name": "Duration",
+          "description": "Duration in minutes (1–480)."
+        }
+      }
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "Gardena real-time connection lost",
+      "description": "The WebSocket connection to the Gardena Smart System cloud has failed. The integration is now relying on polling (every 30 minutes) for device updates instead of real-time push. Check your internet connection and the Husqvarna service status. The issue will be resolved automatically when the connection is re-established."
+    },
+    "automower_websocket_connection_failed": {
+      "title": "Automower real-time connection lost",
+      "description": "The WebSocket connection to the Automower Connect cloud has failed. The integration is now relying on polling (every 15 minutes) for device updates instead of real-time push. Check your internet connection and the Husqvarna service status. The issue will be resolved automatically when the connection is re-established."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Failed to send command to device: {error}"
+    },
+    "device_unavailable": {
+      "message": "The device is currently unavailable."
+    },
+    "command_throttled": {
+      "message": "Commands are being sent too quickly. Please wait a few seconds between commands to avoid exceeding the API rate limit."
+    }
+  }
+}

@@ -64,17 +64,18 @@ AUTOMOWER_ENTRY_DATA: dict[str, str] = {
     "api_type": "automower",
 }
 
-# Entity IDs are derived from device name + translation/device_class.
+# Entity IDs are derived from device name + translated entity name.
 # With has_entity_name=True and device name "Test Mower":
-#   - sensor with device_class=BATTERY -> sensor.test_mower_battery
-#   - sensor without device_class (cutting_height) -> sensor.test_mower (first), _2, _3...
-#   - binary_sensor with device_class=PROBLEM -> binary_sensor.test_mower_problem
-#   - binary_sensor with device_class=CONNECTIVITY -> binary_sensor.test_mower_connectivity
-#   - lawn_mower -> lawn_mower.test_mower
-#   - switch (headlight, no device_class) -> switch.test_mower
-#   - number (cutting_height, no device_class) -> number.test_mower
-#   - device_tracker -> device_tracker.test_mower
-#   - calendar -> calendar.test_mower
+#   - sensor with translation "Battery" -> sensor.test_mower_battery
+#   - sensor with translation "Cutting height" -> sensor.test_mower_cutting_height
+#   - sensor with translation "Next start" -> sensor.test_mower_next_start
+#   - binary_sensor with translation "Error" -> binary_sensor.test_mower_error
+#   - binary_sensor with translation "Connected" -> binary_sensor.test_mower_connected
+#   - lawn_mower with translation "Mower" -> lawn_mower.test_mower_mower
+#   - switch with translation "Headlight" -> switch.test_mower_headlight
+#   - number with translation "Cutting height" -> number.test_mower_cutting_height
+#   - device_tracker with translation "Position" -> device_tracker.test_mower_position
+#   - calendar with translation "Mowing schedule" -> calendar.test_mower_mowing_schedule
 
 
 def make_mock_automower_device(
@@ -259,7 +260,7 @@ class TestPlatformRouting:
 
         async with _setup_automower(hass, automower_config_entry, devices):
             # device_class=PROBLEM generates entity_id suffix "_problem"
-            state = hass.states.get("binary_sensor.test_mower_problem")
+            state = hass.states.get("binary_sensor.test_mower_error")
             assert state is not None
 
     async def test_lawn_mower_platform_delegates_to_automower(
@@ -269,7 +270,7 @@ class TestPlatformRouting:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
 
     async def test_automower_only_platforms_noop_for_gardena(
@@ -389,7 +390,7 @@ class TestAutomowerSensor:
 
         async with _setup_automower(hass, automower_config_entry, devices):
             # device_class=TIMESTAMP -> entity_id suffix "_timestamp"
-            state = hass.states.get("sensor.test_mower_timestamp")
+            state = hass.states.get("sensor.test_mower_next_start")
             assert state is not None
             assert state.state != "unknown"
 
@@ -421,7 +422,7 @@ class TestAutomowerBinarySensor:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("binary_sensor.test_mower_problem")
+            state = hass.states.get("binary_sensor.test_mower_error")
             assert state is not None
             assert state.state == "on"
 
@@ -432,7 +433,7 @@ class TestAutomowerBinarySensor:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("binary_sensor.test_mower_problem")
+            state = hass.states.get("binary_sensor.test_mower_error")
             assert state is not None
             assert state.state == "on"
 
@@ -443,7 +444,7 @@ class TestAutomowerBinarySensor:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("binary_sensor.test_mower_problem")
+            state = hass.states.get("binary_sensor.test_mower_error")
             assert state is not None
             assert state.state == "off"
 
@@ -454,7 +455,7 @@ class TestAutomowerBinarySensor:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("binary_sensor.test_mower_connectivity")
+            state = hass.states.get("binary_sensor.test_mower_connected")
             assert state is not None
             assert state.state == "on"
 
@@ -467,7 +468,7 @@ class TestAutomowerBinarySensor:
         async with _setup_automower(hass, automower_config_entry, devices):
             # When disconnected, AutomowerEntity.available returns False,
             # so the entity becomes STATE_UNAVAILABLE.
-            state = hass.states.get("binary_sensor.test_mower_connectivity")
+            state = hass.states.get("binary_sensor.test_mower_connected")
             assert state is not None
             assert state.state == STATE_UNAVAILABLE
 
@@ -490,7 +491,7 @@ class TestAutomowerLawnMower:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             assert state.state == "mowing"
 
@@ -504,7 +505,7 @@ class TestAutomowerLawnMower:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             assert state.state == "docked"
 
@@ -518,7 +519,7 @@ class TestAutomowerLawnMower:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             assert state.state == "paused"
 
@@ -532,7 +533,7 @@ class TestAutomowerLawnMower:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             assert state.state == "error"
 
@@ -546,7 +547,7 @@ class TestAutomowerLawnMower:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             assert state.state == "mowing"
 
@@ -560,7 +561,7 @@ class TestAutomowerLawnMower:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             assert state.state == "docked"
 
@@ -574,7 +575,7 @@ class TestAutomowerLawnMower:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             assert state.state == "error"
 
@@ -589,7 +590,7 @@ class TestAutomowerLawnMower:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             assert "activity" in state.attributes
             assert "state" in state.attributes
@@ -607,7 +608,7 @@ class TestAutomowerLawnMower:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             assert state.attributes["error_code"] == 18
 
@@ -618,7 +619,7 @@ class TestAutomowerLawnMower:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             assert "error_code" not in state.attributes
 
@@ -636,7 +637,7 @@ class TestAutomowerLawnMowerCommands:
             await hass.services.async_call(
                 "lawn_mower",
                 "start_mowing",
-                {"entity_id": "lawn_mower.test_mower"},
+                {"entity_id": "lawn_mower.test_mower_mower"},
                 blocking=True,
             )
 
@@ -652,7 +653,7 @@ class TestAutomowerLawnMowerCommands:
             await hass.services.async_call(
                 "lawn_mower",
                 "dock",
-                {"entity_id": "lawn_mower.test_mower"},
+                {"entity_id": "lawn_mower.test_mower_mower"},
                 blocking=True,
             )
 
@@ -670,7 +671,7 @@ class TestAutomowerLawnMowerCommands:
             await hass.services.async_call(
                 "lawn_mower",
                 "pause",
-                {"entity_id": "lawn_mower.test_mower"},
+                {"entity_id": "lawn_mower.test_mower_mower"},
                 blocking=True,
             )
 
@@ -691,7 +692,7 @@ class TestAutomowerLawnMowerCommands:
                 await hass.services.async_call(
                     "lawn_mower",
                     "start_mowing",
-                    {"entity_id": "lawn_mower.test_mower"},
+                    {"entity_id": "lawn_mower.test_mower_mower"},
                     blocking=True,
                 )
 
@@ -708,7 +709,7 @@ class TestAutomowerLawnMowerCommands:
                 await hass.services.async_call(
                     "lawn_mower",
                     "start_mowing",
-                    {"entity_id": "lawn_mower.test_mower"},
+                    {"entity_id": "lawn_mower.test_mower_mower"},
                     blocking=True,
                 )
 
@@ -723,7 +724,7 @@ class TestAutomowerLawnMowerUnavailability:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             assert state.state == STATE_UNAVAILABLE
 
@@ -734,7 +735,7 @@ class TestAutomowerLawnMowerUnavailability:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             assert state.state != STATE_UNAVAILABLE
 
@@ -742,7 +743,7 @@ class TestAutomowerLawnMowerUnavailability:
             coordinator.async_set_updated_data({})
             await hass.async_block_till_done()
 
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             assert state.state == STATE_UNAVAILABLE
 
@@ -999,7 +1000,7 @@ class TestAutomowerDeviceTracker:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("device_tracker.test_mower")
+            state = hass.states.get("device_tracker.test_mower_position")
             assert state is not None
             assert state.attributes["latitude"] == 52.5200
             assert state.attributes["longitude"] == 13.4050
@@ -1029,7 +1030,7 @@ class TestAutomowerDeviceTracker:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("device_tracker.test_mower")
+            state = hass.states.get("device_tracker.test_mower_position")
             assert state is not None
             # latitude/longitude are None when no positions
             assert state.attributes.get("latitude") is None
@@ -1231,7 +1232,7 @@ class TestAutomowerDeviceInfo:
 
         async with _setup_automower(hass, automower_config_entry, devices):
             entity_reg = er.async_get(hass)
-            entry = entity_reg.async_get("lawn_mower.test_mower")
+            entry = entity_reg.async_get("lawn_mower.test_mower_mower")
             assert entry is not None
             assert entry.unique_id == "AM-SN-001_automower"
 
@@ -1295,7 +1296,7 @@ class TestAutomowerDeviceInfo:
 
         async with _setup_automower(hass, automower_config_entry, devices):
             entity_reg = er.async_get(hass)
-            mower_entry = entity_reg.async_get("lawn_mower.test_mower")
+            mower_entry = entity_reg.async_get("lawn_mower.test_mower_mower")
             sensor_entry = entity_reg.async_get("sensor.test_mower_battery")
 
             assert mower_entry is not None
@@ -1935,7 +1936,7 @@ class TestAutomowerLawnMowerAdditional:
             coordinator.async_set_updated_data({})
             await hass.async_block_till_done()
 
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             assert state.state == STATE_UNAVAILABLE
 
@@ -1951,7 +1952,7 @@ class TestAutomowerLawnMowerAdditional:
             coordinator.async_set_updated_data({})
             await hass.async_block_till_done()
 
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             # When unavailable, no extra attributes
             assert "activity" not in state.attributes
@@ -1966,7 +1967,7 @@ class TestAutomowerLawnMowerAdditional:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             assert state.attributes["restricted_reason"] == "WEEK_SCHEDULE"
 
@@ -1980,7 +1981,7 @@ class TestAutomowerLawnMowerAdditional:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             assert state.attributes["override_action"] == "FORCE_MOW"
 
@@ -1995,7 +1996,7 @@ class TestAutomowerLawnMowerAdditional:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower")
+            state = hass.states.get("lawn_mower.test_mower_mower")
             assert state is not None
             assert state.state == "error"
 
@@ -2036,7 +2037,7 @@ class TestAutomowerLawnMowerAdditional:
                 await hass.services.async_call(
                     "lawn_mower",
                     "pause",
-                    {"entity_id": "lawn_mower.test_mower"},
+                    {"entity_id": "lawn_mower.test_mower_mower"},
                     blocking=True,
                 )
 

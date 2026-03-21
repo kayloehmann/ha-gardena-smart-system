@@ -61,7 +61,7 @@ class TestLawnMowerEntityCreation:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state is not None
 
     async def test_no_mower_without_mower_service(
@@ -94,7 +94,7 @@ class TestLawnMowerUniqueId:
             pass
 
         entity_reg = er.async_get(hass)
-        entry = entity_reg.async_get("lawn_mower.my_sensor")
+        entry = entity_reg.async_get("lawn_mower.my_sensor_mower")
         assert entry is not None
         assert entry.unique_id == "SN001_mower"
 
@@ -112,7 +112,7 @@ class TestLawnMowerTranslationKey:
             pass
 
         entity_reg = er.async_get(hass)
-        entry = entity_reg.async_get("lawn_mower.my_sensor")
+        entry = entity_reg.async_get("lawn_mower.my_sensor_mower")
         assert entry is not None
         assert entry.translation_key == "mower"
 
@@ -131,7 +131,7 @@ class TestLawnMowerActivityMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state is not None
         assert state.state == "mowing"
 
@@ -146,7 +146,7 @@ class TestLawnMowerActivityMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state.state == "mowing"
 
     async def test_ok_searching_maps_to_mowing(
@@ -160,7 +160,7 @@ class TestLawnMowerActivityMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state.state == "mowing"
 
     async def test_ok_leaving_maps_to_mowing(
@@ -174,7 +174,7 @@ class TestLawnMowerActivityMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state.state == "mowing"
 
     async def test_ok_charging_maps_to_docked(
@@ -188,7 +188,7 @@ class TestLawnMowerActivityMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state.state == "docked"
 
     async def test_parked_timer_maps_to_docked(
@@ -202,7 +202,7 @@ class TestLawnMowerActivityMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state.state == "docked"
 
     async def test_parked_park_selected_maps_to_docked(
@@ -216,7 +216,7 @@ class TestLawnMowerActivityMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state.state == "docked"
 
     async def test_parked_autotimer_maps_to_docked(
@@ -230,7 +230,7 @@ class TestLawnMowerActivityMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state.state == "docked"
 
     async def test_parked_frost_maps_to_docked(
@@ -244,7 +244,7 @@ class TestLawnMowerActivityMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state.state == "docked"
 
     async def test_paused_maps_to_paused(
@@ -258,7 +258,7 @@ class TestLawnMowerActivityMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state.state == "paused"
 
     async def test_paused_in_cs_maps_to_paused(
@@ -272,7 +272,7 @@ class TestLawnMowerActivityMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state.state == "paused"
 
     async def test_stopped_in_garden_maps_to_error(
@@ -286,7 +286,7 @@ class TestLawnMowerActivityMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state.state == "error"
 
     async def test_error_state_overrides_activity(
@@ -300,7 +300,7 @@ class TestLawnMowerActivityMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state.state == "error"
 
     async def test_unknown_activity_defaults_to_paused(
@@ -314,7 +314,7 @@ class TestLawnMowerActivityMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state.state == "paused"
 
     async def test_none_activity_defaults_to_paused(
@@ -328,7 +328,7 @@ class TestLawnMowerActivityMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state.state == "paused"
 
 
@@ -344,7 +344,7 @@ class TestLawnMowerCommands:
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
                 "lawn_mower", "start_mowing",
-                {"entity_id": "lawn_mower.my_sensor"},
+                {"entity_id": "lawn_mower.my_sensor_mower"},
                 blocking=True,
             )
 
@@ -365,7 +365,7 @@ class TestLawnMowerCommands:
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
                 "lawn_mower", "dock",
-                {"entity_id": "lawn_mower.my_sensor"},
+                {"entity_id": "lawn_mower.my_sensor_mower"},
                 blocking=True,
             )
 
@@ -386,7 +386,7 @@ class TestLawnMowerCommands:
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
                 "lawn_mower", "pause",
-                {"entity_id": "lawn_mower.my_sensor"},
+                {"entity_id": "lawn_mower.my_sensor_mower"},
                 blocking=True,
             )
 
@@ -405,7 +405,7 @@ class TestLawnMowerCommands:
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
                 "gardena_smart_system", "override_schedule",
-                {"entity_id": "lawn_mower.my_sensor", "duration": 120},
+                {"entity_id": "lawn_mower.my_sensor_mower", "duration": 120},
                 blocking=True,
             )
 
@@ -436,7 +436,7 @@ class TestLawnMowerErrorHandling:
             with pytest.raises(HomeAssistantError):
                 await hass.services.async_call(
                     "lawn_mower", "start_mowing",
-                    {"entity_id": "lawn_mower.my_sensor"},
+                    {"entity_id": "lawn_mower.my_sensor_mower"},
                     blocking=True,
                 )
 
@@ -454,7 +454,7 @@ class TestLawnMowerErrorHandling:
             with pytest.raises(HomeAssistantError):
                 await hass.services.async_call(
                     "lawn_mower", "start_mowing",
-                    {"entity_id": "lawn_mower.my_sensor"},
+                    {"entity_id": "lawn_mower.my_sensor_mower"},
                     blocking=True,
                 )
 
@@ -473,7 +473,7 @@ class TestLawnMowerErrorHandling:
             # HA silently skips service calls on unavailable entities
             await hass.services.async_call(
                 "lawn_mower", "start_mowing",
-                {"entity_id": "lawn_mower.my_sensor"},
+                {"entity_id": "lawn_mower.my_sensor_mower"},
                 blocking=True,
             )
 
@@ -494,7 +494,7 @@ class TestLawnMowerUnavailability:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state is not None
         assert state.state == STATE_UNAVAILABLE
 
@@ -505,7 +505,7 @@ class TestLawnMowerUnavailability:
         devices = {device.device_id: device}
 
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
-            state = hass.states.get("lawn_mower.my_sensor")
+            state = hass.states.get("lawn_mower.my_sensor_mower")
             assert state is not None
             assert state.state != STATE_UNAVAILABLE
 
@@ -513,7 +513,7 @@ class TestLawnMowerUnavailability:
             coordinator.async_set_updated_data({})
             await hass.async_block_till_done()
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state is not None
         assert state.state == STATE_UNAVAILABLE
 
@@ -532,7 +532,7 @@ class TestLawnMowerExtraStateAttributes:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state is not None
         assert state.attributes["activity"] == "OK_CUTTING"
 
@@ -546,7 +546,7 @@ class TestLawnMowerExtraStateAttributes:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state is not None
         assert state.attributes["battery_state"] == "CHARGING"
 
@@ -560,7 +560,7 @@ class TestLawnMowerExtraStateAttributes:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state is not None
         assert state.attributes["last_error_code"] == "TRAPPED"
 
@@ -574,7 +574,7 @@ class TestLawnMowerExtraStateAttributes:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state is not None
         assert "last_error_code" not in state.attributes
 
@@ -591,7 +591,7 @@ class TestLawnMowerExtraStateAttributes:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("lawn_mower.my_sensor")
+        state = hass.states.get("lawn_mower.my_sensor_mower")
         assert state is not None
         assert state.attributes["activity"] == "PARKED_FROST"
         assert state.attributes["last_error_code"] == "COLLISION"
@@ -625,5 +625,5 @@ class TestLawnMowerDynamicDevices:
             coordinator.async_set_updated_data(new_devices)
             await hass.async_block_till_done()
 
-            state = hass.states.get("lawn_mower.sileno")
+            state = hass.states.get("lawn_mower.sileno_mower")
             assert state is not None

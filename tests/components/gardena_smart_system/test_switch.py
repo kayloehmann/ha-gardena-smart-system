@@ -61,7 +61,7 @@ class TestSwitchEntityCreation:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("switch.my_sensor")
+        state = hass.states.get("switch.my_sensor_power")
         assert state is not None
 
     async def test_no_switch_without_power_socket(
@@ -94,7 +94,7 @@ class TestSwitchUniqueId:
             pass
 
         entity_reg = er.async_get(hass)
-        entry = entity_reg.async_get("switch.my_sensor")
+        entry = entity_reg.async_get("switch.my_sensor_power")
         assert entry is not None
         assert entry.unique_id == "SN001_power_socket"
 
@@ -112,7 +112,7 @@ class TestSwitchTranslationKey:
             pass
 
         entity_reg = er.async_get(hass)
-        entry = entity_reg.async_get("switch.my_sensor")
+        entry = entity_reg.async_get("switch.my_sensor_power")
         assert entry is not None
         assert entry.translation_key == "power_socket"
 
@@ -130,7 +130,7 @@ class TestSwitchStateMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("switch.my_sensor")
+        state = hass.states.get("switch.my_sensor_power")
         assert state is not None
         assert state.state == STATE_OFF
 
@@ -144,7 +144,7 @@ class TestSwitchStateMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("switch.my_sensor")
+        state = hass.states.get("switch.my_sensor_power")
         assert state is not None
         assert state.state == STATE_ON
 
@@ -158,7 +158,7 @@ class TestSwitchStateMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("switch.my_sensor")
+        state = hass.states.get("switch.my_sensor_power")
         assert state is not None
         assert state.state == STATE_ON
 
@@ -172,7 +172,7 @@ class TestSwitchStateMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("switch.my_sensor")
+        state = hass.states.get("switch.my_sensor_power")
         assert state is not None
         assert state.state == STATE_ON
 
@@ -189,7 +189,7 @@ class TestSwitchCommands:
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
                 "switch", "turn_on",
-                {"entity_id": "switch.my_sensor"},
+                {"entity_id": "switch.my_sensor_power"},
                 blocking=True,
             )
 
@@ -209,7 +209,7 @@ class TestSwitchCommands:
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
                 "switch", "turn_off",
-                {"entity_id": "switch.my_sensor"},
+                {"entity_id": "switch.my_sensor_power"},
                 blocking=True,
             )
 
@@ -228,7 +228,7 @@ class TestSwitchCommands:
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
                 "gardena_smart_system", "turn_on_for",
-                {"entity_id": "switch.my_sensor", "duration": 45},
+                {"entity_id": "switch.my_sensor_power", "duration": 45},
                 blocking=True,
             )
 
@@ -259,7 +259,7 @@ class TestSwitchErrorHandling:
             with pytest.raises(HomeAssistantError):
                 await hass.services.async_call(
                     "switch", "turn_on",
-                    {"entity_id": "switch.my_sensor"},
+                    {"entity_id": "switch.my_sensor_power"},
                     blocking=True,
                 )
 
@@ -277,7 +277,7 @@ class TestSwitchErrorHandling:
             with pytest.raises(HomeAssistantError):
                 await hass.services.async_call(
                     "switch", "turn_on",
-                    {"entity_id": "switch.my_sensor"},
+                    {"entity_id": "switch.my_sensor_power"},
                     blocking=True,
                 )
 
@@ -296,7 +296,7 @@ class TestSwitchErrorHandling:
             # HA silently skips service calls on unavailable entities
             await hass.services.async_call(
                 "switch", "turn_on",
-                {"entity_id": "switch.my_sensor"},
+                {"entity_id": "switch.my_sensor_power"},
                 blocking=True,
             )
 
@@ -317,7 +317,7 @@ class TestSwitchUnavailability:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("switch.my_sensor")
+        state = hass.states.get("switch.my_sensor_power")
         assert state is not None
         assert state.state == STATE_UNAVAILABLE
 
@@ -328,14 +328,14 @@ class TestSwitchUnavailability:
         devices = {device.device_id: device}
 
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
-            state = hass.states.get("switch.my_sensor")
+            state = hass.states.get("switch.my_sensor_power")
             assert state.state == STATE_OFF
 
             coordinator = mock_config_entry.runtime_data
             coordinator.async_set_updated_data({})
             await hass.async_block_till_done()
 
-        state = hass.states.get("switch.my_sensor")
+        state = hass.states.get("switch.my_sensor_power")
         assert state is not None
         assert state.state == STATE_UNAVAILABLE
 
@@ -367,5 +367,5 @@ class TestSwitchDynamicDevices:
             coordinator.async_set_updated_data(new_devices)
             await hass.async_block_till_done()
 
-            state = hass.states.get("switch.smart_plug")
+            state = hass.states.get("switch.smart_plug_power")
             assert state is not None

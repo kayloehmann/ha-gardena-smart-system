@@ -70,7 +70,7 @@ class TestBatteryLowBinarySensor:
         device.common.battery_state = "OK"
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
-        state = hass.states.get("binary_sensor.my_sensor_battery")
+        state = hass.states.get("binary_sensor.my_sensor_battery_low")
         assert state is not None
         assert state.state == STATE_OFF
 
@@ -81,7 +81,7 @@ class TestBatteryLowBinarySensor:
         device.common.battery_state = "LOW"
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
-        state = hass.states.get("binary_sensor.my_sensor_battery")
+        state = hass.states.get("binary_sensor.my_sensor_battery_low")
         assert state is not None
         assert state.state == STATE_ON
 
@@ -92,7 +92,7 @@ class TestBatteryLowBinarySensor:
         device.common.battery_state = "REPLACE_NOW"
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
-        state = hass.states.get("binary_sensor.my_sensor_battery")
+        state = hass.states.get("binary_sensor.my_sensor_battery_low")
         assert state is not None
         assert state.state == STATE_ON
 
@@ -103,7 +103,7 @@ class TestBatteryLowBinarySensor:
         device.common.battery_state = "CHARGING"
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
-        state = hass.states.get("binary_sensor.my_sensor_battery")
+        state = hass.states.get("binary_sensor.my_sensor_battery_low")
         assert state is not None
         assert state.state == STATE_OFF
 
@@ -114,7 +114,7 @@ class TestBatteryLowBinarySensor:
         device.common.battery_state = None
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
-        state = hass.states.get("binary_sensor.my_sensor_battery")
+        state = hass.states.get("binary_sensor.my_sensor_battery_low")
         assert state is None
 
 
@@ -126,7 +126,7 @@ class TestBatteryLowUniqueId:
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
         entity_reg = er.async_get(hass)
-        entry = entity_reg.async_get("binary_sensor.my_sensor_battery")
+        entry = entity_reg.async_get("binary_sensor.my_sensor_battery_low")
         assert entry is not None
         assert entry.unique_id == "SN001_battery_low"
 
@@ -141,7 +141,7 @@ class TestValveErrorBinarySensor:
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
         entity_reg = er.async_get(hass)
-        entry = entity_reg.async_get("binary_sensor.my_sensor_problem")
+        entry = entity_reg.async_get("binary_sensor.my_sensor_valve_error")
         assert entry is not None
         assert entry.disabled_by is not None
 
@@ -154,14 +154,14 @@ class TestValveErrorBinarySensor:
         # Enable the entity
         entity_reg = er.async_get(hass)
         entity_reg.async_update_entity(
-            "binary_sensor.my_sensor_problem", disabled_by=None
+            "binary_sensor.my_sensor_valve_error", disabled_by=None
         )
         await hass.config_entries.async_reload(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
         # Re-setup because the reload cleared everything
         # Instead, let's verify via the registry that it was created correctly
-        entry = entity_reg.async_get("binary_sensor.my_sensor_problem")
+        entry = entity_reg.async_get("binary_sensor.my_sensor_valve_error")
         assert entry is not None
         assert entry.unique_id == "SN001_valve_error"
 
@@ -172,7 +172,7 @@ class TestValveErrorBinarySensor:
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
         entity_reg = er.async_get(hass)
-        entry = entity_reg.async_get("binary_sensor.my_sensor_problem")
+        entry = entity_reg.async_get("binary_sensor.my_sensor_valve_error")
         assert entry is None
 
     async def test_valve_error_unique_id(
@@ -182,7 +182,7 @@ class TestValveErrorBinarySensor:
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
         entity_reg = er.async_get(hass)
-        entry = entity_reg.async_get("binary_sensor.my_sensor_problem")
+        entry = entity_reg.async_get("binary_sensor.my_sensor_valve_error")
         assert entry is not None
         assert entry.unique_id == "SN001_valve_error"
 
@@ -197,7 +197,7 @@ class TestMowerErrorBinarySensor:
         device.mower.state = "OK"
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
-        state = hass.states.get("binary_sensor.my_sensor_problem")
+        state = hass.states.get("binary_sensor.my_sensor_mower_error")
         assert state is not None
         assert state.state == STATE_OFF
 
@@ -208,7 +208,7 @@ class TestMowerErrorBinarySensor:
         device.mower.state = "ERROR"
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
-        state = hass.states.get("binary_sensor.my_sensor_problem")
+        state = hass.states.get("binary_sensor.my_sensor_mower_error")
         assert state is not None
         assert state.state == STATE_ON
 
@@ -219,7 +219,7 @@ class TestMowerErrorBinarySensor:
         device.mower.state = "WARNING"
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
-        state = hass.states.get("binary_sensor.my_sensor_problem")
+        state = hass.states.get("binary_sensor.my_sensor_mower_error")
         assert state is not None
         assert state.state == STATE_ON
 
@@ -229,7 +229,7 @@ class TestMowerErrorBinarySensor:
         device = make_mock_device(has_mower=False)
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
-        state = hass.states.get("binary_sensor.my_sensor_problem")
+        state = hass.states.get("binary_sensor.my_sensor_mower_error")
         assert state is None
 
     async def test_mower_error_unique_id(
@@ -239,7 +239,7 @@ class TestMowerErrorBinarySensor:
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
         entity_reg = er.async_get(hass)
-        entry = entity_reg.async_get("binary_sensor.my_sensor_problem")
+        entry = entity_reg.async_get("binary_sensor.my_sensor_mower_error")
         assert entry is not None
         assert entry.unique_id == "SN001_mower_error"
 
@@ -254,7 +254,7 @@ class TestBinarySensorUnavailability:
         device.is_online = False
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
-        state = hass.states.get("binary_sensor.my_sensor_battery")
+        state = hass.states.get("binary_sensor.my_sensor_battery_low")
         assert state is not None
         assert state.state == STATE_UNAVAILABLE
 
@@ -280,7 +280,7 @@ class TestBinarySensorUnavailability:
             await hass.async_block_till_done()
 
             # Verify available first
-            state = hass.states.get("binary_sensor.my_sensor_battery")
+            state = hass.states.get("binary_sensor.my_sensor_battery_low")
             assert state is not None
             assert state.state == STATE_OFF
 
@@ -289,7 +289,7 @@ class TestBinarySensorUnavailability:
             coordinator.async_set_updated_data({})
             await hass.async_block_till_done()
 
-        state = hass.states.get("binary_sensor.my_sensor_battery")
+        state = hass.states.get("binary_sensor.my_sensor_battery_low")
         assert state is not None
         assert state.state == STATE_UNAVAILABLE
 
@@ -319,7 +319,7 @@ class TestBinarySensorDynamicDevices:
             await hass.async_block_till_done()
 
             # No mower error sensor initially
-            assert hass.states.get("binary_sensor.my_mower_problem") is None
+            assert hass.states.get("binary_sensor.my_mower_mower_error") is None
 
             # Add mower device
             device2 = make_mock_device(
@@ -330,5 +330,5 @@ class TestBinarySensorDynamicDevices:
             coordinator.async_set_updated_data(new_devices)
             await hass.async_block_till_done()
 
-            state = hass.states.get("binary_sensor.my_mower_problem")
+            state = hass.states.get("binary_sensor.my_mower_mower_error")
             assert state is not None
