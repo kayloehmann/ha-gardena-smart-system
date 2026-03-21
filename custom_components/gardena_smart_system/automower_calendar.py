@@ -16,6 +16,8 @@ from .automower_coordinator import AutomowerCoordinator
 from .automower_entity import AutomowerEntity
 from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
 
+PARALLEL_UPDATES = 0
+
 _WEEKDAY_MAP = {
     0: "monday",
     1: "tuesday",

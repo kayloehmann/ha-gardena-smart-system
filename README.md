@@ -80,6 +80,19 @@ To use both Gardena and Automower devices, **add the integration twice** — onc
 
 If your credentials expire or become invalid, Home Assistant will prompt you to re-authenticate. Go to the integration page, click **Reconfigure**, and enter your updated credentials.
 
+### Removing the Integration
+
+1. Go to **Settings > Devices & Services**.
+2. Find the "Gardena Smart System" integration entry you want to remove.
+3. Click the three-dot menu and select **Delete**.
+4. All entities and devices created by this entry will be removed from Home Assistant.
+
+If you installed via HACS, you can also uninstall the integration entirely:
+
+1. Open HACS, go to **Integrations**.
+2. Find "Gardena Smart System" and click **Remove**.
+3. Restart Home Assistant.
+
 ## Entities
 
 ### Gardena Sensors
@@ -267,6 +280,83 @@ target:
   entity_id: lawn_mower.sileno_mower
 data:
   duration: 60
+```
+
+## Use Cases & Automation Examples
+
+### Water the garden when soil is dry
+
+```yaml
+automation:
+  - alias: "Water when soil moisture drops below 30%"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.smart_sensor_moisture
+        below: 30
+    condition:
+      - condition: time
+        after: "06:00:00"
+        before: "09:00:00"
+    action:
+      - service: gardena_smart_system.start_watering
+        target:
+          entity_id: valve.garden_valve_1
+        data:
+          duration: 20
+```
+
+### Send a notification when the Automower has an error
+
+```yaml
+automation:
+  - alias: "Notify on Automower error"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.automower_450x_error
+        to: "on"
+    action:
+      - service: notify.mobile_app
+        data:
+          title: "Automower Error"
+          message: >
+            The mower reported an error.
+            State: {{ state_attr('lawn_mower.automower_450x_mower', 'state') }}
+            Error code: {{ state_attr('lawn_mower.automower_450x_mower', 'error_code') }}
+```
+
+### Park the mower when rain is expected
+
+```yaml
+automation:
+  - alias: "Park mower before rain"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.openweathermap_forecast_precipitation_probability
+        above: 80
+    condition:
+      - condition: state
+        entity_id: lawn_mower.automower_450x_mower
+        state: "mowing"
+    action:
+      - service: lawn_mower.dock
+        target:
+          entity_id: lawn_mower.automower_450x_mower
+```
+
+### Track mower blade usage and notify for replacement
+
+```yaml
+automation:
+  - alias: "Notify when blades need replacement"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.automower_450x_blade_usage_time
+        above: 200
+    action:
+      - service: notify.mobile_app
+        data:
+          title: "Blade replacement needed"
+          message: "The Automower blades have been running for over 200 hours. Consider replacing them."
 ```
 
 ## Data Updates

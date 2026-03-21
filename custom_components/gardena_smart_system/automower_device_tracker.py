@@ -13,6 +13,8 @@ from .automower_coordinator import AutomowerCoordinator
 from .automower_entity import AutomowerEntity
 from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
 
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,

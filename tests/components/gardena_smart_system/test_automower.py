@@ -7,13 +7,13 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from typing import Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import entity_registry as er
+from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
+from homeassistant.helpers import device_registry as dr, entity_registry as er, issue_registry as ir
 
 try:
     from tests.common import MockConfigEntry
@@ -25,6 +25,7 @@ from aioautomower.exceptions import (
     AutomowerAuthenticationError,
     AutomowerConnectionError,
     AutomowerException,
+    AutomowerForbiddenError,
     AutomowerRateLimitError,
 )
 from aioautomower.models import (
@@ -1303,3 +1304,1295 @@ class TestAutomowerDeviceInfo:
             # All entities share the same device
             assert mower_entry.device_id == sensor_entry.device_id
             assert mower_entry.device_id is not None
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 11. Coordinator Error Handling & WS Lifecycle
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerCoordinatorErrors:
+    """Test coordinator error handling paths."""
+
+    async def test_auth_error_raises_config_entry_auth_failed(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Line 85: AuthenticationError -> ConfigEntryAuthFailed."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        with (
+            patch(_PATCH_AM_CLIENT) as mock_client_cls,
+            patch(_PATCH_AM_AUTH),
+            patch(_PATCH_AM_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_mowers = AsyncMock(
+                side_effect=[devices, AutomowerAuthenticationError("expired")]
+            )
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            automower_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(automower_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = automower_config_entry.runtime_data
+            await coordinator.async_refresh()
+            await hass.async_block_till_done()
+
+            # ConfigEntryAuthFailed sets the entry to SETUP_ERROR
+            assert coordinator.last_update_success is False
+
+    async def test_connection_error_raises_update_failed(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Line 97: ConnectionError -> UpdateFailed."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        with (
+            patch(_PATCH_AM_CLIENT) as mock_client_cls,
+            patch(_PATCH_AM_AUTH),
+            patch(_PATCH_AM_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_mowers = AsyncMock(
+                side_effect=[devices, AutomowerConnectionError("offline")]
+            )
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            automower_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(automower_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = automower_config_entry.runtime_data
+            await coordinator.async_refresh()
+            await hass.async_block_till_done()
+
+            assert coordinator.last_update_success is False
+
+    async def test_restore_normal_interval_after_rate_limit(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 106-110: Restore normal interval after successful fetch."""
+        from custom_components.gardena_smart_system.const import (
+            AUTOMOWER_RATE_LIMIT_COOLDOWN,
+            AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED,
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        with (
+            patch(_PATCH_AM_CLIENT) as mock_client_cls,
+            patch(_PATCH_AM_AUTH),
+            patch(_PATCH_AM_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            # First: success (setup), second: rate limit, third: success (restore)
+            mock_client.async_get_mowers = AsyncMock(
+                side_effect=[
+                    devices,
+                    AutomowerRateLimitError("rate limited"),
+                    devices,
+                ]
+            )
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            automower_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(automower_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = automower_config_entry.runtime_data
+
+            # Trigger rate limit
+            await coordinator.async_refresh()
+            await hass.async_block_till_done()
+            assert coordinator.update_interval == AUTOMOWER_RATE_LIMIT_COOLDOWN
+
+            # Trigger successful fetch that restores interval
+            await coordinator.async_refresh()
+            await hass.async_block_till_done()
+            assert coordinator.update_interval == AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED
+
+
+class TestAutomowerCoordinatorStaleDevices:
+    """Test stale device removal."""
+
+    async def test_stale_device_removed_from_registry(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 128-146: Remove devices no longer in API response."""
+        device1 = make_mock_automower_device(
+            mower_id="mower-1", serial_number="SN-001", name="Mower One"
+        )
+        device2 = make_mock_automower_device(
+            mower_id="mower-2", serial_number="SN-002", name="Mower Two"
+        )
+        both_devices = {device1.mower_id: device1, device2.mower_id: device2}
+        one_device = {device1.mower_id: device1}
+
+        with (
+            patch(_PATCH_AM_CLIENT) as mock_client_cls,
+            patch(_PATCH_AM_AUTH),
+            patch(_PATCH_AM_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            # First call returns both, second returns only device1
+            mock_client.async_get_mowers = AsyncMock(
+                side_effect=[both_devices, one_device]
+            )
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            automower_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(automower_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            device_reg = dr.async_get(hass)
+            # Both devices should exist
+            assert device_reg.async_get_device(identifiers={(DOMAIN, "SN-001")})
+            assert device_reg.async_get_device(identifiers={(DOMAIN, "SN-002")})
+
+            coordinator = automower_config_entry.runtime_data
+            await coordinator.async_refresh()
+            await hass.async_block_till_done()
+
+            # Device 2 should be removed
+            assert device_reg.async_get_device(identifiers={(DOMAIN, "SN-001")})
+            assert device_reg.async_get_device(identifiers={(DOMAIN, "SN-002")}) is None
+
+
+class TestAutomowerCoordinatorWebSocket:
+    """Test WebSocket lifecycle in the coordinator."""
+
+    async def test_ws_connect_exception_falls_back_to_polling(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 171-176: WS connect exception -> fall back to polling."""
+        from custom_components.gardena_smart_system.const import (
+            AUTOMOWER_SCAN_INTERVAL,
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        with (
+            patch(_PATCH_AM_CLIENT) as mock_client_cls,
+            patch(_PATCH_AM_AUTH),
+            patch(_PATCH_AM_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_mowers = AsyncMock(return_value=devices)
+            mock_client_cls.return_value = mock_client
+
+            mock_ws = AsyncMock()
+            mock_ws.async_connect = AsyncMock(
+                side_effect=Exception("WS connect failed")
+            )
+            mock_ws_cls.return_value = mock_ws
+
+            automower_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(automower_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = automower_config_entry.runtime_data
+            # WS failed, so should stay at normal polling interval
+            assert coordinator.update_interval == AUTOMOWER_SCAN_INTERVAL
+            assert coordinator._ws_connected is False
+
+    async def test_on_device_update_updates_coordinator_data(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 188-190: WS push update handler."""
+        device = make_mock_automower_device(battery_level=75)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            # Simulate a WS push update with updated battery
+            updated_device = make_mock_automower_device(battery_level=50)
+            coordinator._on_device_update(device.mower_id, updated_device)
+            await hass.async_block_till_done()
+
+            assert coordinator.data[device.mower_id].battery.level == 50
+
+    async def test_on_device_update_with_none_data(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 188-190: WS push update when data is None."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.data = None
+
+            updated_device = make_mock_automower_device(battery_level=50)
+            coordinator._on_device_update(device.mower_id, updated_device)
+            await hass.async_block_till_done()
+
+            # Should set data to empty dict via async_set_updated_data
+            assert coordinator.data == {}
+
+    async def test_on_ws_error_creates_repair_issue(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 194-197: WS error handler sets repair issue."""
+        from custom_components.gardena_smart_system.const import (
+            AUTOMOWER_SCAN_INTERVAL,
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            assert coordinator._ws_connected is True
+
+            # Simulate WS error
+            coordinator._on_ws_error(Exception("connection lost"))
+
+            assert coordinator._ws_connected is False
+            assert coordinator.update_interval == AUTOMOWER_SCAN_INTERVAL
+
+            # Check repair issue was created
+            issue_reg = ir.async_get(hass)
+            issue = issue_reg.async_get_issue(
+                DOMAIN, "automower_websocket_connection_failed"
+            )
+            assert issue is not None
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 12. Switch Error Handling
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerSwitchErrors:
+    """Test switch error handling paths."""
+
+    async def test_headlight_device_unavailable_raises(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 97-101: Device unavailable raises HomeAssistantError."""
+        from custom_components.gardena_smart_system.automower_switch import (
+            AutomowerHeadlightSwitch,
+        )
+
+        device = make_mock_automower_device(has_headlights=True)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            # Directly instantiate and test the method since HA skips unavailable entities
+            entity = AutomowerHeadlightSwitch(coordinator, device)
+            entity.hass = hass
+            with pytest.raises(HomeAssistantError):
+                await entity.async_turn_on()
+
+    async def test_headlight_auth_error_raises_config_entry_auth_failed(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 107-114: AuthenticationError -> ConfigEntryAuthFailed."""
+        device = make_mock_automower_device(has_headlights=True)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            entity_id = _find_entity_id(hass, "switch", "headlight")
+            mock_client.async_set_headlight_mode.side_effect = (
+                AutomowerAuthenticationError("expired")
+            )
+
+            with pytest.raises(Exception):
+                await hass.services.async_call(
+                    "switch", "turn_on", {"entity_id": entity_id}, blocking=True
+                )
+
+    async def test_headlight_generic_error_raises_ha_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 113-118: AutomowerException -> HomeAssistantError."""
+        device = make_mock_automower_device(has_headlights=True)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            entity_id = _find_entity_id(hass, "switch", "headlight")
+            mock_client.async_set_headlight_mode.side_effect = AutomowerException(
+                "API error"
+            )
+
+            with pytest.raises(HomeAssistantError):
+                await hass.services.async_call(
+                    "switch", "turn_on", {"entity_id": entity_id}, blocking=True
+                )
+
+    async def test_zone_device_unavailable_raises(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 160-164: Zone device unavailable."""
+        from custom_components.gardena_smart_system.automower_switch import (
+            AutomowerStayOutZoneSwitch,
+        )
+
+        zone = StayOutZone(zone_id="zone-1", name="Pond", enabled=False)
+        device = make_mock_automower_device(
+            has_stay_out_zones=True, stay_out_zones={"zone-1": zone}
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            entity = AutomowerStayOutZoneSwitch(coordinator, device, "zone-1")
+            entity.hass = hass
+            with pytest.raises(HomeAssistantError):
+                await entity.async_turn_on()
+
+    async def test_zone_auth_error_raises(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 170-175: Zone AuthenticationError -> ConfigEntryAuthFailed."""
+        zone = StayOutZone(zone_id="zone-1", name="Pond", enabled=False)
+        device = make_mock_automower_device(
+            has_stay_out_zones=True, stay_out_zones={"zone-1": zone}
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            entity_id = _find_entity_id(hass, "switch", "soz_zone-1")
+            mock_client.async_set_stay_out_zone.side_effect = (
+                AutomowerAuthenticationError("expired")
+            )
+
+            with pytest.raises(Exception):
+                await hass.services.async_call(
+                    "switch", "turn_on", {"entity_id": entity_id}, blocking=True
+                )
+
+    async def test_zone_generic_error_raises_ha_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 176-181: Zone AutomowerException -> HomeAssistantError."""
+        zone = StayOutZone(zone_id="zone-1", name="Pond", enabled=False)
+        device = make_mock_automower_device(
+            has_stay_out_zones=True, stay_out_zones={"zone-1": zone}
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            entity_id = _find_entity_id(hass, "switch", "soz_zone-1")
+            mock_client.async_set_stay_out_zone.side_effect = AutomowerException(
+                "API error"
+            )
+
+            with pytest.raises(HomeAssistantError):
+                await hass.services.async_call(
+                    "switch", "turn_on", {"entity_id": entity_id}, blocking=True
+                )
+
+    async def test_headlight_is_on_returns_none_when_device_unavailable(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Line 84: is_on returns None when device is None."""
+        device = make_mock_automower_device(has_headlights=True)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "switch", "headlight")
+
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+    async def test_zone_is_on_returns_none_when_device_unavailable(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Line 144: is_on returns None when device is None."""
+        zone = StayOutZone(zone_id="zone-1", name="Pond", enabled=True)
+        device = make_mock_automower_device(
+            has_stay_out_zones=True, stay_out_zones={"zone-1": zone}
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "switch", "soz_zone-1")
+
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 13. Number Error Handling
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerNumberErrors:
+    """Test number entity error handling paths."""
+
+    async def test_cutting_height_device_unavailable_raises(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 88-92: Device unavailable raises HomeAssistantError."""
+        from custom_components.gardena_smart_system.automower_number import (
+            AutomowerCuttingHeightEntity,
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            entity = AutomowerCuttingHeightEntity(coordinator, device)
+            entity.hass = hass
+            with pytest.raises(HomeAssistantError):
+                await entity.async_set_native_value(5)
+
+    async def test_cutting_height_auth_error_raises(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 98-105: AuthenticationError -> ConfigEntryAuthFailed."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            entity_id = _find_entity_id(hass, "number", "cutting_height")
+            mock_client.async_set_cutting_height.side_effect = (
+                AutomowerAuthenticationError("expired")
+            )
+
+            with pytest.raises(Exception):
+                await hass.services.async_call(
+                    "number",
+                    "set_value",
+                    {"entity_id": entity_id, "value": 5},
+                    blocking=True,
+                )
+
+    async def test_cutting_height_generic_error_raises_ha_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 104-109: AutomowerException -> HomeAssistantError."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            entity_id = _find_entity_id(hass, "number", "cutting_height")
+            mock_client.async_set_cutting_height.side_effect = AutomowerException(
+                "API error"
+            )
+
+            with pytest.raises(HomeAssistantError):
+                await hass.services.async_call(
+                    "number",
+                    "set_value",
+                    {"entity_id": entity_id, "value": 5},
+                    blocking=True,
+                )
+
+    async def test_cutting_height_native_value_none_when_unavailable(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Line 82: native_value returns None when device is None."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "number", "cutting_height")
+
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+    async def test_work_area_height_device_unavailable_raises(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 152-155: Work area device unavailable."""
+        from custom_components.gardena_smart_system.automower_number import (
+            AutomowerWorkAreaHeightEntity,
+        )
+
+        wa = WorkArea(work_area_id=1, name="Front Yard", cutting_height=60, enabled=True)
+        device = make_mock_automower_device(has_work_areas=True, work_areas={1: wa})
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            entity = AutomowerWorkAreaHeightEntity(coordinator, device, 1)
+            entity.hass = hass
+            with pytest.raises(HomeAssistantError):
+                await entity.async_set_native_value(50)
+
+    async def test_work_area_height_auth_error_raises(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 161-168: Work area AuthenticationError."""
+        wa = WorkArea(work_area_id=1, name="Front Yard", cutting_height=60, enabled=True)
+        device = make_mock_automower_device(has_work_areas=True, work_areas={1: wa})
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            entity_id = _find_entity_id(hass, "number", "wa_1_height")
+            mock_client.async_set_work_area_cutting_height.side_effect = (
+                AutomowerAuthenticationError("expired")
+            )
+
+            with pytest.raises(Exception):
+                await hass.services.async_call(
+                    "number",
+                    "set_value",
+                    {"entity_id": entity_id, "value": 50},
+                    blocking=True,
+                )
+
+    async def test_work_area_height_generic_error_raises_ha_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 167-172: Work area AutomowerException."""
+        wa = WorkArea(work_area_id=1, name="Front Yard", cutting_height=60, enabled=True)
+        device = make_mock_automower_device(has_work_areas=True, work_areas={1: wa})
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            entity_id = _find_entity_id(hass, "number", "wa_1_height")
+            mock_client.async_set_work_area_cutting_height.side_effect = (
+                AutomowerException("API error")
+            )
+
+            with pytest.raises(HomeAssistantError):
+                await hass.services.async_call(
+                    "number",
+                    "set_value",
+                    {"entity_id": entity_id, "value": 50},
+                    blocking=True,
+                )
+
+    async def test_work_area_native_value_none_when_unavailable(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Line 142: native_value returns None when device is None."""
+        wa = WorkArea(work_area_id=1, name="Front Yard", cutting_height=60, enabled=True)
+        device = make_mock_automower_device(has_work_areas=True, work_areas={1: wa})
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "number", "wa_1_height")
+
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 14. Lawn Mower Additional Coverage
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerLawnMowerAdditional:
+    """Additional lawn mower coverage for missing lines."""
+
+    async def test_activity_none_when_device_unavailable(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Line 86: activity returns None when device is None."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+    async def test_extra_state_attributes_none_when_device_unavailable(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Line 98: extra_state_attributes returns None when device is None."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            # When unavailable, no extra attributes
+            assert "activity" not in state.attributes
+
+    async def test_extra_state_attributes_restricted_reason(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 107: restricted_reason included when not NONE."""
+        device = make_mock_automower_device(
+            restricted_reason="WEEK_SCHEDULE",
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            assert state.attributes["restricted_reason"] == "WEEK_SCHEDULE"
+
+    async def test_extra_state_attributes_override_action(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 109: override_action included when not NOT_ACTIVE."""
+        device = make_mock_automower_device(
+            override_action="FORCE_MOW",
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            assert state.attributes["override_action"] == "FORCE_MOW"
+
+    async def test_fatal_error_state_maps_to_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Line 88: FATAL_ERROR maps to LawnMowerActivity.ERROR."""
+        device = make_mock_automower_device(
+            mower_activity=MowerActivity.MOWING,
+            mower_state=MowerState.FATAL_ERROR,
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("lawn_mower.test_mower")
+            assert state is not None
+            assert state.state == "error"
+
+    async def test_device_unavailable_command_raises(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Line 128: Device unavailable when sending command."""
+        from custom_components.gardena_smart_system.automower_lawn_mower import (
+            AutomowerLawnMowerEntity,
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            entity = AutomowerLawnMowerEntity(coordinator, device)
+            entity.hass = hass
+            with pytest.raises(HomeAssistantError):
+                await entity.async_start_mowing()
+
+    async def test_command_auth_error_raises_config_entry_auth_failed(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 145-150: _async_send_command auth error path."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            mock_client.async_pause.side_effect = AutomowerAuthenticationError(
+                "expired"
+            )
+
+            with pytest.raises(Exception):
+                await hass.services.async_call(
+                    "lawn_mower",
+                    "pause",
+                    {"entity_id": "lawn_mower.test_mower"},
+                    blocking=True,
+                )
+
+    async def test_activity_returns_none_when_device_gone(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Line 86: activity returns None when _device is None."""
+        from custom_components.gardena_smart_system.automower_lawn_mower import (
+            AutomowerLawnMowerEntity,
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            entity = AutomowerLawnMowerEntity(coordinator, device)
+            entity.hass = hass
+            assert entity.activity is None
+
+    async def test_extra_state_attributes_returns_none_when_device_gone(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Line 98: extra_state_attributes returns None when _device is None."""
+        from custom_components.gardena_smart_system.automower_lawn_mower import (
+            AutomowerLawnMowerEntity,
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            entity = AutomowerLawnMowerEntity(coordinator, device)
+            entity.hass = hass
+            assert entity.extra_state_attributes is None
+
+    async def test_send_command_park_until_further_notice(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Line 141-142: park_until_further_notice command branch."""
+        from custom_components.gardena_smart_system.automower_lawn_mower import (
+            AutomowerLawnMowerEntity,
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            coordinator = automower_config_entry.runtime_data
+            entity = AutomowerLawnMowerEntity(coordinator, device)
+            entity.hass = hass
+            await entity._async_send_command("park_until_further_notice")
+            mock_client.async_park_until_further_notice.assert_called_once_with(
+                device.mower_id
+            )
+
+    async def test_send_command_resume_schedule(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Line 143-144: resume_schedule command branch."""
+        from custom_components.gardena_smart_system.automower_lawn_mower import (
+            AutomowerLawnMowerEntity,
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            coordinator = automower_config_entry.runtime_data
+            entity = AutomowerLawnMowerEntity(coordinator, device)
+            entity.hass = hass
+            await entity._async_send_command("resume_schedule")
+            mock_client.async_resume_schedule.assert_called_once_with(
+                device.mower_id
+            )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 15. Calendar Additional Coverage
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerCalendarAdditional:
+    """Additional calendar coverage for missing lines."""
+
+    async def test_async_get_events_returns_empty_when_device_none(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 92-95: async_get_events returns [] when device is None."""
+        from custom_components.gardena_smart_system.automower_calendar import (
+            AutomowerCalendarEntity,
+        )
+        from homeassistant.util import dt as dt_util
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            # Directly call async_get_events on the entity instance
+            entity = AutomowerCalendarEntity(coordinator, device)
+            entity.hass = hass
+            now = dt_util.now()
+            events = await entity.async_get_events(hass, now, now + timedelta(days=7))
+            assert events == []
+
+    async def test_event_summary_includes_work_area_name(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 121, 125-126: Work area name in event summary."""
+        from custom_components.gardena_smart_system.automower_calendar import (
+            AutomowerCalendarEntity,
+        )
+        from homeassistant.util import dt as dt_util
+
+        wa = WorkArea(work_area_id=1, name="Front Yard", cutting_height=60, enabled=True)
+        # Monday task with work_area_id
+        task = ScheduleTask(
+            start=480,
+            duration=120,
+            monday=True,
+            tuesday=False,
+            wednesday=False,
+            thursday=False,
+            friday=False,
+            saturday=False,
+            sunday=False,
+            work_area_id=1,
+        )
+        device = make_mock_automower_device(
+            has_work_areas=True,
+            work_areas={1: wa},
+            tasks=[task],
+        )
+
+        # Monday June 16, 2025
+        start = datetime(2025, 6, 16, 0, 0, 0, tzinfo=dt_util.DEFAULT_TIME_ZONE)
+        end = datetime(2025, 6, 16, 23, 59, 59, tzinfo=dt_util.DEFAULT_TIME_ZONE)
+        events = AutomowerCalendarEntity._generate_events(device, start, end)
+        assert len(events) == 1
+        assert events[0].summary == "Mowing (Front Yard)"
+
+    async def test_event_summary_without_work_area_name(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 125-126: Work area ID not in work_areas dict."""
+        from custom_components.gardena_smart_system.automower_calendar import (
+            AutomowerCalendarEntity,
+        )
+        from homeassistant.util import dt as dt_util
+
+        # Task references work_area_id=99 but device has no such work area
+        task = ScheduleTask(
+            start=480,
+            duration=120,
+            monday=True,
+            tuesday=False,
+            wednesday=False,
+            thursday=False,
+            friday=False,
+            saturday=False,
+            sunday=False,
+            work_area_id=99,
+        )
+        device = make_mock_automower_device(tasks=[task])
+
+        start = datetime(2025, 6, 16, 0, 0, 0, tzinfo=dt_util.DEFAULT_TIME_ZONE)
+        end = datetime(2025, 6, 16, 23, 59, 59, tzinfo=dt_util.DEFAULT_TIME_ZONE)
+        events = AutomowerCalendarEntity._generate_events(device, start, end)
+        assert len(events) == 1
+        # No work area match, so summary is just "Mowing" without suffix
+        assert events[0].summary == "Mowing"
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 16. Diagnostics
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerDiagnostics:
+    """Test diagnostics for Automower entries."""
+
+    async def test_automower_diagnostics(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Lines 32, 74-105: Automower diagnostics serialization."""
+        from custom_components.gardena_smart_system.diagnostics import (
+            async_get_config_entry_diagnostics,
+        )
+
+        wa = WorkArea(work_area_id=1, name="Front Yard", cutting_height=60, enabled=True)
+        zone = StayOutZone(zone_id="zone-1", name="Pond", enabled=True)
+        device = make_mock_automower_device(
+            has_work_areas=True,
+            work_areas={1: wa},
+            has_stay_out_zones=True,
+            stay_out_zones={"zone-1": zone},
+            tasks=[
+                ScheduleTask(
+                    start=480, duration=120,
+                    monday=True, tuesday=False, wednesday=False,
+                    thursday=False, friday=False, saturday=False, sunday=False,
+                    work_area_id=None,
+                )
+            ],
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            result = await async_get_config_entry_diagnostics(
+                hass, automower_config_entry
+            )
+
+            assert "config_entry" in result
+            assert "devices" in result
+            devices_data = result["devices"]
+            assert device.mower_id in devices_data
+
+            mower_data = devices_data[device.mower_id]
+            assert mower_data["name"] == "Test Mower"
+            assert mower_data["model"] == "HUSQVARNA AUTOMOWER 450XH"
+            assert "battery" in mower_data
+            assert "mower" in mower_data
+            assert "planner" in mower_data
+            assert "statistics" in mower_data
+            assert "settings" in mower_data
+            assert "capabilities" in mower_data
+            assert mower_data["positions_count"] == 1
+            assert "1" in mower_data["work_areas"]
+            assert mower_data["work_areas"]["1"]["name"] == "Front Yard"
+            assert "zone-1" in mower_data["stay_out_zones"]
+            assert mower_data["schedule_tasks_count"] == 1
+
+    async def test_automower_diagnostics_empty_data(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Line 74: Empty data returns empty dict."""
+        from custom_components.gardena_smart_system.diagnostics import (
+            _serialize_automower_devices,
+        )
+
+        assert _serialize_automower_devices(None) == {}
+        assert _serialize_automower_devices({}) == {}
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 17. Config Flow Additional Coverage
+# ──────────────────────────────────────────────────────────────────────
+
+
+_PATCH_CF_AUTH = "custom_components.gardena_smart_system.config_flow.GardenaAuth"
+_PATCH_CF_CLIENT = "custom_components.gardena_smart_system.config_flow.GardenaClient"
+_PATCH_CF_AM_CLIENT = "custom_components.gardena_smart_system.config_flow.AutomowerClient"
+
+
+class TestConfigFlowAdditional:
+    """Test config flow paths not covered by test_config_flow.py."""
+
+    async def test_user_step_rate_limit_error(self, hass: HomeAssistant) -> None:
+        """Line 83: GardenaRateLimitError in user step."""
+        from aiogardenasmart.exceptions import GardenaRateLimitError
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": "user"}
+        )
+
+        mock_auth = AsyncMock()
+        mock_auth.async_ensure_valid_token = AsyncMock(
+            side_effect=GardenaRateLimitError("too many")
+        )
+        mock_auth.async_revoke_token = AsyncMock()
+
+        with patch(_PATCH_CF_AUTH, return_value=mock_auth):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"client_id": "test", "client_secret": "test"},
+            )
+
+        assert result["type"] == "form"
+        assert result["errors"]["base"] == "rate_limited"
+
+    async def test_api_type_gardena_forbidden_error(self, hass: HomeAssistant) -> None:
+        """Line 127: Gardena forbidden error in api_type step."""
+        from aiogardenasmart.exceptions import GardenaForbiddenError
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": "user"}
+        )
+
+        mock_auth = AsyncMock()
+        mock_auth.async_ensure_valid_token = AsyncMock()
+        mock_auth.async_revoke_token = AsyncMock()
+
+        with patch(_PATCH_CF_AUTH, return_value=mock_auth):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"client_id": "test", "client_secret": "test"},
+            )
+
+        mock_client = AsyncMock()
+        mock_client.async_get_locations = AsyncMock(
+            side_effect=GardenaForbiddenError("forbidden")
+        )
+
+        with patch(_PATCH_CF_CLIENT, return_value=mock_client):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"api_type": "gardena"},
+            )
+
+        assert result["type"] == "form"
+        assert result["errors"]["base"] == "forbidden"
+
+    async def test_reauth_automower_entry(self, hass: HomeAssistant) -> None:
+        """Line 204: Reauth for automower api_type entry."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={
+                "client_id": "old-id",
+                "client_secret": "old-secret",
+                "api_type": "automower",
+            },
+            title="Automower",
+            version=2,
+        )
+        entry.add_to_hass(hass)
+        result = await entry.start_reauth_flow(hass)
+
+        mock_am_client = AsyncMock()
+        mock_am_client.async_get_mowers = AsyncMock(return_value={})
+
+        with patch(_PATCH_CF_AM_CLIENT, return_value=mock_am_client):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"client_id": "new-id", "client_secret": "new-secret"},
+            )
+
+        assert result["type"] == "abort"
+        assert result["reason"] == "reauth_successful"
+        assert entry.data["client_id"] == "new-id"
+
+    async def test_reconfigure_automower_entry(self, hass: HomeAssistant) -> None:
+        """Line 253: Reconfigure for automower api_type entry."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={
+                "client_id": "old-id",
+                "client_secret": "old-secret",
+                "api_type": "automower",
+            },
+            title="Automower",
+            version=2,
+        )
+        entry.add_to_hass(hass)
+        result = await entry.start_reconfigure_flow(hass)
+
+        mock_am_client = AsyncMock()
+        mock_am_client.async_get_mowers = AsyncMock(return_value={})
+
+        with patch(_PATCH_CF_AM_CLIENT, return_value=mock_am_client):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"client_id": "new-id", "client_secret": "new-secret"},
+            )
+
+        assert result["type"] == "abort"
+        assert entry.data["client_id"] == "new-id"
+
+    async def test_automower_test_auth_error(self, hass: HomeAssistant) -> None:
+        """Line 371: _async_test_automower auth error path."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": "user"}
+        )
+
+        mock_auth = AsyncMock()
+        mock_auth.async_ensure_valid_token = AsyncMock()
+        mock_auth.async_revoke_token = AsyncMock()
+
+        with patch(_PATCH_CF_AUTH, return_value=mock_auth):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"client_id": "test", "client_secret": "test"},
+            )
+
+        mock_am_client = AsyncMock()
+        mock_am_client.async_get_mowers = AsyncMock(
+            side_effect=AutomowerAuthenticationError("bad token")
+        )
+
+        with patch(_PATCH_CF_AM_CLIENT, return_value=mock_am_client):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"api_type": "automower"},
+            )
+
+        assert result["type"] == "form"
+        assert result["errors"]["base"] == "invalid_auth"
+
+    async def test_automower_test_rate_limit_error(self, hass: HomeAssistant) -> None:
+        """Line 374: _async_test_automower rate limit path."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": "user"}
+        )
+
+        mock_auth = AsyncMock()
+        mock_auth.async_ensure_valid_token = AsyncMock()
+        mock_auth.async_revoke_token = AsyncMock()
+
+        with patch(_PATCH_CF_AUTH, return_value=mock_auth):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"client_id": "test", "client_secret": "test"},
+            )
+
+        mock_am_client = AsyncMock()
+        mock_am_client.async_get_mowers = AsyncMock(
+            side_effect=AutomowerRateLimitError("too many")
+        )
+
+        with patch(_PATCH_CF_AM_CLIENT, return_value=mock_am_client):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"api_type": "automower"},
+            )
+
+        assert result["type"] == "form"
+        assert result["errors"]["base"] == "rate_limited"
+
+    async def test_automower_test_connection_error(self, hass: HomeAssistant) -> None:
+        """Line 376: _async_test_automower connection error path."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": "user"}
+        )
+
+        mock_auth = AsyncMock()
+        mock_auth.async_ensure_valid_token = AsyncMock()
+        mock_auth.async_revoke_token = AsyncMock()
+
+        with patch(_PATCH_CF_AUTH, return_value=mock_auth):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"client_id": "test", "client_secret": "test"},
+            )
+
+        mock_am_client = AsyncMock()
+        mock_am_client.async_get_mowers = AsyncMock(
+            side_effect=AutomowerConnectionError("offline")
+        )
+
+        with patch(_PATCH_CF_AM_CLIENT, return_value=mock_am_client):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"api_type": "automower"},
+            )
+
+        assert result["type"] == "form"
+        assert result["errors"]["base"] == "cannot_connect"
+
+    async def test_automower_test_unknown_error(self, hass: HomeAssistant) -> None:
+        """Lines 378-380: _async_test_automower unknown error path."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": "user"}
+        )
+
+        mock_auth = AsyncMock()
+        mock_auth.async_ensure_valid_token = AsyncMock()
+        mock_auth.async_revoke_token = AsyncMock()
+
+        with patch(_PATCH_CF_AUTH, return_value=mock_auth):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"client_id": "test", "client_secret": "test"},
+            )
+
+        mock_am_client = AsyncMock()
+        mock_am_client.async_get_mowers = AsyncMock(
+            side_effect=RuntimeError("unexpected")
+        )
+
+        with patch(_PATCH_CF_AM_CLIENT, return_value=mock_am_client):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"api_type": "automower"},
+            )
+
+        assert result["type"] == "form"
+        assert result["errors"]["base"] == "unknown"
+
+    async def test_gardena_test_rate_limit_error(self, hass: HomeAssistant) -> None:
+        """Line 351: _async_test_gardena rate limit path."""
+        from aiogardenasmart.exceptions import GardenaRateLimitError
+
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": "user"}
+        )
+
+        mock_auth = AsyncMock()
+        mock_auth.async_ensure_valid_token = AsyncMock()
+        mock_auth.async_revoke_token = AsyncMock()
+
+        with patch(_PATCH_CF_AUTH, return_value=mock_auth):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"client_id": "test", "client_secret": "test"},
+            )
+
+        mock_client = AsyncMock()
+        mock_client.async_get_locations = AsyncMock(
+            side_effect=GardenaRateLimitError("too many")
+        )
+
+        with patch(_PATCH_CF_CLIENT, return_value=mock_client):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"api_type": "gardena"},
+            )
+
+        assert result["type"] == "form"
+        assert result["errors"]["base"] == "rate_limited"
+
+    async def test_gardena_test_unknown_error(self, hass: HomeAssistant) -> None:
+        """Lines 354-356: _async_test_gardena unknown error path."""
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": "user"}
+        )
+
+        mock_auth = AsyncMock()
+        mock_auth.async_ensure_valid_token = AsyncMock()
+        mock_auth.async_revoke_token = AsyncMock()
+
+        with patch(_PATCH_CF_AUTH, return_value=mock_auth):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"client_id": "test", "client_secret": "test"},
+            )
+
+        mock_client = AsyncMock()
+        mock_client.async_get_locations = AsyncMock(
+            side_effect=RuntimeError("unexpected")
+        )
+
+        with patch(_PATCH_CF_CLIENT, return_value=mock_client):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {"api_type": "gardena"},
+            )
+
+        assert result["type"] == "form"
+        assert result["errors"]["base"] == "unknown"

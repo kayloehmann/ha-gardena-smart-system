@@ -18,6 +18,36 @@
       },
       "rf_link_level": {
         "default": "mdi:signal"
+      },
+      "automower_battery_level": {
+        "default": "mdi:battery"
+      },
+      "automower_cutting_height": {
+        "default": "mdi:grass"
+      },
+      "automower_next_start": {
+        "default": "mdi:clock-start"
+      },
+      "automower_total_cutting_time": {
+        "default": "mdi:clock-outline"
+      },
+      "automower_total_charging_cycles": {
+        "default": "mdi:battery-sync"
+      },
+      "automower_total_collisions": {
+        "default": "mdi:car-brake-alert"
+      },
+      "automower_total_drive_distance": {
+        "default": "mdi:map-marker-distance"
+      },
+      "automower_blade_usage_time": {
+        "default": "mdi:fan"
+      },
+      "automower_total_running_time": {
+        "default": "mdi:timer-outline"
+      },
+      "automower_total_searching_time": {
+        "default": "mdi:magnify"
       }
     },
     "binary_sensor": {
@@ -26,6 +56,16 @@
       },
       "mower_error": {
         "default": "mdi:robot-mower-outline"
+      },
+      "automower_error": {
+        "default": "mdi:alert-circle-outline"
+      },
+      "automower_connected": {
+        "default": "mdi:cloud-check-outline",
+        "state": {
+          "on": "mdi:cloud-check-outline",
+          "off": "mdi:cloud-off-outline"
+        }
       }
     },
     "switch": {
@@ -34,6 +74,20 @@
         "state": {
           "on": "mdi:power-socket-eu",
           "off": "mdi:power-socket-eu"
+        }
+      },
+      "automower_headlight": {
+        "default": "mdi:car-light-high",
+        "state": {
+          "on": "mdi:car-light-high",
+          "off": "mdi:car-light-dimmed"
+        }
+      },
+      "automower_stay_out_zone": {
+        "default": "mdi:map-marker-off",
+        "state": {
+          "on": "mdi:map-marker-off",
+          "off": "mdi:map-marker-check"
         }
       }
     },
@@ -55,7 +109,39 @@
           "paused": "mdi:pause",
           "error": "mdi:alert-circle-outline"
         }
+      },
+      "automower": {
+        "default": "mdi:robot-mower",
+        "state": {
+          "mowing": "mdi:robot-mower",
+          "docked": "mdi:robot-mower-outline",
+          "paused": "mdi:pause",
+          "error": "mdi:alert-circle-outline"
+        }
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "default": "mdi:grass"
+      },
+      "automower_work_area_cutting_height": {
+        "default": "mdi:grass"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "default": "mdi:crosshairs-gps"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "default": "mdi:calendar-clock"
       }
     }
+  },
+  "services": {
+    "start_watering": "mdi:sprinkler",
+    "turn_on_for": "mdi:power-socket-eu",
+    "override_schedule": "mdi:robot-mower"
   }
 }
