@@ -15,8 +15,16 @@ CONF_LOCATION_ID = "location_id"
 # 30 min keeps us well within budget even without WebSocket.
 SCAN_INTERVAL = timedelta(minutes=30)
 
+# When the WebSocket is connected and delivering real-time updates, polling
+# serves only as a rare health-check. Use a long interval to conserve quota.
+SCAN_INTERVAL_WS_CONNECTED = timedelta(hours=6)
+
 # Cooldown interval when the API returns HTTP 429 (rate limited)
 RATE_LIMIT_COOLDOWN = timedelta(hours=1)
+
+# Minimum seconds between consecutive API commands (mower/valve/power socket)
+# to avoid burning through the API quota with rapid-fire automations.
+MIN_COMMAND_INTERVAL_SECONDS = 5
 
 PLATFORMS: list[Platform] = [
     Platform.SENSOR,

@@ -182,12 +182,95 @@ data:
 
 The integration connects to the Gardena Smart System cloud via WebSocket for real-time push updates. When a device state changes (e.g., a valve opens, the mower starts), the update arrives within seconds.
 
-If the WebSocket connection drops (network issues, Gardena service outage), the integration automatically falls back to polling every 60 seconds and creates a repair issue in Home Assistant to notify you. The repair issue is resolved automatically when the WebSocket connection is re-established.
+If the WebSocket connection drops (network issues, Gardena service outage), the integration automatically falls back to polling every 30 minutes and creates a repair issue in Home Assistant to notify you. The repair issue is resolved automatically when the WebSocket connection is re-established.
+
+### API Communication Breakdown
+
+The Husqvarna API has a budget of approximately **3,000 requests per month** (~100 per day). Here is exactly how and when the integration communicates with the API.
+
+#### Startup (on every HA restart or integration reload)
+
+| # | API Call | Purpose |
+|---|---------|---------|
+| 1 | `POST /oauth2/token` | Acquire an OAuth2 access token |
+| 2 | `GET /locations/{id}` | Fetch all devices and their current state |
+| 3 | `POST /websocket` | Request a WebSocket URL for real-time updates |
+| 4 | WebSocket connect | Open the persistent connection for push updates |
+
+That is **3 REST calls + 1 WebSocket connection** per startup.
+
+#### Normal operation (WebSocket connected)
+
+| API Call | Frequency | Purpose |
+|---------|-----------|---------|
+| `GET /locations/{id}` | Every **6 hours** | Health-check poll — verifies the device list is in sync, catches devices added or removed |
+| `POST /oauth2/token` | Every **~55 minutes** | Token refresh (tokens expire after 1 hour, refreshed 5 minutes early) |
+| WebSocket messages | Continuous (push) | All device state updates arrive here at zero REST cost |
+
+Daily total: **~4 polls + ~24 token refreshes = ~28 requests/day** — roughly **28% of the daily budget**.
+
+#### Fallback operation (WebSocket down)
+
+| API Call | Frequency | Purpose |
+|---------|-----------|---------|
+| `GET /locations/{id}` | Every **30 minutes** | Poll for device state since real-time updates are unavailable |
+| `POST /oauth2/token` | Every **~55 minutes** | Token refresh |
+
+Daily total: **~48 polls + ~24 token refreshes = ~72 requests/day** — roughly **72% of the daily budget**. Still within limits, but with less headroom.
+
+#### Rate-limited state (after HTTP 429)
+
+| API Call | Frequency | Purpose |
+|---------|-----------|---------|
+| `GET /locations/{id}` | Every **1 hour** | Reduced polling until the rate limit resets |
+
+Daily total: **~24 polls + ~24 token refreshes = ~48 requests/day**. The normal interval is restored automatically after a successful response.
+
+#### User-triggered commands
+
+| API Call | Frequency | Purpose |
+|---------|-----------|---------|
+| `PUT /command/{service_id}` | On demand, **min 5 seconds apart** | Start mowing, dock, open valve, turn on switch, etc. |
+
+Each button press or automation action is one API call. The 5-second throttle prevents rapid-fire sequences from burning quota.
+
+### Why These Intervals Should Not Be Shortened
+
+The current intervals are deliberately chosen to balance responsiveness with API quota safety. Doubling the polling frequency (e.g., 3-hour health-check, 15-minute fallback) would push fallback mode to **~120 requests/day — already over the daily budget**. This would trigger rate limiting precisely when reliable polling is most needed (because the WebSocket is already down). Meanwhile, the benefit would be minimal: when the WebSocket is connected, all state updates are already real-time, and the 6-hour poll exists only to catch rare device additions or removals.
+
+## API Rate Limits
+
+### How This Integration Stays Within Limits
+
+The integration uses several strategies to minimize API usage:
+
+| Strategy | Detail |
+|----------|--------|
+| **WebSocket-first architecture** | Device state updates arrive in real time via a persistent WebSocket connection. REST API polling is only a fallback. |
+| **Adaptive polling interval** | When the WebSocket is connected, the polling interval extends to **every 6 hours** (health-check only). If the WebSocket drops, polling resumes at **every 30 minutes**. |
+| **Rate limit backoff** | If the API returns HTTP 429, the integration automatically backs off to **1-hour polling** and restores the normal interval after a successful response. |
+| **Command throttling** | A minimum **5-second interval** is enforced between consecutive commands (mower, valve, switch) to prevent automations from rapid-firing API calls. |
+
+### Tips for Avoiding Rate Limits
+
+- **Don't restart Home Assistant frequently.** Each restart triggers a full API poll and a new WebSocket connection request.
+- **Avoid rapid-fire automations.** If you have automations that send multiple commands in a loop (e.g., toggling valves on and off), add delays between them. The integration enforces a 5-second minimum, but longer pauses are better for quota.
+- **Don't reuse your API key across multiple systems.** If you use the same Husqvarna application credentials in another smart home platform alongside Home Assistant, they share the same quota. Create a separate application on the Husqvarna Developer Portal for each system.
+- **Use one integration instance per garden.** Each additional garden/location adds its own polling and WebSocket overhead.
+- **Monitor for rate limit warnings.** Check the Home Assistant logs for messages containing "Rate limited by Gardena API". If you see these regularly, review your automations and restart frequency.
+
+### What Happens When Rate Limited
+
+1. The integration logs a warning: `Rate limited by Gardena API, backing off to 1:00:00`.
+2. The polling interval increases to 1 hour.
+3. Existing entity states remain available (they are cached from the last successful update and WebSocket messages).
+4. Commands (start mowing, open valve, etc.) may fail until the rate limit resets.
+5. After a successful API response, the normal polling interval is restored automatically.
 
 ## Known Limitations
 
 - **Cloud-only**: The integration communicates with Gardena devices through the Husqvarna cloud. It requires an active internet connection and depends on Husqvarna's API availability.
-- **API rate limits**: The Husqvarna Developer Platform enforces rate limits. Under normal operation (WebSocket-based updates) this is not a concern, but repeated restarts or configuration changes in quick succession may trigger rate limiting.
+- **API rate limits**: See the [API Rate Limits](#api-rate-limits) section above for details and mitigation strategies.
 - **Valve position**: Gardena valves do not report percentage-based position. The valve entity reports only open/closed state.
 - **Mower GPS**: The Gardena API does not expose GPS coordinates through the Smart System API.
 
@@ -207,7 +290,7 @@ If the WebSocket connection drops (network issues, Gardena service outage), the 
 
 ### "Gardena real-time connection lost" repair issue
 
-This indicates the WebSocket connection to the Gardena cloud has failed. The integration continues to work via polling (every 60 seconds) but updates will be delayed.
+This indicates the WebSocket connection to the Gardena cloud has failed. The integration continues to work via polling (every 30 minutes) but updates will be delayed.
 
 - Check your Home Assistant host's internet connection.
 - Check the [Husqvarna service status](https://status.husqvarnagroup.cloud) for outages.
@@ -218,6 +301,18 @@ This indicates the WebSocket connection to the Gardena cloud has failed. The int
 - The device may be temporarily unreachable. Wait a moment and try again.
 - If the error persists, check the Home Assistant logs for details.
 - Verify the device is online in the Gardena Smart App.
+
+### "Commands are being sent too quickly"
+
+- The integration enforces a 5-second minimum interval between commands to protect the API quota.
+- If you see this in automations, add a `delay` step between consecutive Gardena service calls.
+- See [API Rate Limits](#api-rate-limits) for more details.
+
+### "Rate limited by Gardena API" in logs
+
+- The Husqvarna API has temporarily blocked your API key due to too many requests.
+- The integration automatically backs off and will recover on its own.
+- If this happens frequently, review your automations and restart habits. See [API Rate Limits](#api-rate-limits) for tips.
 
 ## License
 

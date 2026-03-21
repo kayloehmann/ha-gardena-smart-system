@@ -134,7 +134,7 @@
   "issues": {
     "websocket_connection_failed": {
       "title": "Gardena real-time connection lost",
-      "description": "The WebSocket connection to the Gardena Smart System cloud has failed. The integration is now relying on polling (every 60 seconds) for device updates instead of real-time push. Check your internet connection and the Husqvarna service status. The issue will be resolved automatically when the connection is re-established."
+      "description": "The WebSocket connection to the Gardena Smart System cloud has failed. The integration is now relying on polling (every 30 minutes) for device updates instead of real-time push. Check your internet connection and the Husqvarna service status. The issue will be resolved automatically when the connection is re-established."
     }
   },
   "exceptions": {
@@ -143,6 +143,9 @@
     },
     "device_unavailable": {
       "message": "The Gardena device is currently unavailable."
+    },
+    "command_throttled": {
+      "message": "Commands are being sent too quickly. Please wait a few seconds between commands to avoid exceeding the Gardena API rate limit."
     }
   }
 }

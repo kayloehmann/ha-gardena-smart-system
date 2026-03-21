@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import timedelta
 
 import aiohttp
@@ -19,7 +20,7 @@ from aiogardenasmart import (
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady, HomeAssistantError
 from homeassistant.helpers import device_registry as dr, issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -28,8 +29,10 @@ from .const import (
     CONF_CLIENT_SECRET,
     CONF_LOCATION_ID,
     DOMAIN,
+    MIN_COMMAND_INTERVAL_SECONDS,
     RATE_LIMIT_COOLDOWN,
     SCAN_INTERVAL,
+    SCAN_INTERVAL_WS_CONNECTED,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -74,6 +77,7 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
         self._location_id: str = entry.data[CONF_LOCATION_ID]
         self._ws: GardenaWebSocket | None = None
         self._ws_connected = False
+        self._last_command_time: float = 0.0
 
     @property
     def location_id(self) -> str:
@@ -116,12 +120,15 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
             raise UpdateFailed(f"Cannot connect to Gardena API: {err}") from err
 
         # Restore normal polling interval after a successful fetch
-        if self.update_interval != SCAN_INTERVAL:
+        normal_interval = (
+            SCAN_INTERVAL_WS_CONNECTED if self._ws_connected else SCAN_INTERVAL
+        )
+        if self.update_interval != normal_interval:
             _LOGGER.debug(
                 "Gardena API responded successfully, restoring poll interval to %s",
-                SCAN_INTERVAL,
+                normal_interval,
             )
-            self.update_interval = SCAN_INTERVAL
+            self.update_interval = normal_interval
 
         # Start WebSocket on first successful fetch
         if not self._ws_connected:
@@ -176,7 +183,12 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
         )
         await self._ws.async_connect(ws_url)
         self._ws_connected = True
-        _LOGGER.debug("Gardena WebSocket started for location %s", self._location_id)
+        self.update_interval = SCAN_INTERVAL_WS_CONNECTED
+        _LOGGER.debug(
+            "Gardena WebSocket started for location %s, poll interval set to %s",
+            self._location_id,
+            SCAN_INTERVAL_WS_CONNECTED,
+        )
         ir.async_delete_issue(self.hass, DOMAIN, "websocket_connection_failed")
 
     def _on_device_update(self, device_id: str, device: Device) -> None:
@@ -189,6 +201,7 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
         """Called when the WebSocket connection fails unrecoverably."""
         _LOGGER.error("Gardena WebSocket connection lost: %s", err)
         self._ws_connected = False
+        self.update_interval = SCAN_INTERVAL
         ir.async_create_issue(
             self.hass,
             DOMAIN,
@@ -204,6 +217,21 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
             await self._ws.async_disconnect()
             self._ws = None
         self._ws_connected = False
+
+    def check_command_throttle(self) -> None:
+        """Raise if a command is sent too soon after the previous one.
+
+        Prevents automations and UI from rapid-firing commands that burn
+        through the Husqvarna API quota.
+        """
+        now = time.monotonic()
+        elapsed = now - self._last_command_time
+        if elapsed < MIN_COMMAND_INTERVAL_SECONDS:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="command_throttled",
+            )
+        self._last_command_time = now
 
     async def async_get_locations(self) -> list[Location]:
         """Return locations — used by config flow to let user select a garden."""

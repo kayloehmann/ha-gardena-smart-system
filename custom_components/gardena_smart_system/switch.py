@@ -105,6 +105,7 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
                 translation_domain="gardena_smart_system",
                 translation_key="device_unavailable",
             )
+        self.coordinator.check_command_throttle()
         try:
             await self.coordinator.client.async_send_command(
                 service_id=device.power_socket.service_id,

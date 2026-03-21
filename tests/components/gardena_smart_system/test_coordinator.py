@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import time
+from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers import device_registry as dr, issue_registry as ir
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
@@ -15,7 +17,12 @@ try:
 except ImportError:
     from pytest_homeassistant_custom_component.common import MockConfigEntry  # type: ignore[no-redef]
 
-from custom_components.gardena_smart_system.const import DOMAIN
+from custom_components.gardena_smart_system.const import (
+    DOMAIN,
+    RATE_LIMIT_COOLDOWN,
+    SCAN_INTERVAL,
+    SCAN_INTERVAL_WS_CONNECTED,
+)
 from custom_components.gardena_smart_system.coordinator import GardenaCoordinator
 
 from .conftest import ENTRY_DATA, make_mock_device
@@ -278,3 +285,136 @@ class TestShutdown:
         coordinator._ws = None
         # Should not raise
         await coordinator.async_shutdown()
+
+
+class TestRateLimitBackoff:
+    """Test rate limit handling in _async_update_data."""
+
+    async def test_rate_limit_raises_update_failed(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        from aiogardenasmart.exceptions import GardenaRateLimitError
+
+        coordinator._client = AsyncMock()
+        coordinator._client.async_get_devices = AsyncMock(
+            side_effect=GardenaRateLimitError("429")
+        )
+
+        with pytest.raises(UpdateFailed, match="Rate limited"):
+            await coordinator._async_update_data()
+
+    async def test_rate_limit_increases_poll_interval(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        from aiogardenasmart.exceptions import GardenaRateLimitError
+
+        coordinator._client = AsyncMock()
+        coordinator._client.async_get_devices = AsyncMock(
+            side_effect=GardenaRateLimitError("429")
+        )
+
+        with pytest.raises(UpdateFailed):
+            await coordinator._async_update_data()
+
+        assert coordinator.update_interval == RATE_LIMIT_COOLDOWN
+
+    async def test_successful_fetch_restores_normal_interval(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        """After a rate limit, a successful fetch restores the normal interval."""
+        coordinator.update_interval = RATE_LIMIT_COOLDOWN
+        devices = {"dev-1": make_mock_device()}
+        coordinator._client = AsyncMock()
+        coordinator._client.async_get_devices = AsyncMock(return_value=devices)
+
+        with patch.object(coordinator, "_async_start_websocket", new_callable=AsyncMock):
+            await coordinator._async_update_data()
+
+        assert coordinator.update_interval == SCAN_INTERVAL
+
+    async def test_successful_fetch_restores_ws_interval_when_connected(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        """After a rate limit with WS connected, restore the longer WS interval."""
+        coordinator.update_interval = RATE_LIMIT_COOLDOWN
+        coordinator._ws_connected = True
+        devices = {"dev-1": make_mock_device()}
+        coordinator._client = AsyncMock()
+        coordinator._client.async_get_devices = AsyncMock(return_value=devices)
+
+        await coordinator._async_update_data()
+
+        assert coordinator.update_interval == SCAN_INTERVAL_WS_CONNECTED
+
+    async def test_consecutive_rate_limits_keep_cooldown(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        from aiogardenasmart.exceptions import GardenaRateLimitError
+
+        coordinator._client = AsyncMock()
+        coordinator._client.async_get_devices = AsyncMock(
+            side_effect=GardenaRateLimitError("429")
+        )
+
+        for _ in range(3):
+            with pytest.raises(UpdateFailed):
+                await coordinator._async_update_data()
+            assert coordinator.update_interval == RATE_LIMIT_COOLDOWN
+
+
+class TestWebSocketPollIntervalAdaptation:
+    """Test that poll interval adapts based on WebSocket connection state."""
+
+    async def test_ws_connect_extends_poll_interval(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        coordinator._client = AsyncMock()
+        coordinator._client.async_get_websocket_url = AsyncMock(
+            return_value="wss://gardena.example/ws"
+        )
+
+        with patch(_PATCH_WS) as mock_ws_cls:
+            mock_ws_cls.return_value = AsyncMock()
+            await coordinator._async_start_websocket({})
+
+        assert coordinator.update_interval == SCAN_INTERVAL_WS_CONNECTED
+
+    def test_ws_error_restores_short_poll_interval(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        coordinator._ws_connected = True
+        coordinator.update_interval = SCAN_INTERVAL_WS_CONNECTED
+
+        coordinator._on_ws_error(RuntimeError("connection lost"))
+
+        assert coordinator.update_interval == SCAN_INTERVAL
+        assert coordinator._ws_connected is False
+
+
+class TestCommandThrottle:
+    """Test command throttling to prevent API quota exhaustion."""
+
+    def test_first_command_allowed(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        # Should not raise
+        coordinator.check_command_throttle()
+
+    def test_rapid_second_command_blocked(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        coordinator.check_command_throttle()  # first succeeds
+
+        with pytest.raises(HomeAssistantError):
+            coordinator.check_command_throttle()  # immediate second blocked
+
+    def test_command_allowed_after_interval(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        coordinator.check_command_throttle()
+
+        # Simulate time passing
+        coordinator._last_command_time = time.monotonic() - 10
+
+        # Should not raise
+        coordinator.check_command_throttle()

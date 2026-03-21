@@ -130,6 +130,7 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
 
     async def _async_send_command(self, command: str, **params: int) -> None:
         """Send a command to this valve."""
+        self.coordinator.check_command_throttle()
         try:
             await self.coordinator.client.async_send_command(
                 service_id=self._service_id,
