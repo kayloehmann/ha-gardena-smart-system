@@ -11,9 +11,9 @@ import voluptuous as vol
 from aiogardenasmart import Device, GardenaAuthenticationError, GardenaException
 from aiogardenasmart.const import ControlType, MowerActivity, ServiceState
 
-from homeassistant.components.lawn_mower import (
+from homeassistant.components.lawn_mower import LawnMowerEntity
+from homeassistant.components.lawn_mower.const import (
     LawnMowerActivity,
-    LawnMowerEntity,
     LawnMowerEntityFeature,
 )
 from homeassistant.core import HomeAssistant, callback

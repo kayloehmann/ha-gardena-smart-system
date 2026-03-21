@@ -8,9 +8,9 @@ from aioautomower import AutomowerDevice
 from aioautomower.const import MowerActivity, MowerState
 from aioautomower.exceptions import AutomowerAuthenticationError, AutomowerException
 
-from homeassistant.components.lawn_mower import (
+from homeassistant.components.lawn_mower import LawnMowerEntity
+from homeassistant.components.lawn_mower.const import (
     LawnMowerActivity,
-    LawnMowerEntity,
     LawnMowerEntityFeature,
 )
 from homeassistant.core import HomeAssistant, callback

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from aioautomower import AutomowerDevice
 
-from homeassistant.components.device_tracker import SourceType, TrackerEntity
+from homeassistant.components.device_tracker.config_entry import TrackerEntity
+from homeassistant.components.device_tracker.const import SourceType
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 

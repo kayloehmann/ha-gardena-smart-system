@@ -29,16 +29,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: GardenaConfigEntry) -> b
     if api_type == API_TYPE_AUTOMOWER:
         from .automower_coordinator import AutomowerCoordinator
 
-        coordinator = AutomowerCoordinator(hass, entry, session)
-        await coordinator.async_config_entry_first_refresh()
-        entry.runtime_data = coordinator
+        am_coordinator = AutomowerCoordinator(hass, entry, session)
+        await am_coordinator.async_config_entry_first_refresh()
+        entry.runtime_data = am_coordinator
         await hass.config_entries.async_forward_entry_setups(entry, AUTOMOWER_PLATFORMS)
     else:
         from .coordinator import GardenaCoordinator
 
-        coordinator = GardenaCoordinator(hass, entry, session)
-        await coordinator.async_config_entry_first_refresh()
-        entry.runtime_data = coordinator
+        gd_coordinator = GardenaCoordinator(hass, entry, session)
+        await gd_coordinator.async_config_entry_first_refresh()
+        entry.runtime_data = gd_coordinator
         await hass.config_entries.async_forward_entry_setups(entry, GARDENA_PLATFORMS)
 
     return True
