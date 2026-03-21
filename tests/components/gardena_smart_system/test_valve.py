@@ -61,7 +61,7 @@ class TestValveEntityCreation:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("valve.my_sensor")
+        state = hass.states.get("valve.my_sensor_valve_1")
         assert state is not None
 
     async def test_multi_valve_device_creates_multiple_entities(
@@ -123,13 +123,43 @@ class TestValveUniqueIds:
         assert valve_entities[1].unique_id == "SN001_valve_2"
 
 
-class TestValveTranslationKey:
-    """Test valve translation key."""
+class TestValveNaming:
+    """Test valve entity naming uses zone names from the API."""
 
-    async def test_valve_has_translation_key(
+    async def test_valve_uses_api_zone_name(
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         device = make_mock_device(valve_count=1, has_sensor=False)
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            pass
+
+        state = hass.states.get("valve.my_sensor_valve_1")
+        assert state is not None
+        assert state.attributes["friendly_name"] == "My Sensor Valve 1"
+
+    async def test_multi_valve_has_distinct_names(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=3, has_sensor=False)
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            pass
+
+        for i in range(1, 4):
+            state = hass.states.get(f"valve.my_sensor_valve_{i}")
+            assert state is not None
+            assert state.attributes["friendly_name"] == f"My Sensor Valve {i}"
+
+    async def test_valve_falls_back_to_translation_key_when_no_name(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=1, has_sensor=False)
+        # Clear the valve name to trigger fallback
+        valve_id = list(device.valves.keys())[0]
+        device.valves[valve_id].name = None
         devices = {device.device_id: device}
 
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
@@ -157,7 +187,7 @@ class TestValveStateMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("valve.my_sensor")
+        state = hass.states.get("valve.my_sensor_valve_1")
         assert state is not None
         assert state.state == "closed"
 
@@ -172,7 +202,7 @@ class TestValveStateMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("valve.my_sensor")
+        state = hass.states.get("valve.my_sensor_valve_1")
         assert state is not None
         assert state.state == "open"
 
@@ -187,7 +217,7 @@ class TestValveStateMapping:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("valve.my_sensor")
+        state = hass.states.get("valve.my_sensor_valve_1")
         assert state is not None
         assert state.state == "open"
 
@@ -205,7 +235,7 @@ class TestValveCommands:
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
                 "valve", "open_valve",
-                {"entity_id": "valve.my_sensor"},
+                {"entity_id": "valve.my_sensor_valve_1"},
                 blocking=True,
             )
 
@@ -226,7 +256,7 @@ class TestValveCommands:
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
                 "valve", "close_valve",
-                {"entity_id": "valve.my_sensor"},
+                {"entity_id": "valve.my_sensor_valve_1"},
                 blocking=True,
             )
 
@@ -246,7 +276,7 @@ class TestValveCommands:
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
                 "gardena_smart_system", "start_watering",
-                {"entity_id": "valve.my_sensor", "duration": 30},
+                {"entity_id": "valve.my_sensor_valve_1", "duration": 30},
                 blocking=True,
             )
 
@@ -279,7 +309,7 @@ class TestValveErrorHandling:
             with pytest.raises(HomeAssistantError):
                 await hass.services.async_call(
                     "valve", "open_valve",
-                    {"entity_id": "valve.my_sensor"},
+                    {"entity_id": "valve.my_sensor_valve_1"},
                     blocking=True,
                 )
 
@@ -299,7 +329,7 @@ class TestValveErrorHandling:
             with pytest.raises(HomeAssistantError):
                 await hass.services.async_call(
                     "valve", "open_valve",
-                    {"entity_id": "valve.my_sensor"},
+                    {"entity_id": "valve.my_sensor_valve_1"},
                     blocking=True,
                 )
 
@@ -317,7 +347,7 @@ class TestValveUnavailability:
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             pass
 
-        state = hass.states.get("valve.my_sensor")
+        state = hass.states.get("valve.my_sensor_valve_1")
         assert state is not None
         assert state.state == STATE_UNAVAILABLE
 
@@ -329,7 +359,7 @@ class TestValveUnavailability:
 
         async for _ in _setup_with_devices(hass, mock_config_entry, devices):
             # Verify valve is available first
-            state = hass.states.get("valve.my_sensor")
+            state = hass.states.get("valve.my_sensor_valve_1")
             assert state is not None
             assert state.state == "closed"
 
@@ -338,7 +368,7 @@ class TestValveUnavailability:
             coordinator.async_set_updated_data({})
             await hass.async_block_till_done()
 
-        state = hass.states.get("valve.my_sensor")
+        state = hass.states.get("valve.my_sensor_valve_1")
         assert state is not None
         assert state.state == STATE_UNAVAILABLE
 

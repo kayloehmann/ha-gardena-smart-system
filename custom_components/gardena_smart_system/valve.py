@@ -92,7 +92,11 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
         suffix = "valve_" + service_id.split(":")[-1] if ":" in service_id else "valve"
         super().__init__(coordinator, device, suffix)
         self._service_id = service_id
-        self._attr_translation_key = "valve"
+        valve_service = device.valves.get(service_id)
+        if valve_service and valve_service.name:
+            self._attr_name = valve_service.name
+        else:
+            self._attr_translation_key = "valve"
 
     @property
     def _valve(self) -> ValveService | None:

@@ -10,5 +10,5 @@
   "loggers": ["aiogardenasmart", "aioautomower"],
   "requirements": ["aiogardenasmart==0.1.2", "aioautomower==0.1.0"],
   "single_config_entry": false,
-  "version": "0.2.1"
+  "version": "0.2.2"
 }
