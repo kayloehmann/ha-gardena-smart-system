@@ -304,11 +304,22 @@ class Schedule:
         recurrence = data.get("recurrence", {})
         return cls(
             schedule_id=str(data.get("id", "")),
-            start_at=data.get("start_at", ""),
-            end_at=data.get("end_at", ""),
+            start_at=_normalize_time(data.get("start_at", "")),
+            end_at=_normalize_time(data.get("end_at", "")),
             weekdays=recurrence.get("weekdays", []),
             valve_id=data.get("valve_id"),
         )
+
+
+def _normalize_time(time_str: str) -> str:
+    """Normalize API time strings to human-readable format.
+
+    Formats: 'MN+20:00' -> '20:00', 'SR+00:30' -> 'SR+00:30', 'SS-01:00' -> 'SS-01:00'
+    MN (midnight) offsets are converted to plain times; SR/SS (sunrise/sunset) are kept.
+    """
+    if time_str.startswith("MN+"):
+        return time_str[3:]
+    return time_str
 
 
 @dataclass
