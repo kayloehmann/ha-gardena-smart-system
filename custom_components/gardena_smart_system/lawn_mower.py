@@ -105,6 +105,23 @@ class GardenaLawnMowerEntity(GardenaEntity, LawnMowerEntity):
             device.mower.activity or "", LawnMowerActivity.PAUSED
         )
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Expose detailed Gardena API fields for frontend cards."""
+        device = self._device
+        if device is None:
+            return None
+        attrs: dict[str, Any] = {}
+        if device.mower is not None:
+            if device.mower.activity is not None:
+                attrs["activity"] = device.mower.activity
+            if device.mower.last_error_code is not None:
+                attrs["last_error_code"] = device.mower.last_error_code
+        if device.common is not None:
+            if device.common.battery_state is not None:
+                attrs["battery_state"] = device.common.battery_state
+        return attrs if attrs else None
+
     async def async_start_mowing(self) -> None:
         """Start mowing without overriding the schedule."""
         await self._async_send_command("START_DONT_OVERRIDE")

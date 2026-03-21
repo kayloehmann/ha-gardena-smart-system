@@ -74,6 +74,7 @@ def make_mock_device(
         mower.device_id = device_id
         mower.activity = "PARKED_PARK_SELECTED"
         mower.state = "OK"
+        mower.last_error_code = None
         mower.operating_hours = 100
         device.mower = mower
     else:
