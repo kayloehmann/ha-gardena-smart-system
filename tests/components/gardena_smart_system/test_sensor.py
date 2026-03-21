@@ -83,7 +83,7 @@ class TestSensorEntityCreation:
         await _setup_integration(hass, mock_config_entry, mock_sensor_api)
 
         entity_reg = er.async_get(hass)
-        entry = entity_reg.async_get("sensor.my_sensor")
+        entry = entity_reg.async_get("sensor.my_sensor_signal_strength")
         assert entry is not None
         assert entry.disabled_by is not None
 
@@ -92,7 +92,7 @@ class TestSensorEntityCreation:
     ) -> None:
         await _setup_integration(hass, mock_config_entry, mock_sensor_api)
 
-        state = hass.states.get("sensor.my_sensor_moisture")
+        state = hass.states.get("sensor.my_sensor_soil_moisture")
         assert state is not None
         assert state.state == "42"
 
@@ -101,7 +101,7 @@ class TestSensorEntityCreation:
     ) -> None:
         await _setup_integration(hass, mock_config_entry, mock_sensor_api)
 
-        state = hass.states.get("sensor.my_sensor_temperature")
+        state = hass.states.get("sensor.my_sensor_soil_temperature")
         assert state is not None
         assert state.state == "18.5"
 
@@ -110,7 +110,7 @@ class TestSensorEntityCreation:
     ) -> None:
         await _setup_integration(hass, mock_config_entry, mock_sensor_api)
 
-        state = hass.states.get("sensor.my_sensor_temperature_2")
+        state = hass.states.get("sensor.my_sensor_ambient_temperature")
         assert state is not None
         assert state.state == "22.1"
 
@@ -119,7 +119,7 @@ class TestSensorEntityCreation:
     ) -> None:
         await _setup_integration(hass, mock_config_entry, mock_sensor_api)
 
-        state = hass.states.get("sensor.my_sensor_illuminance")
+        state = hass.states.get("sensor.my_sensor_light_intensity")
         assert state is not None
         assert state.state == "15000"
 
@@ -145,13 +145,12 @@ class TestSensorEntityCreation:
             await _setup_integration(hass, mock_config_entry, mock_client)
 
         entity_reg = er.async_get(hass)
-        # mower_operating_hours has no device_class, so entity ID uses just device name
-        # It will collide with other no-device-class sensors (rf_link_level) if on same device
+        # mower_operating_hours has translation name "Operating hours"
         # On "My Mower" device with has_mower=True, has_sensor=False:
         # battery_level -> sensor.my_mower_battery
-        # rf_link_level (no device_class) -> sensor.my_mower (disabled)
-        # mower_operating_hours (no device_class) -> sensor.my_mower_2 (disabled)
-        entry = entity_reg.async_get("sensor.my_mower_2")
+        # rf_link_level -> sensor.my_mower_signal_strength (disabled)
+        # mower_operating_hours -> sensor.my_mower_operating_hours (disabled)
+        entry = entity_reg.async_get("sensor.my_mower_operating_hours")
         assert entry is not None
         assert entry.disabled_by is not None
 
@@ -177,10 +176,10 @@ class TestSensorEntityCreation:
             await _setup_integration(hass, mock_config_entry, mock_client)
 
         # Soil sensors should not exist
-        assert hass.states.get("sensor.no_sensor_moisture") is None
-        assert hass.states.get("sensor.no_sensor_temperature") is None
-        assert hass.states.get("sensor.no_sensor_temperature_2") is None
-        assert hass.states.get("sensor.no_sensor_illuminance") is None
+        assert hass.states.get("sensor.no_sensor_soil_moisture") is None
+        assert hass.states.get("sensor.no_sensor_soil_temperature") is None
+        assert hass.states.get("sensor.no_sensor_ambient_temperature") is None
+        assert hass.states.get("sensor.no_sensor_light_intensity") is None
 
 
 class TestSensorUniqueIds:
@@ -202,8 +201,8 @@ class TestSensorUniqueIds:
         await _setup_integration(hass, mock_config_entry, mock_sensor_api)
 
         entity_reg = er.async_get(hass)
-        entry = entity_reg.async_get("sensor.my_sensor_moisture")
-        assert entry is not None, "sensor.my_sensor_moisture not found"
+        entry = entity_reg.async_get("sensor.my_sensor_soil_moisture")
+        assert entry is not None, "sensor.my_sensor_soil_moisture not found"
         assert entry.unique_id == "SN001_soil_humidity"
 
 
@@ -303,7 +302,7 @@ class TestSensorUnavailability:
 
         # soil_humidity was set to None, but exists_fn checks is not None,
         # so the entity should not be created
-        state = hass.states.get("sensor.my_sensor_moisture")
+        state = hass.states.get("sensor.my_sensor_soil_moisture")
         assert state is None
 
 
