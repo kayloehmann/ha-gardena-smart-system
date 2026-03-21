@@ -176,6 +176,20 @@ class TestSwitchStateMapping:
         assert state is not None
         assert state.state == STATE_ON
 
+    async def test_activity_exposed_as_attribute(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(has_sensor=False, has_power_socket=True)
+        device.power_socket.activity = "FOREVER_ON"
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            pass
+
+        state = hass.states.get("switch.my_sensor_power")
+        assert state is not None
+        assert state.attributes["activity"] == "FOREVER_ON"
+
 
 class TestSwitchCommands:
     """Test switch turn_on/turn_off/turn_on_for commands."""

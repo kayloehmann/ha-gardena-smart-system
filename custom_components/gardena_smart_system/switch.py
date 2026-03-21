@@ -89,6 +89,14 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
             PowerSocketActivity.SCHEDULED_ON,
         )
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return the power socket activity as an extra attribute."""
+        device = self._device
+        if device is None or device.power_socket is None:
+            return None
+        return {"activity": device.power_socket.activity}
+
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the socket on indefinitely."""
         await self._async_send_command("START_OVERRIDE")

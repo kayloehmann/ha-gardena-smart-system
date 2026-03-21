@@ -221,6 +221,21 @@ class TestValveStateMapping:
         assert state is not None
         assert state.state == "open"
 
+    async def test_activity_exposed_as_attribute(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=1, has_sensor=False)
+        valve_id = list(device.valves.keys())[0]
+        device.valves[valve_id].activity = "MANUAL_WATERING"
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            pass
+
+        state = hass.states.get("valve.my_sensor_valve_1")
+        assert state is not None
+        assert state.attributes["activity"] == "MANUAL_WATERING"
+
 
 class TestValveCommands:
     """Test valve open/close/start_watering commands."""
