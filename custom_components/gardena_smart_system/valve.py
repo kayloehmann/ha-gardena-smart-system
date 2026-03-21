@@ -88,7 +88,7 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
         service_id: str,
     ) -> None:
         """Initialize the valve entity."""
-        # Use the valve index from the service_id (e.g., "uuid:1" → suffix "valve_1")
+        # Use the valve index from the service_id (e.g., "uuid:1" -> suffix "valve_1")
         suffix = "valve_" + service_id.split(":")[-1] if ":" in service_id else "valve"
         super().__init__(coordinator, device, suffix)
         self._service_id = service_id
@@ -108,32 +108,35 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Expose schedule data filtered for this valve."""
+        """Expose detailed Gardena API fields for frontend cards."""
         device = self._device
-        if device is None or not device.schedules:
+        if device is None:
             return None
-        valve_idx = (
-            int(self._service_id.split(":")[-1])
-            if ":" in self._service_id
-            else 0
-        )
-        valve_schedules = [
-            s for s in device.schedules if s.valve_id == valve_idx
-        ]
-        if not valve_schedules:
-            return None
-        return {
-            "scheduled_events": [
-                {
-                    "start_at": s.start_at,
-                    "end_at": s.end_at,
-                    "weekdays": s.weekdays,
-                    "paused": s.is_paused,
-                    **({"paused_until": s.paused_until_date} if s.paused_until_date else {}),
-                }
-                for s in valve_schedules
+        attrs: dict[str, Any] = {}
+        valve = self._valve
+        if valve is not None and valve.activity is not None:
+            attrs["activity"] = valve.activity
+        if device.schedules:
+            valve_idx = (
+                int(self._service_id.split(":")[-1])
+                if ":" in self._service_id
+                else 0
+            )
+            valve_schedules = [
+                s for s in device.schedules if s.valve_id == valve_idx
             ]
-        }
+            if valve_schedules:
+                attrs["scheduled_events"] = [
+                    {
+                        "start_at": s.start_at,
+                        "end_at": s.end_at,
+                        "weekdays": s.weekdays,
+                        "paused": s.is_paused,
+                        **({"paused_until": s.paused_until_date} if s.paused_until_date else {}),
+                    }
+                    for s in valve_schedules
+                ]
+        return attrs if attrs else None
 
     @property
     def is_closed(self) -> bool | None:

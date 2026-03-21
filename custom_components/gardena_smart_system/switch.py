@@ -79,12 +79,15 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Expose schedule data for this power socket."""
+        """Expose detailed Gardena API fields for frontend cards."""
         device = self._device
-        if device is None or not device.schedules:
+        if device is None:
             return None
-        return {
-            "scheduled_events": [
+        attrs: dict[str, Any] = {}
+        if device.power_socket is not None and device.power_socket.activity is not None:
+            attrs["activity"] = device.power_socket.activity
+        if device.schedules:
+            attrs["scheduled_events"] = [
                 {
                     "start_at": s.start_at,
                     "end_at": s.end_at,
@@ -94,7 +97,7 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
                 }
                 for s in device.schedules
             ]
-        }
+        return attrs if attrs else None
 
     @property
     def is_on(self) -> bool | None:
