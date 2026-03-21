@@ -4,6 +4,9 @@
 [![GitHub Release](https://img.shields.io/github/v/release/kayloehmann/ha-gardena-smart-system)](https://github.com/kayloehmann/ha-gardena-smart-system/releases)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.12%2B-blue)](https://www.home-assistant.io/)
 [![License](https://img.shields.io/github/license/kayloehmann/ha-gardena-smart-system)](https://github.com/kayloehmann/ha-gardena-smart-system/blob/main/LICENSE)
+[![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Platinum-blueviolet)](https://developers.home-assistant.io/docs/core/integration-quality-scale/)
+[![mypy](https://img.shields.io/badge/type%20checked-mypy%20strict-blue)](https://mypy-lang.org/)
+[![Test Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen)](https://github.com/kayloehmann/ha-gardena-smart-system)
 
 A Home Assistant custom integration for **Husqvarna smart garden devices** — supporting both the **Gardena Smart System API** and the **Automower Connect API** through a single integration. Device states are updated in real time via cloud WebSocket connections, with automatic fallback to polling if the connection is interrupted.
 
@@ -522,6 +525,29 @@ This indicates the WebSocket connection to the Husqvarna cloud has failed. The i
 - The Husqvarna API has temporarily blocked your API key due to too many requests.
 - The integration automatically backs off and will recover on its own.
 - If this happens frequently, review your automations and restart habits. See [API Rate Limits](#api-rate-limits) for tips.
+
+## Code Quality
+
+This integration targets the [Home Assistant Integration Quality Scale](https://developers.home-assistant.io/docs/core/integration-quality-scale/) at the **Platinum** level.
+
+| Tier | Rules | Status |
+|------|-------|--------|
+| Bronze | 19 | Passed (2 N/A for custom integrations) |
+| Silver | 10 | Passed |
+| Gold | 22 | Passed (2 N/A: `discovery` / `discovery-update-info` — cloud API, no local discovery) |
+| Platinum | 3 | Passed |
+
+Key quality features:
+
+- **97% test coverage** across 271 automated tests
+- **mypy --strict** passes with zero errors on all 23 source files
+- **PEP 561** compliant (`py.typed` markers on both client libraries)
+- **Full async** codebase — no blocking I/O in the event loop
+- **WebSocket session injection** — `aiohttp.ClientSession` provided by Home Assistant, not created internally
+- **Diagnostics** with sensitive data redaction (credentials, serial numbers)
+- **Repair issues** for WebSocket connection loss
+- **Stale device cleanup** — devices removed from the API are automatically removed from the HA device registry
+- **Translated exceptions** — all error messages use the HA translation framework
 
 ## License
 
