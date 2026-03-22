@@ -16,10 +16,15 @@ from custom_components.gardena_smart_system.const import (
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
     CONF_LOCATION_ID,
+    DEFAULT_SOCKET_MINUTES,
+    DEFAULT_WATERING_MINUTES,
     DOMAIN,
+    OPT_DEFAULT_SOCKET_MINUTES,
+    OPT_DEFAULT_WATERING_MINUTES,
 )
 
 from .conftest import (
+    ENTRY_DATA,
     MOCK_CLIENT_ID,
     MOCK_CLIENT_SECRET,
     MOCK_LOCATION_ID,
@@ -323,3 +328,74 @@ class TestReconfigureFlow:
 
         assert result["type"] == FlowResultType.FORM
         assert result["errors"]["base"] == "cannot_connect"
+
+
+class TestOptionsFlow:
+    """Test the options flow for Gardena Smart System."""
+
+    async def test_options_flow_shows_form_with_defaults(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        mock_config_entry.add_to_hass(hass)
+        result = await hass.config_entries.options.async_init(
+            mock_config_entry.entry_id
+        )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "init"
+
+    async def test_options_flow_saves_values(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        mock_config_entry.add_to_hass(hass)
+        result = await hass.config_entries.options.async_init(
+            mock_config_entry.entry_id
+        )
+
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {
+                OPT_DEFAULT_WATERING_MINUTES: 30,
+                OPT_DEFAULT_SOCKET_MINUTES: 120,
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert mock_config_entry.options[OPT_DEFAULT_WATERING_MINUTES] == 30
+        assert mock_config_entry.options[OPT_DEFAULT_SOCKET_MINUTES] == 120
+
+    async def test_options_flow_prefills_existing_values(
+        self, hass: HomeAssistant
+    ) -> None:
+        try:
+            from tests.common import MockConfigEntry
+        except ImportError:
+            from pytest_homeassistant_custom_component.common import MockConfigEntry  # type: ignore[no-redef]
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=ENTRY_DATA,
+            title=MOCK_LOCATION_NAME,
+            options={
+                OPT_DEFAULT_WATERING_MINUTES: 45,
+                OPT_DEFAULT_SOCKET_MINUTES: 90,
+            },
+        )
+        entry.add_to_hass(hass)
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "init"
+
+        # Submit the same values to verify they are preserved
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            {
+                OPT_DEFAULT_WATERING_MINUTES: 45,
+                OPT_DEFAULT_SOCKET_MINUTES: 90,
+            },
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert entry.options[OPT_DEFAULT_WATERING_MINUTES] == 45
+        assert entry.options[OPT_DEFAULT_SOCKET_MINUTES] == 90

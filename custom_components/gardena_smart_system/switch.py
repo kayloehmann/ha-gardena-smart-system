@@ -18,7 +18,12 @@ from homeassistant.helpers import entity_platform as ep
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import GardenaConfigEntry
-from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
+from .const import (
+    API_TYPE_AUTOMOWER,
+    CONF_API_TYPE,
+    DEFAULT_SOCKET_MINUTES,
+    OPT_DEFAULT_SOCKET_MINUTES,
+)
 from .coordinator import GardenaCoordinator
 from .entity import GardenaEntity
 
@@ -105,8 +110,14 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
         return attrs
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        """Turn the socket on indefinitely."""
-        await self._async_send_command("START_OVERRIDE")
+        """Turn the socket on for the configured default duration."""
+        duration_minutes: int = self.coordinator.config_entry.options.get(
+            OPT_DEFAULT_SOCKET_MINUTES, DEFAULT_SOCKET_MINUTES
+        )
+        await self._async_send_command(
+            "START_SECONDS_TO_OVERRIDE",
+            seconds=duration_minutes * 60,
+        )
 
     async def async_turn_on_for(self, duration: int) -> None:
         """Turn the socket on for the given number of minutes."""

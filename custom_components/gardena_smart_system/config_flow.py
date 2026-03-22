@@ -15,9 +15,17 @@ from aiogardenasmart.exceptions import (
     GardenaRateLimitError,
 )
 
-from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
     SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
@@ -33,7 +41,11 @@ from .const import (
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
     CONF_LOCATION_ID,
+    DEFAULT_SOCKET_MINUTES,
+    DEFAULT_WATERING_MINUTES,
     DOMAIN,
+    OPT_DEFAULT_SOCKET_MINUTES,
+    OPT_DEFAULT_WATERING_MINUTES,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,6 +61,13 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
     """
 
     VERSION = 2
+
+    @staticmethod
+    def async_get_options_flow(
+        config_entry: ConfigEntry,
+    ) -> GardenaOptionsFlowHandler:
+        """Return the options flow handler."""
+        return GardenaOptionsFlowHandler()
 
     def __init__(self) -> None:
         """Initialize flow state."""
@@ -399,3 +418,52 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
         except Exception:  # noqa: BLE001
             _LOGGER.exception("Unexpected error during Automower credential test")
             return "unknown"
+
+
+class GardenaOptionsFlowHandler(OptionsFlow):
+    """Handle Gardena Smart System options."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage the options for the Gardena integration."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        current_watering = self.config_entry.options.get(
+            OPT_DEFAULT_WATERING_MINUTES, DEFAULT_WATERING_MINUTES
+        )
+        current_socket = self.config_entry.options.get(
+            OPT_DEFAULT_SOCKET_MINUTES, DEFAULT_SOCKET_MINUTES
+        )
+
+        schema = self.add_suggested_values_to_schema(
+            vol.Schema(
+                {
+                    vol.Required(OPT_DEFAULT_WATERING_MINUTES): NumberSelector(
+                        NumberSelectorConfig(
+                            min=1,
+                            max=1440,
+                            step=1,
+                            unit_of_measurement="min",
+                            mode=NumberSelectorMode.BOX,
+                        )
+                    ),
+                    vol.Required(OPT_DEFAULT_SOCKET_MINUTES): NumberSelector(
+                        NumberSelectorConfig(
+                            min=1,
+                            max=1440,
+                            step=1,
+                            unit_of_measurement="min",
+                            mode=NumberSelectorMode.BOX,
+                        )
+                    ),
+                }
+            ),
+            {
+                OPT_DEFAULT_WATERING_MINUTES: current_watering,
+                OPT_DEFAULT_SOCKET_MINUTES: current_socket,
+            },
+        )
+
+        return self.async_show_form(step_id="init", data_schema=schema)

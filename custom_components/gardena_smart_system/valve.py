@@ -24,6 +24,7 @@ from homeassistant.helpers import entity_platform as ep
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import GardenaConfigEntry
+from .const import DEFAULT_WATERING_MINUTES, OPT_DEFAULT_WATERING_MINUTES
 from .coordinator import GardenaCoordinator
 from .entity import GardenaEntity
 
@@ -31,7 +32,6 @@ _LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 1
 
-DEFAULT_WATERING_DURATION_SECONDS = 3600
 MAX_WATERING_DURATION_MINUTES = 1440  # 24 hours
 
 
@@ -127,10 +127,13 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
         return attrs
 
     async def async_open_valve(self, **kwargs: Any) -> None:
-        """Open the valve for the default duration."""
+        """Open the valve for the configured default duration."""
+        duration_minutes: int = self.coordinator.config_entry.options.get(
+            OPT_DEFAULT_WATERING_MINUTES, DEFAULT_WATERING_MINUTES
+        )
         await self._async_send_command(
             "START_SECONDS_TO_OVERRIDE",
-            seconds=DEFAULT_WATERING_DURATION_SECONDS,
+            seconds=duration_minutes * 60,
         )
 
     async def async_start_watering(self, duration: int) -> None:

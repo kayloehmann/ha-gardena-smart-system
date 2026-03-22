@@ -32,6 +32,12 @@ AUTOMOWER_RATE_LIMIT_COOLDOWN = timedelta(hours=1)
 # to avoid burning through the API quota with rapid-fire automations.
 MIN_COMMAND_INTERVAL_SECONDS = 5
 
+# ── Options flow defaults ─────────────────────────────────────────
+OPT_DEFAULT_WATERING_MINUTES = "default_watering_minutes"
+OPT_DEFAULT_SOCKET_MINUTES = "default_socket_minutes"
+DEFAULT_WATERING_MINUTES = 60
+DEFAULT_SOCKET_MINUTES = 60
+
 GARDENA_PLATFORMS: list[Platform] = [
     Platform.SENSOR,
     Platform.BINARY_SENSOR,

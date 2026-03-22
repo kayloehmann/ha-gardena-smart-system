@@ -10,9 +10,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 
-from custom_components.gardena_smart_system.const import DOMAIN
+from custom_components.gardena_smart_system.const import (
+    DOMAIN,
+    OPT_DEFAULT_SOCKET_MINUTES,
+)
 
-from .conftest import ENTRY_DATA, make_mock_device
+from .conftest import ENTRY_DATA, MOCK_LOCATION_NAME, make_mock_device
 
 _PATCH_CLIENT = (
     "custom_components.gardena_smart_system.coordinator.GardenaClient"
@@ -237,7 +240,7 @@ class TestSwitchStateMapping:
 class TestSwitchCommands:
     """Test switch turn_on/turn_off/turn_on_for commands."""
 
-    async def test_turn_on_sends_start_override(
+    async def test_turn_on_sends_start_seconds_to_override_with_default(
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         device = make_mock_device(has_sensor=False, has_power_socket=True)
@@ -253,7 +256,8 @@ class TestSwitchCommands:
             mock_client.async_send_command.assert_called_once_with(
                 service_id=device.power_socket.service_id,
                 control_type="POWER_SOCKET_CONTROL",
-                command="START_OVERRIDE",
+                command="START_SECONDS_TO_OVERRIDE",
+                seconds=3600,  # 60 minutes default * 60
             )
 
     async def test_turn_off_sends_stop_until_next_task(
@@ -426,3 +430,39 @@ class TestSwitchDynamicDevices:
 
             state = hass.states.get("switch.smart_plug_power")
             assert state is not None
+
+
+class TestSwitchOptionsIntegration:
+    """Test that switch commands use configured options."""
+
+    async def test_turn_on_uses_configured_duration(
+        self, hass: HomeAssistant
+    ) -> None:
+        try:
+            from tests.common import MockConfigEntry
+        except ImportError:
+            from pytest_homeassistant_custom_component.common import MockConfigEntry  # type: ignore[no-redef]
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=ENTRY_DATA,
+            title=MOCK_LOCATION_NAME,
+            options={OPT_DEFAULT_SOCKET_MINUTES: 45},
+        )
+
+        device = make_mock_device(has_sensor=False, has_power_socket=True)
+        devices = {device.device_id: device}
+
+        async for mock_client in _setup_with_devices(hass, entry, devices):
+            await hass.services.async_call(
+                "switch", "turn_on",
+                {"entity_id": "switch.my_sensor_power"},
+                blocking=True,
+            )
+
+            mock_client.async_send_command.assert_called_once_with(
+                service_id=device.power_socket.service_id,
+                control_type="POWER_SOCKET_CONTROL",
+                command="START_SECONDS_TO_OVERRIDE",
+                seconds=2700,  # 45 minutes * 60
+            )

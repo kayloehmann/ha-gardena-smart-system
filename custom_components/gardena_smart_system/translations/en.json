@@ -58,6 +58,21 @@
       "reconfigure_successful": "Reconfiguration was successful."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Gardena Smart System Options",
+        "data": {
+          "default_watering_minutes": "Default watering duration",
+          "default_socket_minutes": "Default power socket duration"
+        },
+        "data_description": {
+          "default_watering_minutes": "Duration in minutes when opening a valve without specifying a duration (1-1440).",
+          "default_socket_minutes": "Duration in minutes when turning on a power socket (1-1440). Set to 1440 (24h) for near-indefinite operation."
+        }
+      }
+    }
+  },
   "entity": {
     "sensor": {
       "battery_level": {

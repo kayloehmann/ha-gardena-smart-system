@@ -10,9 +10,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 
-from custom_components.gardena_smart_system.const import DOMAIN
+from custom_components.gardena_smart_system.const import (
+    DOMAIN,
+    OPT_DEFAULT_WATERING_MINUTES,
+)
 
-from .conftest import ENTRY_DATA, make_mock_device
+from .conftest import ENTRY_DATA, MOCK_LOCATION_NAME, make_mock_device
 
 _PATCH_CLIENT = (
     "custom_components.gardena_smart_system.coordinator.GardenaClient"
@@ -286,7 +289,7 @@ class TestValveStateMapping:
 class TestValveCommands:
     """Test valve open/close/start_watering commands."""
 
-    async def test_open_valve_sends_start_command(
+    async def test_open_valve_sends_start_command_with_default_duration(
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         device = make_mock_device(valve_count=1, has_sensor=False)
@@ -304,7 +307,7 @@ class TestValveCommands:
                 service_id=valve_id,
                 control_type="VALVE_CONTROL",
                 command="START_SECONDS_TO_OVERRIDE",
-                seconds=3600,
+                seconds=3600,  # 60 minutes default * 60
             )
 
     async def test_close_valve_sends_stop_command(
@@ -466,3 +469,40 @@ class TestValveDynamicDevices:
                 if e.domain == "valve" and e.platform == "gardena_smart_system"
             ]
             assert len(valve_entities) == 2
+
+
+class TestValveOptionsIntegration:
+    """Test that valve commands use configured options."""
+
+    async def test_open_valve_uses_configured_duration(
+        self, hass: HomeAssistant
+    ) -> None:
+        try:
+            from tests.common import MockConfigEntry
+        except ImportError:
+            from pytest_homeassistant_custom_component.common import MockConfigEntry  # type: ignore[no-redef]
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=ENTRY_DATA,
+            title=MOCK_LOCATION_NAME,
+            options={OPT_DEFAULT_WATERING_MINUTES: 30},
+        )
+
+        device = make_mock_device(valve_count=1, has_sensor=False)
+        valve_id = list(device.valves.keys())[0]
+        devices = {device.device_id: device}
+
+        async for mock_client in _setup_with_devices(hass, entry, devices):
+            await hass.services.async_call(
+                "valve", "open_valve",
+                {"entity_id": "valve.my_sensor_valve_1"},
+                blocking=True,
+            )
+
+            mock_client.async_send_command.assert_called_once_with(
+                service_id=valve_id,
+                control_type="VALVE_CONTROL",
+                command="START_SECONDS_TO_OVERRIDE",
+                seconds=1800,  # 30 minutes * 60
+            )

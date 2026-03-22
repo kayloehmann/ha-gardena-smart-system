@@ -398,6 +398,62 @@ class TestSensorUnavailability:
         state = hass.states.get("sensor.my_sensor_soil_moisture")
         assert state is None
 
+    async def test_logs_device_offline_and_online_transitions(
+        self, hass: HomeAssistant, mock_config_entry: object, caplog: object
+    ) -> None:
+        """Test that device availability transitions are logged."""
+        import logging
+
+        device = make_mock_device()
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+            # Device starts online — no log yet (first check, _was_available is None)
+            state = hass.states.get("sensor.my_sensor_battery")
+            assert state.state == "85"
+
+            # Simulate device going offline
+            device.is_online = False
+            coordinator = mock_config_entry.runtime_data
+            coordinator.async_set_updated_data(devices)
+            await hass.async_block_till_done()
+
+            state = hass.states.get("sensor.my_sensor_battery")
+            assert state.state == STATE_UNAVAILABLE
+
+            assert any(
+                "Device My Sensor is offline" in r.message
+                and r.levelno == logging.WARNING
+                for r in caplog.records
+            )
+
+            # Simulate device coming back online
+            caplog.clear()
+            device.is_online = True
+            coordinator.async_set_updated_data(devices)
+            await hass.async_block_till_done()
+
+            state = hass.states.get("sensor.my_sensor_battery")
+            assert state.state == "85"
+
+            assert any(
+                "Device My Sensor is back online" in r.message
+                and r.levelno == logging.INFO
+                for r in caplog.records
+            )
+
 
 class TestSensorDynamicDevices:
     """Test new sensor entities are added when new devices appear."""
