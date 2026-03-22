@@ -146,6 +146,26 @@ class TestStartWebSocket:
 
         assert coordinator._ws_connected is False
 
+    async def test_websocket_connect_failure_falls_back_to_polling(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        """If async_connect raises, the coordinator falls back to polling."""
+        coordinator._client = AsyncMock()
+        coordinator._client.async_get_websocket_url = AsyncMock(
+            return_value="wss://gardena.example/ws"
+        )
+
+        with patch(_PATCH_WS) as mock_ws_cls:
+            mock_ws = AsyncMock()
+            mock_ws.async_connect = AsyncMock(
+                side_effect=OSError("Connection refused")
+            )
+            mock_ws_cls.return_value = mock_ws
+            await coordinator._async_start_websocket({})
+
+        assert coordinator._ws_connected is False
+        assert coordinator._ws is None
+
     async def test_websocket_reconnect_clears_repair_issue(
         self, hass: HomeAssistant, coordinator: GardenaCoordinator
     ) -> None:

@@ -180,7 +180,14 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
             on_update=self._on_device_update,
             on_error=self._on_ws_error,
         )
-        await self._ws.async_connect(ws_url)
+        try:
+            await self._ws.async_connect(ws_url)
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.warning(
+                "Could not connect Gardena WebSocket, will rely on polling: %s", err
+            )
+            self._ws = None
+            return
         self._ws_connected = True
         self.update_interval = SCAN_INTERVAL_WS_CONNECTED
         _LOGGER.debug(
