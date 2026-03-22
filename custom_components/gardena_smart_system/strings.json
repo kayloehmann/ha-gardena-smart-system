@@ -37,6 +37,7 @@
       },
       "reconfigure": {
         "title": "Reconfigure",
+        "description": "Update your application credentials.",
         "data": {
           "client_id": "Application Key (Client ID)",
           "client_secret": "Application Secret"
@@ -53,7 +54,8 @@
     },
     "abort": {
       "already_configured": "This configuration already exists.",
-      "reauth_successful": "Re-authentication was successful."
+      "reauth_successful": "Re-authentication was successful.",
+      "reconfigure_successful": "Reconfiguration was successful."
     }
   },
   "entity": {
@@ -78,6 +80,12 @@
       },
       "mower_operating_hours": {
         "name": "Operating hours"
+      },
+      "mower_activity": {
+        "name": "Mower activity"
+      },
+      "mower_last_error_code": {
+        "name": "Last error code"
       },
       "automower_battery_level": {
         "name": "Battery"

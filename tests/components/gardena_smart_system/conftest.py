@@ -85,6 +85,7 @@ def make_mock_device(
         ps.service_id = device_id
         ps.activity = "OFF"
         ps.state = "OK"
+        ps.duration = None
         device.power_socket = ps
     else:
         device.power_socket = None
@@ -97,6 +98,7 @@ def make_mock_device(
         valve.name = f"Valve {i}"
         valve.activity = "CLOSED"
         valve.state = "OK"
+        valve.duration = None
         valves[vid] = valve
     device.valves = valves
     device.valve_set = None

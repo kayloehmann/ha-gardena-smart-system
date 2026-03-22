@@ -121,7 +121,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                 else:
                     self._locations = locations
                     if len(locations) == 1:
-                        return self._async_create_gardena_entry(locations[0]["id"])
+                        return await self._async_create_gardena_entry(locations[0]["id"])
                     return await self.async_step_location()
 
             elif api_type == API_TYPE_AUTOMOWER:
@@ -133,7 +133,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                 if error:
                     errors["base"] = error
                 else:
-                    return self._async_create_automower_entry()
+                    return await self._async_create_automower_entry()
 
         options = [
             SelectOptionDict(value=API_TYPE_GARDENA, label="Gardena Smart System"),
@@ -156,7 +156,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle location selection when the account has multiple gardens."""
         if user_input is not None:
-            return self._async_create_gardena_entry(user_input[CONF_LOCATION_ID])
+            return await self._async_create_gardena_entry(user_input[CONF_LOCATION_ID])
 
         options = [
             SelectOptionDict(value=loc["id"], label=loc["name"])
@@ -213,9 +213,11 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
             errors["base"] = error
 
-        return self.async_show_form(
-            step_id="reauth_confirm",
-            data_schema=vol.Schema(
+        entry = self._get_reauth_entry()
+        suggested_client_id = entry.data.get(CONF_CLIENT_ID, "")
+
+        schema = self.add_suggested_values_to_schema(
+            vol.Schema(
                 {
                     vol.Required(CONF_CLIENT_ID): TextSelector(
                         TextSelectorConfig(type=TextSelectorType.TEXT)
@@ -225,6 +227,12 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                     ),
                 }
             ),
+            {CONF_CLIENT_ID: suggested_client_id},
+        )
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=schema,
             errors=errors,
         )
 
@@ -262,9 +270,11 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
             errors["base"] = error
 
-        return self.async_show_form(
-            step_id="reconfigure",
-            data_schema=vol.Schema(
+        entry = self._get_reconfigure_entry()
+        suggested_client_id = entry.data.get(CONF_CLIENT_ID, "")
+
+        schema = self.add_suggested_values_to_schema(
+            vol.Schema(
                 {
                     vol.Required(CONF_CLIENT_ID): TextSelector(
                         TextSelectorConfig(type=TextSelectorType.TEXT)
@@ -274,12 +284,18 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                     ),
                 }
             ),
+            {CONF_CLIENT_ID: suggested_client_id},
+        )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=schema,
             errors=errors,
         )
 
     # ── Entry creation helpers ─────────────────────────────────────
 
-    def _async_create_gardena_entry(self, location_id: str) -> ConfigFlowResult:
+    async def _async_create_gardena_entry(self, location_id: str) -> ConfigFlowResult:
         """Create a Gardena config entry."""
         self._async_abort_entries_match(
             {
@@ -288,6 +304,8 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_LOCATION_ID: location_id,
             }
         )
+        await self.async_set_unique_id(f"{self._client_id}_{location_id}")
+        self._abort_if_unique_id_configured()
         location_name = next(
             (loc["name"] for loc in self._locations if loc["id"] == location_id),
             location_id,
@@ -302,7 +320,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
             },
         )
 
-    def _async_create_automower_entry(self) -> ConfigFlowResult:
+    async def _async_create_automower_entry(self) -> ConfigFlowResult:
         """Create an Automower config entry."""
         self._async_abort_entries_match(
             {
@@ -310,6 +328,8 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_API_TYPE: API_TYPE_AUTOMOWER,
             }
         )
+        await self.async_set_unique_id(f"{self._client_id}_automower")
+        self._abort_if_unique_id_configured()
         return self.async_create_entry(
             title="Automower Connect",
             data={

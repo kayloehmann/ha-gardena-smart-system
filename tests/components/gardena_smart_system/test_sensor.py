@@ -154,6 +154,99 @@ class TestSensorEntityCreation:
         assert entry is not None
         assert entry.disabled_by is not None
 
+    async def test_mower_activity_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(
+            "mower-dev", "SN-MOWER", "My Mower", has_sensor=False, has_mower=True
+        )
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+        state = hass.states.get("sensor.my_mower_mower_activity")
+        assert state is not None
+        assert state.state == "PARKED_PARK_SELECTED"
+
+    async def test_mower_last_error_code_created_but_disabled(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(
+            "mower-dev", "SN-MOWER", "My Mower", has_sensor=False, has_mower=True
+        )
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+        entity_reg = er.async_get(hass)
+        entry = entity_reg.async_get("sensor.my_mower_last_error_code")
+        assert entry is not None
+        assert entry.disabled_by is not None
+
+    async def test_mower_last_error_code_value(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(
+            "mower-dev", "SN-MOWER", "My Mower", has_sensor=False, has_mower=True
+        )
+        device.mower.last_error_code = "TRAPPED"
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+            # Enable the disabled entity and reload within the mock context
+            entity_reg = er.async_get(hass)
+            entity_reg.async_update_entity(
+                "sensor.my_mower_last_error_code", disabled_by=None
+            )
+            await hass.config_entries.async_reload(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            state = hass.states.get("sensor.my_mower_last_error_code")
+            assert state is not None
+            assert state.state == "TRAPPED"
+
+    async def test_mower_activity_not_created_without_mower(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        # Default mock device has no mower
+        assert hass.states.get("sensor.my_sensor_mower_activity") is None
+
     async def test_no_sensor_entities_for_device_without_sensor_service(
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:

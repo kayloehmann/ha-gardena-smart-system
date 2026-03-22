@@ -95,6 +95,7 @@ class GardenaLawnMowerEntity(GardenaEntity, LawnMowerEntity):
         | LawnMowerEntityFeature.PAUSE
     )
     _attr_translation_key = "mower"
+    _attr_assumed_state = True
 
     def __init__(self, coordinator: GardenaCoordinator, device: Device) -> None:
         """Initialize the lawn mower entity."""

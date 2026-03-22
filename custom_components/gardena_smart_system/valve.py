@@ -80,6 +80,7 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
         ValveEntityFeature.OPEN | ValveEntityFeature.CLOSE
     )
     _attr_reports_position = False
+    _attr_assumed_state = True
 
     def __init__(
         self,
@@ -116,11 +117,14 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Return the valve activity as an extra attribute."""
+        """Return the valve activity and remaining duration as extra attributes."""
         valve = self._valve
         if valve is None:
             return None
-        return {"activity": valve.activity}
+        attrs: dict[str, Any] = {"activity": valve.activity}
+        if valve.duration is not None and valve.duration > 0:
+            attrs["duration"] = valve.duration
+        return attrs
 
     async def async_open_valve(self, **kwargs: Any) -> None:
         """Open the valve for the default duration."""
@@ -142,6 +146,11 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
 
     async def _async_send_command(self, command: str, **params: int) -> None:
         """Send a command to this valve."""
+        if self._device is None or self._valve is None:
+            raise HomeAssistantError(
+                translation_domain="gardena_smart_system",
+                translation_key="device_unavailable",
+            )
         self.coordinator.check_command_throttle()
         try:
             await self.coordinator.client.async_send_command(

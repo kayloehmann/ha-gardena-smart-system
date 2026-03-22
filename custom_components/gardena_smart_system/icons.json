@@ -16,6 +16,12 @@
       "mower_operating_hours": {
         "default": "mdi:clock-outline"
       },
+      "mower_activity": {
+        "default": "mdi:robot-mower"
+      },
+      "mower_last_error_code": {
+        "default": "mdi:alert-circle"
+      },
       "rf_link_level": {
         "default": "mdi:signal"
       },

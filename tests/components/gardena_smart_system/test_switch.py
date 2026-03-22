@@ -190,6 +190,49 @@ class TestSwitchStateMapping:
         assert state is not None
         assert state.attributes["activity"] == "FOREVER_ON"
 
+    async def test_duration_exposed_as_attribute_when_positive(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(has_sensor=False, has_power_socket=True)
+        device.power_socket.activity = "TIME_LIMITED_ON"
+        device.power_socket.duration = 2700
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            pass
+
+        state = hass.states.get("switch.my_sensor_power")
+        assert state is not None
+        assert state.attributes["duration"] == 2700
+
+    async def test_duration_not_exposed_when_none(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(has_sensor=False, has_power_socket=True)
+        device.power_socket.duration = None
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            pass
+
+        state = hass.states.get("switch.my_sensor_power")
+        assert state is not None
+        assert "duration" not in state.attributes
+
+    async def test_duration_not_exposed_when_zero(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(has_sensor=False, has_power_socket=True)
+        device.power_socket.duration = 0
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            pass
+
+        state = hass.states.get("switch.my_sensor_power")
+        assert state is not None
+        assert "duration" not in state.attributes
+
 
 class TestSwitchCommands:
     """Test switch turn_on/turn_off/turn_on_for commands."""

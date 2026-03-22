@@ -72,6 +72,7 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
 
     _attr_device_class = SwitchDeviceClass.OUTLET
     _attr_translation_key = "power_socket"
+    _attr_assumed_state = True
 
     def __init__(self, coordinator: GardenaCoordinator, device: Device) -> None:
         """Initialize the switch."""
@@ -91,11 +92,17 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Return the power socket activity as an extra attribute."""
+        """Return the power socket activity and remaining duration as extra attributes."""
         device = self._device
         if device is None or device.power_socket is None:
             return None
-        return {"activity": device.power_socket.activity}
+        attrs: dict[str, Any] = {"activity": device.power_socket.activity}
+        if (
+            device.power_socket.duration is not None
+            and device.power_socket.duration > 0
+        ):
+            attrs["duration"] = device.power_socket.duration
+        return attrs
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the socket on indefinitely."""
