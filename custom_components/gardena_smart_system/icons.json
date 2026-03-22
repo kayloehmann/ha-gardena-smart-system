@@ -154,6 +154,8 @@
   "services": {
     "start_watering": "mdi:sprinkler",
     "turn_on_for": "mdi:power-socket-eu",
-    "override_schedule": "mdi:robot-mower"
+    "override_schedule": "mdi:robot-mower",
+    "park_until_further_notice": "mdi:home-import-outline",
+    "resume_schedule": "mdi:calendar-check"
   }
 }

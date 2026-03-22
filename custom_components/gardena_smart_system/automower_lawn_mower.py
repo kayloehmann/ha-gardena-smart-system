@@ -15,14 +15,20 @@ from homeassistant.components.lawn_mower.const import (
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import (
+    AddEntitiesCallback,
+    async_get_current_platform,
+)
 
 from . import GardenaConfigEntry
 from .automower_coordinator import AutomowerCoordinator
 from .automower_entity import AutomowerEntity
-from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
+from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE, DOMAIN
 
 PARALLEL_UPDATES = 1
+
+SERVICE_PARK_UNTIL_FURTHER_NOTICE = "park_until_further_notice"
+SERVICE_RESUME_SCHEDULE = "resume_schedule"
 
 _ACTIVITY_MAP: dict[str, LawnMowerActivity] = {
     MowerActivity.MOWING: LawnMowerActivity.MOWING,
@@ -60,6 +66,18 @@ async def async_setup_entry(
 
     entry.async_on_unload(coordinator.async_add_listener(_async_add_new_entities))
     _async_add_new_entities()
+
+    platform = async_get_current_platform()
+    platform.async_register_entity_service(
+        SERVICE_PARK_UNTIL_FURTHER_NOTICE,
+        {},
+        "async_park_until_further_notice",
+    )
+    platform.async_register_entity_service(
+        SERVICE_RESUME_SCHEDULE,
+        {},
+        "async_resume_schedule",
+    )
 
 
 class AutomowerLawnMowerEntity(AutomowerEntity, LawnMowerEntity):
@@ -121,6 +139,14 @@ class AutomowerLawnMowerEntity(AutomowerEntity, LawnMowerEntity):
         """Pause the mower."""
         await self._async_send_command("pause")
 
+    async def async_park_until_further_notice(self) -> None:
+        """Park the mower indefinitely until manually resumed."""
+        await self._async_send_command("park_until_further_notice")
+
+    async def async_resume_schedule(self) -> None:
+        """Resume the mower's automatic schedule."""
+        await self._async_send_command("resume_schedule")
+
     async def _async_send_command(self, command: str, **kwargs: Any) -> None:
         """Send a command to the Automower API."""
         device = self._device
@@ -138,6 +164,10 @@ class AutomowerLawnMowerEntity(AutomowerEntity, LawnMowerEntity):
                 await client.async_pause(device.mower_id)
             elif command == "park_until_next_schedule":
                 await client.async_park_until_next_schedule(device.mower_id)
+            elif command == "park_until_further_notice":
+                await client.async_park_until_further_notice(device.mower_id)
+            elif command == "resume_schedule":
+                await client.async_resume_schedule(device.mower_id)
         except AutomowerAuthenticationError as err:
             raise ConfigEntryAuthFailed(
                 translation_domain="gardena_smart_system",

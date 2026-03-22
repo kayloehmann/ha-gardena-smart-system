@@ -254,7 +254,7 @@ class TestRepairIssues:
         issue = issue_reg.async_get_issue(DOMAIN, "websocket_connection_failed")
         assert issue is not None
         assert issue.severity == ir.IssueSeverity.WARNING
-        assert not issue.is_fixable
+        assert issue.is_fixable
 
     def test_ws_error_sets_connected_false(
         self, coordinator: GardenaCoordinator
@@ -428,6 +428,40 @@ class TestWebSocketAuthReauth:
 
         issue_reg = ir.async_get(hass)
         assert issue_reg.async_get_issue(DOMAIN, "websocket_connection_failed") is not None
+
+
+class TestRepairFlow:
+    """Test the WebSocketReconnectRepairFlow."""
+
+    async def test_repair_flow_creation(self, hass: HomeAssistant) -> None:
+        """Test that async_create_fix_flow returns a WebSocketReconnectRepairFlow."""
+        from custom_components.gardena_smart_system.repairs import (
+            WebSocketReconnectRepairFlow,
+            async_create_fix_flow,
+        )
+
+        flow = await async_create_fix_flow(hass, "websocket_connection_failed", None)
+        assert isinstance(flow, WebSocketReconnectRepairFlow)
+
+    async def test_repair_flow_triggers_refresh_on_confirm(
+        self, hass: HomeAssistant, entry: MockConfigEntry, coordinator: GardenaCoordinator
+    ) -> None:
+        """Test that confirming the repair flow refreshes coordinators."""
+        from custom_components.gardena_smart_system.repairs import (
+            WebSocketReconnectRepairFlow,
+        )
+
+        # Attach coordinator as runtime_data on the entry
+        entry.runtime_data = coordinator
+
+        flow = WebSocketReconnectRepairFlow()
+        flow.hass = hass
+
+        with patch.object(coordinator, "async_request_refresh", new_callable=AsyncMock) as mock_refresh:
+            result = await flow.async_step_init(user_input={})
+
+        mock_refresh.assert_called_once()
+        assert result["type"] == "create_entry"
 
 
 class TestCommandThrottle:

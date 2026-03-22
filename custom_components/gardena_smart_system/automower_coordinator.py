@@ -195,7 +195,7 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
             self.hass,
             DOMAIN,
             "automower_websocket_connection_failed",
-            is_fixable=False,
+            is_fixable=True,
             severity=ir.IssueSeverity.WARNING,
             translation_key="automower_websocket_connection_failed",
         )

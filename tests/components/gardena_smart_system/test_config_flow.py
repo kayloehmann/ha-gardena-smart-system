@@ -308,6 +308,38 @@ class TestReconfigureFlow:
         assert result["type"] == FlowResultType.ABORT
         assert mock_config_entry.data[CONF_CLIENT_ID] == "new-id"
 
+    async def test_reconfigure_gardena_multiple_locations_shows_location_step(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        mock_config_entry.add_to_hass(hass)
+        result = await mock_config_entry.start_reconfigure_flow(hass)
+
+        loc1 = make_mock_location("loc-a", "Front Garden")
+        loc2 = make_mock_location("loc-b", "Back Garden")
+
+        mock_client = AsyncMock()
+        mock_client.async_get_locations = AsyncMock(return_value=[loc1, loc2])
+
+        with patch(_PATCH_CLIENT, return_value=mock_client):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {CONF_CLIENT_ID: "new-id", CONF_CLIENT_SECRET: "new-secret"},
+            )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "reconfigure_location"
+
+        # Submit the location selection
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {CONF_LOCATION_ID: "loc-b"},
+        )
+
+        assert result["type"] == FlowResultType.ABORT
+        assert result["reason"] == "reconfigure_successful"
+        assert mock_config_entry.data[CONF_LOCATION_ID] == "loc-b"
+        assert mock_config_entry.data[CONF_CLIENT_ID] == "new-id"
+
     async def test_reconfigure_cannot_connect_shows_error(
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:

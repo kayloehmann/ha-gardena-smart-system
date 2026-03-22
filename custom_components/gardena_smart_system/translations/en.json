@@ -42,6 +42,13 @@
           "client_id": "Application Key (Client ID)",
           "client_secret": "Application Secret"
         }
+      },
+      "reconfigure_location": {
+        "title": "Select garden",
+        "description": "Multiple gardens were found. Select which garden this entry should use.",
+        "data": {
+          "location_id": "Garden"
+        }
       }
     },
     "error": {
@@ -253,16 +260,40 @@
           "description": "Duration in minutes (1–480)."
         }
       }
+    },
+    "park_until_further_notice": {
+      "name": "Park until further notice",
+      "description": "Park the mower indefinitely. It will stay in the charging station until manually resumed."
+    },
+    "resume_schedule": {
+      "name": "Resume schedule",
+      "description": "Resume the mower's automatic mowing schedule."
     }
   },
   "issues": {
     "websocket_connection_failed": {
       "title": "Gardena real-time connection lost",
-      "description": "The WebSocket connection to the Gardena Smart System cloud has failed. The integration is now relying on polling (every 30 minutes) for device updates instead of real-time push. Check your internet connection and the Husqvarna service status. The issue will be resolved automatically when the connection is re-established."
+      "description": "The WebSocket connection to the Gardena Smart System cloud has failed. The integration is now relying on polling (every 30 minutes) for device updates instead of real-time push. Check your internet connection and the Husqvarna service status.",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Reconnect WebSocket",
+            "description": "This will attempt to re-establish the real-time connection to the Gardena Smart System cloud."
+          }
+        }
+      }
     },
     "automower_websocket_connection_failed": {
       "title": "Automower real-time connection lost",
-      "description": "The WebSocket connection to the Automower Connect cloud has failed. The integration is now relying on polling (every 15 minutes) for device updates instead of real-time push. Check your internet connection and the Husqvarna service status. The issue will be resolved automatically when the connection is re-established."
+      "description": "The WebSocket connection to the Automower Connect cloud has failed. The integration is now relying on polling (every 15 minutes) for device updates instead of real-time push. Check your internet connection and the Husqvarna service status.",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Reconnect WebSocket",
+            "description": "This will attempt to re-establish the real-time connection to the Automower Connect cloud."
+          }
+        }
+      }
     }
   },
   "exceptions": {

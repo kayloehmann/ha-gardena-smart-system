@@ -42,3 +42,15 @@ override_schedule:
           max: 480
           unit_of_measurement: minutes
           mode: box
+
+park_until_further_notice:
+  target:
+    entity:
+      domain: lawn_mower
+      integration: gardena_smart_system
+
+resume_schedule:
+  target:
+    entity:
+      domain: lawn_mower
+      integration: gardena_smart_system

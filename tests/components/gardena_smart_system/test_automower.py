@@ -187,6 +187,8 @@ async def _setup_automower(
         mock_client.async_start = AsyncMock()
         mock_client.async_pause = AsyncMock()
         mock_client.async_park_until_next_schedule = AsyncMock()
+        mock_client.async_park_until_further_notice = AsyncMock()
+        mock_client.async_resume_schedule = AsyncMock()
         mock_client.async_set_headlight_mode = AsyncMock()
         mock_client.async_set_stay_out_zone = AsyncMock()
         mock_client.async_set_cutting_height = AsyncMock()
@@ -738,6 +740,46 @@ class TestAutomowerLawnMowerCommands:
                     {"entity_id": "lawn_mower.test_mower_mower"},
                     blocking=True,
                 )
+
+
+class TestAutomowerLawnMowerServiceActions:
+    """Test custom Automower service actions (park_until_further_notice, resume_schedule)."""
+
+    async def test_park_until_further_notice_service(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            await hass.services.async_call(
+                "gardena_smart_system",
+                "park_until_further_notice",
+                {"entity_id": "lawn_mower.test_mower_mower"},
+                blocking=True,
+            )
+
+            mock_client.async_park_until_further_notice.assert_called_once_with(
+                device.mower_id
+            )
+
+    async def test_resume_schedule_service(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            await hass.services.async_call(
+                "gardena_smart_system",
+                "resume_schedule",
+                {"entity_id": "lawn_mower.test_mower_mower"},
+                blocking=True,
+            )
+
+            mock_client.async_resume_schedule.assert_called_once_with(
+                device.mower_id
+            )
 
 
 class TestAutomowerLawnMowerUnavailability:

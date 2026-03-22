@@ -210,7 +210,7 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
             self.hass,
             DOMAIN,
             "websocket_connection_failed",
-            is_fixable=False,
+            is_fixable=True,
             severity=ir.IssueSeverity.WARNING,
             translation_key="websocket_connection_failed",
         )

@@ -258,7 +258,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Allow changing credentials for an existing entry."""
+        """Allow changing credentials (and location for Gardena) for an existing entry."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -273,20 +273,37 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                 error = await self._async_test_automower(
                     session, client_id, client_secret
                 )
+                if not error:
+                    return self.async_update_reload_and_abort(
+                        entry,
+                        data={
+                            **entry.data,
+                            CONF_CLIENT_ID: client_id,
+                            CONF_CLIENT_SECRET: client_secret,
+                        },
+                    )
             else:
-                _, error = await self._async_test_gardena(
+                locations, error = await self._async_test_gardena(
                     session, client_id, client_secret
                 )
+                if not error:
+                    self._client_id = client_id
+                    self._client_secret = client_secret
+                    self._locations = locations
+                    if len(locations) > 1:
+                        return await self.async_step_reconfigure_location()
+                    # Single location — update with that location
+                    location_id = locations[0]["id"] if locations else entry.data.get(CONF_LOCATION_ID, "")
+                    return self.async_update_reload_and_abort(
+                        entry,
+                        data={
+                            **entry.data,
+                            CONF_CLIENT_ID: client_id,
+                            CONF_CLIENT_SECRET: client_secret,
+                            CONF_LOCATION_ID: location_id,
+                        },
+                    )
 
-            if not error:
-                return self.async_update_reload_and_abort(
-                    entry,
-                    data={
-                        **entry.data,
-                        CONF_CLIENT_ID: client_id,
-                        CONF_CLIENT_SECRET: client_secret,
-                    },
-                )
             errors["base"] = error
 
         entry = self._get_reconfigure_entry()
@@ -310,6 +327,44 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="reconfigure",
             data_schema=schema,
             errors=errors,
+        )
+
+    async def async_step_reconfigure_location(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Allow picking a different location during reconfiguration."""
+        if user_input is not None:
+            entry = self._get_reconfigure_entry()
+            return self.async_update_reload_and_abort(
+                entry,
+                data={
+                    **entry.data,
+                    CONF_CLIENT_ID: self._client_id,
+                    CONF_CLIENT_SECRET: self._client_secret,
+                    CONF_LOCATION_ID: user_input[CONF_LOCATION_ID],
+                },
+            )
+
+        entry = self._get_reconfigure_entry()
+        current_location = entry.data.get(CONF_LOCATION_ID, "")
+
+        options = [
+            SelectOptionDict(value=loc["id"], label=loc["name"])
+            for loc in self._locations
+        ]
+        schema = self.add_suggested_values_to_schema(
+            vol.Schema(
+                {
+                    vol.Required(CONF_LOCATION_ID): SelectSelector(
+                        SelectSelectorConfig(options=options)
+                    )
+                }
+            ),
+            {CONF_LOCATION_ID: current_location},
+        )
+        return self.async_show_form(
+            step_id="reconfigure_location",
+            data_schema=schema,
         )
 
     # ── Entry creation helpers ─────────────────────────────────────
