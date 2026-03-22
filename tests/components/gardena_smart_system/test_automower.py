@@ -747,6 +747,49 @@ class TestAutomowerLawnMowerUnavailability:
             assert state is not None
             assert state.state == STATE_UNAVAILABLE
 
+    async def test_logs_device_offline_and_online_transitions(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry,
+        caplog: object,
+    ) -> None:
+        """Test that Automower device availability transitions are logged."""
+        import logging
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            # Device starts online
+            state = hass.states.get("lawn_mower.test_mower_mower")
+            assert state.state != STATE_UNAVAILABLE
+
+            # Go offline — replace with a disconnected device
+            offline_device = make_mock_automower_device(connected=False)
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data(
+                {offline_device.mower_id: offline_device}
+            )
+            await hass.async_block_till_done()
+
+            assert any(
+                "Device Test Mower is offline" in r.message
+                and r.levelno == logging.WARNING
+                for r in caplog.records
+            )
+
+            # Come back online — replace with a connected device
+            caplog.clear()
+            online_device = make_mock_automower_device(connected=True)
+            coordinator.async_set_updated_data(
+                {online_device.mower_id: online_device}
+            )
+            await hass.async_block_till_done()
+
+            assert any(
+                "Device Test Mower is back online" in r.message
+                and r.levelno == logging.INFO
+                for r in caplog.records
+            )
+
 
 # ──────────────────────────────────────────────────────────────────────
 # 5. Automower Switch Platform

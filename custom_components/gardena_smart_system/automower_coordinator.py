@@ -149,15 +149,7 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
         self, devices: dict[str, AutomowerDevice]
     ) -> None:
         """Start the WebSocket for real-time updates."""
-        # The Automower API provides a WebSocket URL via the /ws endpoint
-        try:
-            ws_url = f"wss://ws.openapi.husqvarna.dev/v1"
-        except Exception as err:  # noqa: BLE001
-            _LOGGER.warning(
-                "Could not obtain Automower WebSocket URL, will rely on polling: %s",
-                err,
-            )
-            return
+        ws_url = "wss://ws.openapi.husqvarna.dev/v1"
 
         self._ws = AutomowerWebSocket(
             auth=self._auth,
@@ -194,6 +186,11 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
         _LOGGER.error("Automower WebSocket connection lost: %s", err)
         self._ws_connected = False
         self.update_interval = AUTOMOWER_SCAN_INTERVAL
+
+        if isinstance(err, AutomowerAuthenticationError):
+            self.config_entry.async_start_reauth(self.hass)
+            return
+
         ir.async_create_issue(
             self.hass,
             DOMAIN,

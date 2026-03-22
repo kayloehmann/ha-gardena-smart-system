@@ -391,6 +391,45 @@ class TestWebSocketPollIntervalAdaptation:
         assert coordinator._ws_connected is False
 
 
+class TestWebSocketAuthReauth:
+    """Test that WebSocket auth errors trigger reauth."""
+
+    def test_ws_auth_error_triggers_reauth(
+        self, hass: HomeAssistant, coordinator: GardenaCoordinator
+    ) -> None:
+        from aiogardenasmart.exceptions import GardenaAuthenticationError
+
+        with patch.object(
+            coordinator.config_entry, "async_start_reauth"
+        ) as mock_reauth:
+            coordinator._on_ws_error(
+                GardenaAuthenticationError("token expired")
+            )
+
+        mock_reauth.assert_called_once_with(hass)
+
+    def test_ws_auth_error_does_not_create_repair_issue(
+        self, hass: HomeAssistant, coordinator: GardenaCoordinator
+    ) -> None:
+        from aiogardenasmart.exceptions import GardenaAuthenticationError
+
+        with patch.object(coordinator.config_entry, "async_start_reauth"):
+            coordinator._on_ws_error(
+                GardenaAuthenticationError("token expired")
+            )
+
+        issue_reg = ir.async_get(hass)
+        assert issue_reg.async_get_issue(DOMAIN, "websocket_connection_failed") is None
+
+    def test_ws_non_auth_error_still_creates_repair_issue(
+        self, hass: HomeAssistant, coordinator: GardenaCoordinator
+    ) -> None:
+        coordinator._on_ws_error(RuntimeError("network error"))
+
+        issue_reg = ir.async_get(hass)
+        assert issue_reg.async_get_issue(DOMAIN, "websocket_connection_failed") is not None
+
+
 class TestCommandThrottle:
     """Test command throttling to prevent API quota exhaustion."""
 

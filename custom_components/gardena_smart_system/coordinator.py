@@ -202,6 +202,11 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
         _LOGGER.error("Gardena WebSocket connection lost: %s", err)
         self._ws_connected = False
         self.update_interval = SCAN_INTERVAL
+
+        if isinstance(err, GardenaAuthenticationError):
+            self.config_entry.async_start_reauth(self.hass)
+            return
+
         ir.async_create_issue(
             self.hass,
             DOMAIN,

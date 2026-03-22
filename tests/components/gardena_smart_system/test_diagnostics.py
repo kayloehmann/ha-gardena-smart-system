@@ -183,6 +183,22 @@ class TestDiagnosticsRedaction:
         assert config_data["location_id"] == "**REDACTED**"
 
 
+class TestDiagnosticsDeepRedaction:
+    """Test that sensitive data is redacted at device level too."""
+
+    async def test_serial_redacted_in_device_data(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device()
+        devices = {device.device_id: device}
+
+        async for _ in _setup_integration(hass, mock_config_entry, devices):
+            result = await async_get_config_entry_diagnostics(hass, mock_config_entry)
+
+        device_data = result["devices"][device.device_id]
+        assert device_data["serial"] == "**REDACTED**"
+
+
 class TestDiagnosticsServiceToDict:
     """Test the _service_to_dict helper function."""
 
