@@ -187,8 +187,6 @@ async def _setup_automower(
         mock_client.async_start = AsyncMock()
         mock_client.async_pause = AsyncMock()
         mock_client.async_park_until_next_schedule = AsyncMock()
-        mock_client.async_park_until_further_notice = AsyncMock()
-        mock_client.async_resume_schedule = AsyncMock()
         mock_client.async_set_headlight_mode = AsyncMock()
         mock_client.async_set_stay_out_zone = AsyncMock()
         mock_client.async_set_cutting_height = AsyncMock()
@@ -405,6 +403,34 @@ class TestAutomowerSensor:
             entry = entity_reg.async_get("sensor.test_mower_battery")
             assert entry is not None
             assert entry.unique_id == "AM-SN-001_battery_level"
+
+    async def test_activity_enum_sensor(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        from aioautomower.const import MowerActivity
+
+        device = make_mock_automower_device(mower_activity=MowerActivity.MOWING)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("sensor.test_mower_activity")
+            assert state is not None
+            assert state.state == "mowing"
+            assert state.attributes.get("device_class") == "enum"
+
+    async def test_state_enum_sensor(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        from aioautomower.const import MowerState
+
+        device = make_mock_automower_device(mower_state=MowerState.IN_OPERATION)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("sensor.test_mower_state")
+            assert state is not None
+            assert state.state == "in_operation"
+            assert state.attributes.get("device_class") == "enum"
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -2124,45 +2150,6 @@ class TestAutomowerLawnMowerAdditional:
             entity.hass = hass
             assert entity.extra_state_attributes is None
 
-    async def test_send_command_park_until_further_notice(
-        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
-    ) -> None:
-        """Line 141-142: park_until_further_notice command branch."""
-        from custom_components.gardena_smart_system.automower_lawn_mower import (
-            AutomowerLawnMowerEntity,
-        )
-
-        device = make_mock_automower_device()
-        devices = {device.mower_id: device}
-
-        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
-            coordinator = automower_config_entry.runtime_data
-            entity = AutomowerLawnMowerEntity(coordinator, device)
-            entity.hass = hass
-            await entity._async_send_command("park_until_further_notice")
-            mock_client.async_park_until_further_notice.assert_called_once_with(
-                device.mower_id
-            )
-
-    async def test_send_command_resume_schedule(
-        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
-    ) -> None:
-        """Line 143-144: resume_schedule command branch."""
-        from custom_components.gardena_smart_system.automower_lawn_mower import (
-            AutomowerLawnMowerEntity,
-        )
-
-        device = make_mock_automower_device()
-        devices = {device.mower_id: device}
-
-        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
-            coordinator = automower_config_entry.runtime_data
-            entity = AutomowerLawnMowerEntity(coordinator, device)
-            entity.hass = hass
-            await entity._async_send_command("resume_schedule")
-            mock_client.async_resume_schedule.assert_called_once_with(
-                device.mower_id
-            )
 
 
 # ──────────────────────────────────────────────────────────────────────

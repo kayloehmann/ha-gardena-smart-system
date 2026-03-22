@@ -15,12 +15,11 @@ from aiogardenasmart import (
     GardenaConnectionError,
     GardenaRateLimitError,
     GardenaWebSocket,
-    Location,
 )
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady, HomeAssistantError
+from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers import device_registry as dr, issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -238,11 +237,3 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
             )
         self._last_command_time = now
 
-    async def async_get_locations(self) -> list[Location]:
-        """Return locations — used by config flow to let user select a garden."""
-        try:
-            return await self._client.async_get_locations()
-        except GardenaAuthenticationError as err:
-            raise ConfigEntryAuthFailed from err
-        except GardenaConnectionError as err:
-            raise ConfigEntryNotReady from err

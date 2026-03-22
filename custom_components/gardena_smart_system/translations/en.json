@@ -131,6 +131,36 @@
       },
       "automower_total_searching_time": {
         "name": "Total searching time"
+      },
+      "automower_activity": {
+        "name": "Activity",
+        "state": {
+          "unknown": "Unknown",
+          "not_applicable": "Not applicable",
+          "mowing": "Mowing",
+          "going_home": "Going home",
+          "charging": "Charging",
+          "leaving": "Leaving",
+          "parked_in_cs": "Parked",
+          "stopped_in_garden": "Stopped in garden"
+        }
+      },
+      "automower_state": {
+        "name": "State",
+        "state": {
+          "unknown": "Unknown",
+          "not_applicable": "Not applicable",
+          "paused": "Paused",
+          "in_operation": "In operation",
+          "wait_updating": "Updating",
+          "wait_power_up": "Powering up",
+          "restricted": "Restricted",
+          "off": "Off",
+          "stopped": "Stopped",
+          "error": "Error",
+          "fatal_error": "Fatal error",
+          "error_at_power_up": "Error at power up"
+        }
       }
     },
     "binary_sensor": {

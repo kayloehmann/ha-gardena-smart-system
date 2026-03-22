@@ -54,6 +54,12 @@
       },
       "automower_total_searching_time": {
         "default": "mdi:magnify"
+      },
+      "automower_activity": {
+        "default": "mdi:robot-mower"
+      },
+      "automower_state": {
+        "default": "mdi:information-outline"
       }
     },
     "binary_sensor": {

@@ -8,6 +8,8 @@ from datetime import datetime
 
 from aioautomower import AutomowerDevice
 
+from aioautomower.const import MowerActivity, MowerState
+
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -108,6 +110,43 @@ SENSOR_DESCRIPTIONS: tuple[AutomowerSensorDescription, ...] = (
         state_class=SensorStateClass.TOTAL_INCREASING,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: d.statistics.total_searching_time // 3600,
+    ),
+    AutomowerSensorDescription(
+        key="activity",
+        translation_key="automower_activity",
+        device_class=SensorDeviceClass.ENUM,
+        options=[
+            MowerActivity.UNKNOWN.lower(),
+            MowerActivity.NOT_APPLICABLE.lower(),
+            MowerActivity.MOWING.lower(),
+            MowerActivity.GOING_HOME.lower(),
+            MowerActivity.CHARGING.lower(),
+            MowerActivity.LEAVING.lower(),
+            MowerActivity.PARKED_IN_CS.lower(),
+            MowerActivity.STOPPED_IN_GARDEN.lower(),
+        ],
+        value_fn=lambda d: d.mower.activity.lower(),
+    ),
+    AutomowerSensorDescription(
+        key="state",
+        translation_key="automower_state",
+        device_class=SensorDeviceClass.ENUM,
+        options=[
+            MowerState.UNKNOWN.lower(),
+            MowerState.NOT_APPLICABLE.lower(),
+            MowerState.PAUSED.lower(),
+            MowerState.IN_OPERATION.lower(),
+            MowerState.WAIT_UPDATING.lower(),
+            MowerState.WAIT_POWER_UP.lower(),
+            MowerState.RESTRICTED.lower(),
+            MowerState.OFF.lower(),
+            MowerState.STOPPED.lower(),
+            MowerState.ERROR.lower(),
+            MowerState.FATAL_ERROR.lower(),
+            MowerState.ERROR_AT_POWER_UP.lower(),
+        ],
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: d.mower.state.lower(),
     ),
 )
 

@@ -138,10 +138,6 @@ class AutomowerLawnMowerEntity(AutomowerEntity, LawnMowerEntity):
                 await client.async_pause(device.mower_id)
             elif command == "park_until_next_schedule":
                 await client.async_park_until_next_schedule(device.mower_id)
-            elif command == "park_until_further_notice":
-                await client.async_park_until_further_notice(device.mower_id)
-            elif command == "resume_schedule":
-                await client.async_resume_schedule(device.mower_id)
         except AutomowerAuthenticationError as err:
             raise ConfigEntryAuthFailed(
                 translation_domain="gardena_smart_system",
