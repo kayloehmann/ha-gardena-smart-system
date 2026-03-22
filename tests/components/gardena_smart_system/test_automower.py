@@ -1545,7 +1545,9 @@ class TestAutomowerCoordinatorStaleDevices:
             mower_id="mower-2", serial_number="SN-002", name="Mower Two"
         )
         both_devices = {device1.mower_id: device1, device2.mower_id: device2}
-        one_device = {device1.mower_id: device1}
+
+        def _make_one_device():
+            return {device1.mower_id: device1}
 
         with (
             patch(_PATCH_AM_CLIENT) as mock_client_cls,
@@ -1553,9 +1555,15 @@ class TestAutomowerCoordinatorStaleDevices:
             patch(_PATCH_AM_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
-            # First call returns both, second returns only device1
+            # First call returns both, subsequent calls return only device1
+            # Each call returns a fresh dict to avoid mutation side effects
             mock_client.async_get_mowers = AsyncMock(
-                side_effect=[both_devices, one_device]
+                side_effect=[
+                    both_devices,
+                    _make_one_device(),
+                    _make_one_device(),
+                    _make_one_device(),
+                ]
             )
             mock_client_cls.return_value = mock_client
             mock_ws_cls.return_value = AsyncMock()
@@ -1570,10 +1578,17 @@ class TestAutomowerCoordinatorStaleDevices:
             assert device_reg.async_get_device(identifiers={(DOMAIN, "SN-002")})
 
             coordinator = automower_config_entry.runtime_data
+
+            # Device must be absent for _STALE_THRESHOLD polls before removal
+            for i in range(coordinator._STALE_THRESHOLD - 1):
+                await coordinator.async_refresh()
+                await hass.async_block_till_done()
+                # Not removed yet
+                assert device_reg.async_get_device(identifiers={(DOMAIN, "SN-002")})
+
+            # Final miss — now it should be removed
             await coordinator.async_refresh()
             await hass.async_block_till_done()
-
-            # Device 2 should be removed
             assert device_reg.async_get_device(identifiers={(DOMAIN, "SN-001")})
             assert device_reg.async_get_device(identifiers={(DOMAIN, "SN-002")}) is None
 

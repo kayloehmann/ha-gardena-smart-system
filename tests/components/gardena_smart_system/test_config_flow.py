@@ -16,11 +16,13 @@ from custom_components.gardena_smart_system.const import (
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
     CONF_LOCATION_ID,
+    DEFAULT_POLL_INTERVAL_GARDENA,
     DEFAULT_SOCKET_MINUTES,
     DEFAULT_WATERING_MINUTES,
     DOMAIN,
     OPT_DEFAULT_SOCKET_MINUTES,
     OPT_DEFAULT_WATERING_MINUTES,
+    OPT_POLL_INTERVAL_MINUTES,
 )
 
 from .conftest import (
@@ -389,12 +391,14 @@ class TestOptionsFlow:
             {
                 OPT_DEFAULT_WATERING_MINUTES: 30,
                 OPT_DEFAULT_SOCKET_MINUTES: 120,
+                OPT_POLL_INTERVAL_MINUTES: 15,
             },
         )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert mock_config_entry.options[OPT_DEFAULT_WATERING_MINUTES] == 30
         assert mock_config_entry.options[OPT_DEFAULT_SOCKET_MINUTES] == 120
+        assert mock_config_entry.options[OPT_POLL_INTERVAL_MINUTES] == 15
 
     async def test_options_flow_prefills_existing_values(
         self, hass: HomeAssistant
@@ -411,6 +415,7 @@ class TestOptionsFlow:
             options={
                 OPT_DEFAULT_WATERING_MINUTES: 45,
                 OPT_DEFAULT_SOCKET_MINUTES: 90,
+                OPT_POLL_INTERVAL_MINUTES: 20,
             },
         )
         entry.add_to_hass(hass)
@@ -425,9 +430,11 @@ class TestOptionsFlow:
             {
                 OPT_DEFAULT_WATERING_MINUTES: 45,
                 OPT_DEFAULT_SOCKET_MINUTES: 90,
+                OPT_POLL_INTERVAL_MINUTES: 20,
             },
         )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert entry.options[OPT_DEFAULT_WATERING_MINUTES] == 45
         assert entry.options[OPT_DEFAULT_SOCKET_MINUTES] == 90
+        assert entry.options[OPT_POLL_INTERVAL_MINUTES] == 20

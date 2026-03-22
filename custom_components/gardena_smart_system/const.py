@@ -35,8 +35,13 @@ MIN_COMMAND_INTERVAL_SECONDS = 5
 # ── Options flow defaults ─────────────────────────────────────────
 OPT_DEFAULT_WATERING_MINUTES = "default_watering_minutes"
 OPT_DEFAULT_SOCKET_MINUTES = "default_socket_minutes"
+OPT_POLL_INTERVAL_MINUTES = "poll_interval_minutes"
 DEFAULT_WATERING_MINUTES = 60
 DEFAULT_SOCKET_MINUTES = 60
+DEFAULT_POLL_INTERVAL_GARDENA = 30
+DEFAULT_POLL_INTERVAL_AUTOMOWER = 15
+MIN_POLL_INTERVAL = 5
+MAX_POLL_INTERVAL = 1440
 
 GARDENA_PLATFORMS: list[Platform] = [
     Platform.SENSOR,

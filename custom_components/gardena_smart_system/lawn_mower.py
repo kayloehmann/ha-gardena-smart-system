@@ -18,8 +18,10 @@ from homeassistant.components.lawn_mower.const import (
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
-from homeassistant.helpers import entity_platform as ep
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import (
+    AddEntitiesCallback,
+    async_get_current_platform,
+)
 
 from . import GardenaConfigEntry
 from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
@@ -74,7 +76,7 @@ async def async_setup_entry(
     entry.async_on_unload(coordinator.async_add_listener(_async_add_new_entities))
     _async_add_new_entities()
 
-    platform = ep.async_get_current_platform()
+    platform = async_get_current_platform()
     platform.async_register_entity_service(
         "override_schedule",
         {
@@ -83,6 +85,16 @@ async def async_setup_entry(
             )
         },
         "async_override_schedule",
+    )
+    platform.async_register_entity_service(
+        "park_until_further_notice",
+        {},
+        "async_park_until_further_notice",
+    )
+    platform.async_register_entity_service(
+        "resume_schedule",
+        {},
+        "async_resume_schedule",
     )
 
 
@@ -148,6 +160,14 @@ class GardenaLawnMowerEntity(GardenaEntity, LawnMowerEntity):
     async def async_pause(self) -> None:
         """Pause the mower and park until further notice."""
         await self._async_send_command("PARK_UNTIL_FURTHER_NOTICE")
+
+    async def async_park_until_further_notice(self) -> None:
+        """Park the mower indefinitely until manually resumed."""
+        await self._async_send_command("PARK_UNTIL_FURTHER_NOTICE")
+
+    async def async_resume_schedule(self) -> None:
+        """Resume the mower's automatic mowing schedule."""
+        await self._async_send_command("START_DONT_OVERRIDE")
 
     async def _async_send_command(self, command: str, **params: int) -> None:
         """Send a command to the mower service."""

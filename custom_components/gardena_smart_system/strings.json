@@ -71,11 +71,13 @@
         "title": "Gardena Smart System Options",
         "data": {
           "default_watering_minutes": "Default watering duration",
-          "default_socket_minutes": "Default power socket duration"
+          "default_socket_minutes": "Default power socket duration",
+          "poll_interval_minutes": "Polling interval"
         },
         "data_description": {
           "default_watering_minutes": "Duration in minutes when opening a valve without specifying a duration (1-1440).",
-          "default_socket_minutes": "Duration in minutes when turning on a power socket (1-1440). Set to 1440 (24h) for near-indefinite operation."
+          "default_socket_minutes": "Duration in minutes when turning on a power socket (1-1440). Set to 1440 (24h) for near-indefinite operation.",
+          "poll_interval_minutes": "How often to poll the API for updates in minutes (5-1440). Lower values provide fresher data but consume more API quota. Default: 30 (Gardena) / 15 (Automower)."
         }
       }
     }

@@ -417,6 +417,48 @@ class TestLawnMowerCommands:
             )
 
 
+class TestLawnMowerServiceActions:
+    """Test park_until_further_notice and resume_schedule services."""
+
+    async def test_park_until_further_notice_service(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(has_sensor=False, has_mower=True)
+        devices = {device.device_id: device}
+
+        async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
+            await hass.services.async_call(
+                "gardena_smart_system", "park_until_further_notice",
+                {"entity_id": "lawn_mower.my_sensor_mower"},
+                blocking=True,
+            )
+
+            mock_client.async_send_command.assert_called_once_with(
+                service_id=device.mower.service_id,
+                control_type="MOWER_CONTROL",
+                command="PARK_UNTIL_FURTHER_NOTICE",
+            )
+
+    async def test_resume_schedule_service(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(has_sensor=False, has_mower=True)
+        devices = {device.device_id: device}
+
+        async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
+            await hass.services.async_call(
+                "gardena_smart_system", "resume_schedule",
+                {"entity_id": "lawn_mower.my_sensor_mower"},
+                blocking=True,
+            )
+
+            mock_client.async_send_command.assert_called_once_with(
+                service_id=device.mower.service_id,
+                control_type="MOWER_CONTROL",
+                command="START_DONT_OVERRIDE",
+            )
+
+
 class TestLawnMowerErrorHandling:
     """Test error handling in lawn mower commands."""
 

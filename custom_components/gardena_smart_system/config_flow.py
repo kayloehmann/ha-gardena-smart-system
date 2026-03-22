@@ -41,11 +41,16 @@ from .const import (
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
     CONF_LOCATION_ID,
+    DEFAULT_POLL_INTERVAL_AUTOMOWER,
+    DEFAULT_POLL_INTERVAL_GARDENA,
     DEFAULT_SOCKET_MINUTES,
     DEFAULT_WATERING_MINUTES,
     DOMAIN,
+    MAX_POLL_INTERVAL,
+    MIN_POLL_INTERVAL,
     OPT_DEFAULT_SOCKET_MINUTES,
     OPT_DEFAULT_WATERING_MINUTES,
+    OPT_POLL_INTERVAL_MINUTES,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -485,40 +490,68 @@ class GardenaOptionsFlowHandler(OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        current_watering = self.config_entry.options.get(
-            OPT_DEFAULT_WATERING_MINUTES, DEFAULT_WATERING_MINUTES
+        api_type = self.config_entry.data.get(CONF_API_TYPE, API_TYPE_GARDENA)
+        is_automower = api_type == API_TYPE_AUTOMOWER
+
+        default_poll = (
+            DEFAULT_POLL_INTERVAL_AUTOMOWER
+            if is_automower
+            else DEFAULT_POLL_INTERVAL_GARDENA
         )
-        current_socket = self.config_entry.options.get(
-            OPT_DEFAULT_SOCKET_MINUTES, DEFAULT_SOCKET_MINUTES
+        current_poll = self.config_entry.options.get(
+            OPT_POLL_INTERVAL_MINUTES, default_poll
         )
 
+        if is_automower:
+            schema_dict: dict[vol.Required, NumberSelector] = {}
+        else:
+            current_watering = self.config_entry.options.get(
+                OPT_DEFAULT_WATERING_MINUTES, DEFAULT_WATERING_MINUTES
+            )
+            current_socket = self.config_entry.options.get(
+                OPT_DEFAULT_SOCKET_MINUTES, DEFAULT_SOCKET_MINUTES
+            )
+            schema_dict = {
+                vol.Required(OPT_DEFAULT_WATERING_MINUTES): NumberSelector(
+                    NumberSelectorConfig(
+                        min=1,
+                        max=1440,
+                        step=1,
+                        unit_of_measurement="min",
+                        mode=NumberSelectorMode.BOX,
+                    )
+                ),
+                vol.Required(OPT_DEFAULT_SOCKET_MINUTES): NumberSelector(
+                    NumberSelectorConfig(
+                        min=1,
+                        max=1440,
+                        step=1,
+                        unit_of_measurement="min",
+                        mode=NumberSelectorMode.BOX,
+                    )
+                ),
+            }
+
+        schema_dict[vol.Required(OPT_POLL_INTERVAL_MINUTES)] = NumberSelector(
+            NumberSelectorConfig(
+                min=MIN_POLL_INTERVAL,
+                max=MAX_POLL_INTERVAL,
+                step=1,
+                unit_of_measurement="min",
+                mode=NumberSelectorMode.BOX,
+            )
+        )
+
+        suggested_values: dict[str, int] = {
+            OPT_POLL_INTERVAL_MINUTES: current_poll,
+        }
+        if not is_automower:
+            suggested_values[OPT_DEFAULT_WATERING_MINUTES] = current_watering
+            suggested_values[OPT_DEFAULT_SOCKET_MINUTES] = current_socket
+
         schema = self.add_suggested_values_to_schema(
-            vol.Schema(
-                {
-                    vol.Required(OPT_DEFAULT_WATERING_MINUTES): NumberSelector(
-                        NumberSelectorConfig(
-                            min=1,
-                            max=1440,
-                            step=1,
-                            unit_of_measurement="min",
-                            mode=NumberSelectorMode.BOX,
-                        )
-                    ),
-                    vol.Required(OPT_DEFAULT_SOCKET_MINUTES): NumberSelector(
-                        NumberSelectorConfig(
-                            min=1,
-                            max=1440,
-                            step=1,
-                            unit_of_measurement="min",
-                            mode=NumberSelectorMode.BOX,
-                        )
-                    ),
-                }
-            ),
-            {
-                OPT_DEFAULT_WATERING_MINUTES: current_watering,
-                OPT_DEFAULT_SOCKET_MINUTES: current_socket,
-            },
+            vol.Schema(schema_dict),
+            suggested_values,
         )
 
         return self.async_show_form(step_id="init", data_schema=schema)

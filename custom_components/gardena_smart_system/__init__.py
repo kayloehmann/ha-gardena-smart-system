@@ -23,6 +23,7 @@ type GardenaConfigEntry = ConfigEntry
 
 async def async_setup_entry(hass: HomeAssistant, entry: GardenaConfigEntry) -> bool:
     """Set up Gardena Smart System from a config entry."""
+    entry.async_on_unload(entry.add_update_listener(_async_options_updated))
     session = async_get_clientsession(hass)
     api_type = entry.data.get(CONF_API_TYPE, API_TYPE_GARDENA)
 
@@ -52,6 +53,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: GardenaConfigEntry) -> 
     coordinator = entry.runtime_data
     await coordinator.async_shutdown()
     return await hass.config_entries.async_unload_platforms(entry, platforms)
+
+
+async def _async_options_updated(
+    hass: HomeAssistant, entry: GardenaConfigEntry
+) -> None:
+    """Reload the integration when options change."""
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_migrate_entry(

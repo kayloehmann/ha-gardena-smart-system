@@ -209,25 +209,57 @@ class TestOnDeviceUpdate:
 
 
 class TestStaleDevices:
-    async def test_stale_device_removed_from_ha_registry(
+    async def test_stale_device_removed_after_threshold(
         self, hass: HomeAssistant, coordinator: GardenaCoordinator
     ) -> None:
+        """Device is only removed after _STALE_THRESHOLD consecutive misses."""
         old_device = make_mock_device("old-dev", "SN-OLD")
         new_device = make_mock_device("new-dev", "SN-NEW")
         coordinator.data = {"old-dev": old_device}
 
-        # Register the old device in HA device registry
         dev_reg = dr.async_get(hass)
         dev_reg.async_get_or_create(
             config_entry_id=coordinator.config_entry.entry_id,
             identifiers={(DOMAIN, "SN-OLD")},
         )
-        assert dev_reg.async_get_device(identifiers={(DOMAIN, "SN-OLD")}) is not None
 
-        # New poll only returns the new device
-        coordinator._async_remove_stale_devices({"new-dev": new_device})
+        # First two misses — device should NOT be removed yet
+        # (fresh_devices is mutated by the method to keep the device)
+        for _ in range(coordinator._STALE_THRESHOLD - 1):
+            fresh = {"new-dev": new_device}
+            coordinator._async_remove_stale_devices(fresh)
+            # Method keeps old_device in fresh so coordinator.data retains it
+            coordinator.data = fresh
+            assert dev_reg.async_get_device(identifiers={(DOMAIN, "SN-OLD")}) is not None
 
+        # Third miss — now it should be removed
+        fresh = {"new-dev": new_device}
+        coordinator._async_remove_stale_devices(fresh)
+        coordinator.data = fresh
         assert dev_reg.async_get_device(identifiers={(DOMAIN, "SN-OLD")}) is None
+
+    async def test_stale_counter_resets_when_device_reappears(
+        self, hass: HomeAssistant, coordinator: GardenaCoordinator
+    ) -> None:
+        """If a device reappears, its miss counter resets."""
+        device = make_mock_device("dev-1", "SN001")
+        coordinator.data = {"dev-1": device}
+
+        dev_reg = dr.async_get(hass)
+        dev_reg.async_get_or_create(
+            config_entry_id=coordinator.config_entry.entry_id,
+            identifiers={(DOMAIN, "SN001")},
+        )
+
+        # Miss once
+        fresh: dict = {}
+        coordinator._async_remove_stale_devices(fresh)
+        coordinator.data = fresh  # Method keeps device in fresh
+        assert coordinator._stale_miss_counts.get("dev-1") == 1
+
+        # Reappear — counter should reset
+        coordinator._async_remove_stale_devices({"dev-1": device})
+        assert "dev-1" not in coordinator._stale_miss_counts
 
     async def test_no_removal_when_device_still_present(
         self, hass: HomeAssistant, coordinator: GardenaCoordinator
@@ -241,7 +273,6 @@ class TestStaleDevices:
             identifiers={(DOMAIN, device.serial)},
         )
 
-        # Same device still in fresh data — should not be removed
         coordinator._async_remove_stale_devices({device.device_id: device})
 
         assert dev_reg.async_get_device(identifiers={(DOMAIN, device.serial)}) is not None
@@ -260,8 +291,9 @@ class TestStaleDevices:
         device.serial = None  # No serial — skip registry removal
         coordinator.data = {device.device_id: device}
 
-        # Should not raise or try registry lookup
-        coordinator._async_remove_stale_devices({})
+        # Exhaust threshold without removal (no serial)
+        for _ in range(coordinator._STALE_THRESHOLD):
+            coordinator._async_remove_stale_devices({})
 
 
 class TestRepairIssues:

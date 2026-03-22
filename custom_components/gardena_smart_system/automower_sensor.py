@@ -27,12 +27,43 @@ from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
 
 PARALLEL_UPDATES = 0
 
+_KNOWN_ACTIVITIES = frozenset(
+    a.lower()
+    for a in (
+        MowerActivity.UNKNOWN,
+        MowerActivity.NOT_APPLICABLE,
+        MowerActivity.MOWING,
+        MowerActivity.GOING_HOME,
+        MowerActivity.CHARGING,
+        MowerActivity.LEAVING,
+        MowerActivity.PARKED_IN_CS,
+        MowerActivity.STOPPED_IN_GARDEN,
+    )
+)
+_KNOWN_STATES = frozenset(
+    s.lower()
+    for s in (
+        MowerState.UNKNOWN,
+        MowerState.NOT_APPLICABLE,
+        MowerState.PAUSED,
+        MowerState.IN_OPERATION,
+        MowerState.WAIT_UPDATING,
+        MowerState.WAIT_POWER_UP,
+        MowerState.RESTRICTED,
+        MowerState.OFF,
+        MowerState.STOPPED,
+        MowerState.ERROR,
+        MowerState.FATAL_ERROR,
+        MowerState.ERROR_AT_POWER_UP,
+    )
+)
+
 
 @dataclass(frozen=True, kw_only=True)
 class AutomowerSensorDescription(SensorEntityDescription):
     """Describes an Automower sensor."""
 
-    value_fn: Callable[[AutomowerDevice], int | float | datetime | None]
+    value_fn: Callable[[AutomowerDevice], int | float | datetime | str | None]
 
 
 SENSOR_DESCRIPTIONS: tuple[AutomowerSensorDescription, ...] = (
@@ -125,7 +156,9 @@ SENSOR_DESCRIPTIONS: tuple[AutomowerSensorDescription, ...] = (
             MowerActivity.PARKED_IN_CS.lower(),
             MowerActivity.STOPPED_IN_GARDEN.lower(),
         ],
-        value_fn=lambda d: d.mower.activity.lower(),
+        value_fn=lambda d: d.mower.activity.lower()
+        if d.mower.activity.lower() in _KNOWN_ACTIVITIES
+        else None,
     ),
     AutomowerSensorDescription(
         key="state",
@@ -146,7 +179,9 @@ SENSOR_DESCRIPTIONS: tuple[AutomowerSensorDescription, ...] = (
             MowerState.ERROR_AT_POWER_UP.lower(),
         ],
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: d.mower.state.lower(),
+        value_fn=lambda d: d.mower.state.lower()
+        if d.mower.state.lower() in _KNOWN_STATES
+        else None,
     ),
 )
 
@@ -197,7 +232,7 @@ class AutomowerSensorEntity(AutomowerEntity, SensorEntity):
         self.entity_description = description
 
     @property
-    def native_value(self) -> int | float | datetime | None:
+    def native_value(self) -> int | float | datetime | str | None:
         """Return the sensor value."""
         device = self._device
         if device is None:

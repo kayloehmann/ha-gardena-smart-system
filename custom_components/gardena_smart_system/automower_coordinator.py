@@ -31,8 +31,10 @@ from .const import (
     AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED,
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
+    DEFAULT_POLL_INTERVAL_AUTOMOWER,
     DOMAIN,
     MIN_COMMAND_INTERVAL_SECONDS,
+    OPT_POLL_INTERVAL_MINUTES,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,11 +56,17 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
         websession: aiohttp.ClientSession,
     ) -> None:
         """Initialize the coordinator."""
+        custom_minutes = entry.options.get(OPT_POLL_INTERVAL_MINUTES)
+        initial_interval = (
+            timedelta(minutes=int(custom_minutes))
+            if custom_minutes is not None
+            else AUTOMOWER_SCAN_INTERVAL
+        )
         super().__init__(
             hass,
             _LOGGER,
             name=f"{DOMAIN}_automower",
-            update_interval=AUTOMOWER_SCAN_INTERVAL,
+            update_interval=initial_interval,
             config_entry=entry,
         )
         self._websession = websession
@@ -71,6 +79,13 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
         self._ws: AutomowerWebSocket | None = None
         self._ws_connected = False
         self._last_command_time: float = 0.0
+        self._custom_poll_interval: timedelta | None = (
+            timedelta(minutes=int(custom_minutes))
+            if custom_minutes is not None
+            and int(custom_minutes) != DEFAULT_POLL_INTERVAL_AUTOMOWER
+            else None
+        )
+        self._stale_miss_counts: dict[str, int] = {}
 
     @property
     def client(self) -> AutomowerClient:
@@ -97,11 +112,12 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
             raise UpdateFailed(f"Cannot connect to Automower API: {err}") from err
 
         # Restore normal polling interval after a successful fetch
-        normal_interval = (
-            AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED
-            if self._ws_connected
-            else AUTOMOWER_SCAN_INTERVAL
-        )
+        if self._custom_poll_interval is not None:
+            normal_interval = self._custom_poll_interval
+        elif self._ws_connected:
+            normal_interval = AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED
+        else:
+            normal_interval = AUTOMOWER_SCAN_INTERVAL
         if self.update_interval != normal_interval:
             _LOGGER.debug(
                 "Automower API responded successfully, restoring poll interval to %s",
@@ -118,21 +134,51 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
 
         return devices
 
+    _STALE_THRESHOLD = 3
+
     def _async_remove_stale_devices(
         self, fresh_devices: dict[str, AutomowerDevice]
     ) -> None:
-        """Remove HA device registry entries for mowers no longer in the API response."""
+        """Remove HA device registry entries for mowers no longer in the API response.
+
+        Devices must be absent for _STALE_THRESHOLD consecutive polls before removal.
+        Devices below the threshold are kept in fresh_devices so coordinator.data
+        retains them for the next comparison.
+        """
         if self.data is None:
             return
 
         stale_ids = set(self.data) - set(fresh_devices)
+
+        # Clear miss counts for devices that reappeared
+        for device_id in list(self._stale_miss_counts):
+            if device_id not in stale_ids:
+                del self._stale_miss_counts[device_id]
+
         if not stale_ids:
             return
 
         device_registry = dr.async_get(self.hass)
         for mower_id in stale_ids:
+            self._stale_miss_counts[mower_id] = (
+                self._stale_miss_counts.get(mower_id, 0) + 1
+            )
+            miss_count = self._stale_miss_counts[mower_id]
+
+            if miss_count < self._STALE_THRESHOLD:
+                _LOGGER.debug(
+                    "Automower device %s absent from API (%d/%d before removal)",
+                    mower_id,
+                    miss_count,
+                    self._STALE_THRESHOLD,
+                )
+                # Keep device in fresh_devices so it stays in coordinator.data
+                fresh_devices[mower_id] = self.data[mower_id]
+                continue
+
             old_device = self.data[mower_id]
             if not old_device.serial_number:
+                del self._stale_miss_counts[mower_id]
                 continue
             ha_device = device_registry.async_get_device(
                 identifiers={(DOMAIN, old_device.serial_number)}
@@ -144,6 +190,7 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
                     old_device.serial_number,
                 )
                 device_registry.async_remove_device(ha_device.id)
+            del self._stale_miss_counts[mower_id]
 
     async def _async_start_websocket(
         self, devices: dict[str, AutomowerDevice]
@@ -165,13 +212,15 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
                 "Could not connect Automower WebSocket, will rely on polling: %s",
                 err,
             )
+            self._ws = None
             return
 
         self._ws_connected = True
-        self.update_interval = AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED
+        ws_interval = self._custom_poll_interval or AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED
+        self.update_interval = ws_interval
         _LOGGER.debug(
             "Automower WebSocket started, poll interval set to %s",
-            AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED,
+            ws_interval,
         )
         ir.async_delete_issue(self.hass, DOMAIN, "automower_websocket_connection_failed")
 
@@ -185,7 +234,7 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
         """Called when the WebSocket connection fails unrecoverably."""
         _LOGGER.error("Automower WebSocket connection lost: %s", err)
         self._ws_connected = False
-        self.update_interval = AUTOMOWER_SCAN_INTERVAL
+        self.update_interval = self._custom_poll_interval or AUTOMOWER_SCAN_INTERVAL
 
         if isinstance(err, AutomowerAuthenticationError):
             self.config_entry.async_start_reauth(self.hass)

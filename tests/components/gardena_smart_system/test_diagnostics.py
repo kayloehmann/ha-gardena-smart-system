@@ -199,6 +199,27 @@ class TestDiagnosticsDeepRedaction:
         assert device_data["serial"] == "**REDACTED**"
 
 
+class TestDiagnosticsCoordinatorState:
+    """Test that coordinator state is included in diagnostics."""
+
+    async def test_coordinator_state_included(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device()
+        devices = {device.device_id: device}
+
+        async for _ in _setup_integration(hass, mock_config_entry, devices):
+            result = await async_get_config_entry_diagnostics(hass, mock_config_entry)
+
+        assert "coordinator" in result
+        coord_data = result["coordinator"]
+        assert "ws_connected" in coord_data
+        assert "update_interval_seconds" in coord_data
+        assert "last_update_success" in coord_data
+        assert isinstance(coord_data["ws_connected"], bool)
+        assert isinstance(coord_data["update_interval_seconds"], (int, float))
+
+
 class TestDiagnosticsServiceToDict:
     """Test the _service_to_dict helper function."""
 

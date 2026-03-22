@@ -36,6 +36,13 @@ async def async_get_config_entry_diagnostics(
     return async_redact_data(
         {
             "config_entry": entry.as_dict(),
+            "coordinator": {
+                "ws_connected": coordinator._ws_connected,
+                "update_interval_seconds": coordinator.update_interval.total_seconds()
+                if coordinator.update_interval
+                else None,
+                "last_update_success": coordinator.last_update_success,
+            },
             "devices": devices_data,
         },
         TO_REDACT,
