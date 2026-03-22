@@ -121,15 +121,29 @@ class AutomowerCalendarEntity(AutomowerEntity, CalendarEntity):
                     continue
 
                 work_area_name = ""
+                description_parts: list[str] = []
                 if task.work_area_id is not None:
                     wa = device.work_areas.get(task.work_area_id)
-                    work_area_name = f" ({wa.name})" if wa else ""
+                    if wa:
+                        work_area_name = f" ({wa.name})"
+                        if wa.cutting_height is not None:
+                            description_parts.append(
+                                f"Cutting height: {wa.cutting_height}%"
+                            )
+
+                if device.settings.cutting_height is not None:
+                    description_parts.append(
+                        f"Global cutting height: {device.settings.cutting_height}"
+                    )
 
                 events.append(
                     CalendarEvent(
                         start=task_start,
                         end=task_end,
                         summary=f"Mowing{work_area_name}",
+                        description="\n".join(description_parts)
+                        if description_parts
+                        else None,
                     )
                 )
 

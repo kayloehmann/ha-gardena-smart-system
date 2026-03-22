@@ -73,6 +73,7 @@ SENSOR_DESCRIPTIONS: tuple[AutomowerSensorDescription, ...] = (
         device_class=SensorDeviceClass.BATTERY,
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: d.battery.level,
     ),
@@ -80,6 +81,7 @@ SENSOR_DESCRIPTIONS: tuple[AutomowerSensorDescription, ...] = (
         key="cutting_height",
         translation_key="automower_cutting_height",
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
         value_fn=lambda d: d.settings.cutting_height,
     ),
     AutomowerSensorDescription(
@@ -115,6 +117,7 @@ SENSOR_DESCRIPTIONS: tuple[AutomowerSensorDescription, ...] = (
         translation_key="automower_total_drive_distance",
         native_unit_of_measurement=UnitOfLength.METERS,
         state_class=SensorStateClass.TOTAL_INCREASING,
+        suggested_display_precision=0,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: d.statistics.total_drive_distance,
     ),

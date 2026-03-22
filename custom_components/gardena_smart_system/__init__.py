@@ -6,6 +6,7 @@ import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
@@ -60,6 +61,28 @@ async def _async_options_updated(
 ) -> None:
     """Reload the integration when options change."""
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    device_entry: dr.DeviceEntry,
+) -> bool:
+    """Allow users to manually remove a device from the device registry."""
+    coordinator = config_entry.runtime_data
+    # Only allow removal if the device is no longer in the coordinator's data
+    if coordinator.data:
+        for identifier in device_entry.identifiers:
+            if identifier[0] != DOMAIN:
+                continue
+            serial = identifier[1]
+            for device in coordinator.data.values():
+                device_serial = getattr(device, "serial_number", None) or getattr(
+                    device, "serial", None
+                )
+                if device_serial == serial:
+                    return False
+    return True
 
 
 async def async_migrate_entry(
