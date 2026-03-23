@@ -20,7 +20,7 @@ from aiogardenasmart import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
-from homeassistant.helpers import device_registry as dr, issue_registry as ir
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
@@ -249,7 +249,6 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
             self._location_id,
             ws_interval,
         )
-        ir.async_delete_issue(self.hass, DOMAIN, "websocket_connection_failed")
 
     def _on_device_update(self, device_id: str, device: Device) -> None:
         """Called by the WebSocket client when a device state changes."""
@@ -267,13 +266,8 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
             self.config_entry.async_start_reauth(self.hass)
             return
 
-        ir.async_create_issue(
-            self.hass,
-            DOMAIN,
-            "websocket_connection_failed",
-            is_fixable=True,
-            severity=ir.IssueSeverity.WARNING,
-            translation_key="websocket_connection_failed",
+        _LOGGER.warning(
+            "Gardena WebSocket connection lost, falling back to polling: %s", err
         )
 
     async def async_shutdown(self) -> None:

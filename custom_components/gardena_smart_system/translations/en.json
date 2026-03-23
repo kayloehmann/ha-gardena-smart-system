@@ -272,30 +272,6 @@
       "description": "Resume the mower's automatic mowing schedule."
     }
   },
-  "issues": {
-    "websocket_connection_failed": {
-      "title": "Gardena real-time connection lost",
-      "fix_flow": {
-        "step": {
-          "init": {
-            "title": "Reconnect WebSocket",
-            "description": "The WebSocket connection to the Gardena Smart System cloud has failed. The integration is now relying on polling for updates instead of real-time push.\n\nThis will attempt to re-establish the real-time connection."
-          }
-        }
-      }
-    },
-    "automower_websocket_connection_failed": {
-      "title": "Automower real-time connection lost",
-      "fix_flow": {
-        "step": {
-          "init": {
-            "title": "Reconnect WebSocket",
-            "description": "The WebSocket connection to the Automower Connect cloud has failed. The integration is now relying on polling for updates instead of real-time push.\n\nThis will attempt to re-establish the real-time connection."
-          }
-        }
-      }
-    }
-  },
   "exceptions": {
     "command_failed": {
       "message": "Failed to send command to device: {error}"

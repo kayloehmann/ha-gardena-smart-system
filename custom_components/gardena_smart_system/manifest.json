@@ -10,5 +10,5 @@
   "loggers": ["aiogardenasmart"],
   "requirements": ["aiogardenasmart==0.1.2"],
   "single_config_entry": false,
-  "version": "0.5.1"
+  "version": "0.5.2"
 }
