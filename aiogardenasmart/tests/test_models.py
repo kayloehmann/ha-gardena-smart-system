@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-import pytest
-
 from aiogardenasmart.client import _parse_devices
 from aiogardenasmart.models import (
     CommonService,
     Device,
-    MowerService,
     PowerSocketService,
     SensorService,
     ValveService,
@@ -147,7 +144,8 @@ class TestDeviceOffline:
         response = {
             **SENSOR_LOCATION_RESPONSE,
             "included": [
-                item if item.get("type") != "COMMON"
+                item
+                if item.get("type") != "COMMON"
                 else {
                     **item,
                     "attributes": {
@@ -178,12 +176,14 @@ class TestServiceUpdates:
         common = devices[SENSOR_DEVICE_ID].common
         assert common is not None
 
-        common.update_from_api({
-            "attributes": {
-                "batteryLevel": {"value": 50},
-                "rfLinkState": {"value": "OFFLINE"},
+        common.update_from_api(
+            {
+                "attributes": {
+                    "batteryLevel": {"value": 50},
+                    "rfLinkState": {"value": "OFFLINE"},
+                }
             }
-        })
+        )
         assert common.battery_level == 50
         assert common.rf_link_state == "OFFLINE"
 
@@ -201,12 +201,14 @@ class TestServiceUpdates:
         sensor = devices[SENSOR_DEVICE_ID].sensor
         assert sensor is not None
 
-        sensor.update_from_api({
-            "attributes": {
-                "soilHumidity": {"value": 75},
-                "soilTemperature": {"value": 20.0},
+        sensor.update_from_api(
+            {
+                "attributes": {
+                    "soilHumidity": {"value": 75},
+                    "soilTemperature": {"value": 20.0},
+                }
             }
-        })
+        )
         assert sensor.soil_humidity == 75
         assert sensor.soil_temperature == 20.0
 
@@ -214,12 +216,14 @@ class TestServiceUpdates:
         devices = _parse_devices(WATER_CONTROL_LOCATION_RESPONSE, LOCATION_ID)
         valve = devices[WATER_CONTROL_DEVICE_ID].valves[f"{WATER_CONTROL_DEVICE_ID}:1"]
 
-        valve.update_from_api({
-            "attributes": {
-                "activity": {"value": "MANUAL_WATERING"},
-                "duration": {"value": 3600},
+        valve.update_from_api(
+            {
+                "attributes": {
+                    "activity": {"value": "MANUAL_WATERING"},
+                    "duration": {"value": 3600},
+                }
             }
-        })
+        )
         assert valve.activity == "MANUAL_WATERING"
         assert valve.duration == 3600
 
@@ -228,9 +232,7 @@ class TestServiceUpdates:
         valve_set = devices[WATER_CONTROL_DEVICE_ID].valve_set
         assert valve_set is not None
 
-        valve_set.update_from_api({
-            "attributes": {"state": {"value": "WARNING"}}
-        })
+        valve_set.update_from_api({"attributes": {"state": {"value": "WARNING"}}})
         assert valve_set.state == "WARNING"
 
     def test_power_socket_update(self) -> None:
@@ -238,7 +240,5 @@ class TestServiceUpdates:
         ps = devices[POWER_SOCKET_DEVICE_ID].power_socket
         assert ps is not None
 
-        ps.update_from_api({
-            "attributes": {"activity": {"value": "FOREVER_ON"}}
-        })
+        ps.update_from_api({"attributes": {"activity": {"value": "FOREVER_ON"}}})
         assert ps.activity == "FOREVER_ON"

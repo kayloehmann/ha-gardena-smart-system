@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -11,7 +11,7 @@ def _ts_to_datetime(ts: int | None) -> datetime | None:
     """Convert a millisecond Unix timestamp to a UTC datetime, or None."""
     if ts is None or ts == 0:
         return None
-    return datetime.fromtimestamp(ts / 1000, tz=timezone.utc)
+    return datetime.fromtimestamp(ts / 1000, tz=UTC)
 
 
 @dataclass
@@ -327,10 +327,7 @@ class AutomowerDevice:
                 stay_out_zones[zone_id] = StayOutZone.from_api(zone_id, zone_data)
 
         # Parse positions
-        positions = [
-            Position.from_api(p)
-            for p in attrs.get("positions", [])
-        ]
+        positions = [Position.from_api(p) for p in attrs.get("positions", [])]
 
         return cls(
             mower_id=mower_id,

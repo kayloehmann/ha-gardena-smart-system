@@ -7,6 +7,13 @@ import time
 from datetime import timedelta
 
 import aiohttp
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+
 from aiogardenasmart import (
     Device,
     GardenaAuth,
@@ -16,12 +23,6 @@ from aiogardenasmart import (
     GardenaRateLimitError,
     GardenaWebSocket,
 )
-
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
-from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
     CONF_CLIENT_ID,
@@ -63,9 +64,7 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
         """Initialize the coordinator."""
         custom_minutes = entry.options.get(OPT_POLL_INTERVAL_MINUTES)
         initial_interval = (
-            timedelta(minutes=int(custom_minutes))
-            if custom_minutes is not None
-            else SCAN_INTERVAL
+            timedelta(minutes=int(custom_minutes)) if custom_minutes is not None else SCAN_INTERVAL
         )
         super().__init__(
             hass,
@@ -170,7 +169,7 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
         retains them for the next comparison.
         """
         if self.data is None:
-            return  # First poll — no previous state to compare
+            return  # type: ignore[unreachable]  # First poll — no previous state to compare
 
         stale_ids = set(self.data) - set(fresh_devices)
 
@@ -184,9 +183,7 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
 
         device_registry = dr.async_get(self.hass)
         for device_id in stale_ids:
-            self._stale_miss_counts[device_id] = (
-                self._stale_miss_counts.get(device_id, 0) + 1
-            )
+            self._stale_miss_counts[device_id] = self._stale_miss_counts.get(device_id, 0) + 1
             miss_count = self._stale_miss_counts[device_id]
 
             if miss_count < self._STALE_THRESHOLD:
@@ -204,9 +201,7 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
             if not old_device.serial:
                 del self._stale_miss_counts[device_id]
                 continue
-            ha_device = device_registry.async_get_device(
-                identifiers={(DOMAIN, old_device.serial)}
-            )
+            ha_device = device_registry.async_get_device(identifiers={(DOMAIN, old_device.serial)})
             if ha_device:
                 _LOGGER.debug(
                     "Removing stale Gardena device %s (%s) from device registry",
@@ -221,9 +216,7 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
         try:
             ws_url = await self._client.async_get_websocket_url(self._location_id)
         except (GardenaAuthenticationError, GardenaConnectionError, GardenaRateLimitError) as err:
-            _LOGGER.warning(
-                "Could not obtain WebSocket URL, will rely on polling: %s", err
-            )
+            _LOGGER.warning("Could not obtain WebSocket URL, will rely on polling: %s", err)
             return
 
         self._ws = GardenaWebSocket(
@@ -235,15 +228,14 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
         )
         try:
             await self._ws.async_connect(ws_url)
-        except Exception as err:  # noqa: BLE001
-            _LOGGER.warning(
-                "Could not connect Gardena WebSocket, will rely on polling: %s", err
-            )
+        except Exception as err:
+            _LOGGER.warning("Could not connect Gardena WebSocket, will rely on polling: %s", err)
             self._ws = None
             return
         self._ws_connected = True
         ws_interval = self._custom_poll_interval or SCAN_INTERVAL_WS_CONNECTED
         self.update_interval = ws_interval
+        ir.async_delete_issue(self.hass, DOMAIN, "websocket_connection_failed")
         _LOGGER.debug(
             "Gardena WebSocket started for location %s, poll interval set to %s",
             self._location_id,
@@ -266,9 +258,16 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
             self.config_entry.async_start_reauth(self.hass)
             return
 
-        _LOGGER.warning(
-            "Gardena WebSocket connection lost, falling back to polling: %s", err
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            "websocket_connection_failed",
+            is_fixable=True,
+            is_persistent=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="websocket_connection_failed",
         )
+        _LOGGER.warning("Gardena WebSocket connection lost, falling back to polling: %s", err)
 
     async def async_shutdown(self) -> None:
         """Disconnect the WebSocket and clean up resources."""
@@ -291,4 +290,3 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
                 translation_key="command_throttled",
             )
         self._last_command_time = now
-

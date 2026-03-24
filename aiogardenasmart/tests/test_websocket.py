@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import json
-from collections.abc import AsyncGenerator
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import aiohttp
 import pytest
@@ -19,7 +18,6 @@ from .fixtures import (
     LOCATION_ID,
     SENSOR_DEVICE_ID,
     SENSOR_LOCATION_RESPONSE,
-    TOKEN_RESPONSE,
     WATER_CONTROL_DEVICE_ID,
     WATER_CONTROL_LOCATION_RESPONSE,
 )
@@ -122,9 +120,7 @@ class TestWebSocketMessageHandling:
             on_update=lambda device_id, device: None,
         )
 
-    async def test_sensor_ws_update_triggers_callback(
-        self, devices: dict[str, Any]
-    ) -> None:
+    async def test_sensor_ws_update_triggers_callback(self, devices: dict[str, Any]) -> None:
         updated_ids: list[str] = []
 
         session = MagicMock(spec=aiohttp.ClientSession)
@@ -138,11 +134,13 @@ class TestWebSocketMessageHandling:
             on_update=lambda did, _: updated_ids.append(did),
         )
 
-        msg = json.dumps({
-            "id": SENSOR_DEVICE_ID,
-            "type": "SENSOR",
-            "attributes": {"soilHumidity": {"value": 99}},
-        })
+        msg = json.dumps(
+            {
+                "id": SENSOR_DEVICE_ID,
+                "type": "SENSOR",
+                "attributes": {"soilHumidity": {"value": 99}},
+            }
+        )
         await ws._async_handle_message(msg)
 
         assert SENSOR_DEVICE_ID in updated_ids
@@ -171,17 +169,17 @@ class TestWebSocketMessageHandling:
         await ws._async_handle_message("not json {{{")
 
     async def test_unknown_device_id_ignored(self, ws: GardenaWebSocket) -> None:
-        msg = json.dumps({
-            "id": "nonexistent-device-id",
-            "type": "SENSOR",
-            "attributes": {"soilHumidity": {"value": 10}},
-        })
+        msg = json.dumps(
+            {
+                "id": "nonexistent-device-id",
+                "type": "SENSOR",
+                "attributes": {"soilHumidity": {"value": 10}},
+            }
+        )
         # Should not raise
         await ws._async_handle_message(msg)
 
-    async def test_common_update_dispatched(
-        self, devices: dict[str, Any]
-    ) -> None:
+    async def test_common_update_dispatched(self, devices: dict[str, Any]) -> None:
         updated: list[str] = []
 
         session = MagicMock(spec=aiohttp.ClientSession)
@@ -195,12 +193,14 @@ class TestWebSocketMessageHandling:
             on_update=lambda did, _: updated.append(did),
         )
 
-        msg = json.dumps({
-            "id": SENSOR_DEVICE_ID,
-            "type": "COMMON",
-            "attributes": {"rfLinkState": {"value": "OFFLINE"}},
-            "relationships": {"device": {"data": {"id": SENSOR_DEVICE_ID}}},
-        })
+        msg = json.dumps(
+            {
+                "id": SENSOR_DEVICE_ID,
+                "type": "COMMON",
+                "attributes": {"rfLinkState": {"value": "OFFLINE"}},
+                "relationships": {"device": {"data": {"id": SENSOR_DEVICE_ID}}},
+            }
+        )
         await ws._async_handle_message(msg)
 
         assert SENSOR_DEVICE_ID in updated

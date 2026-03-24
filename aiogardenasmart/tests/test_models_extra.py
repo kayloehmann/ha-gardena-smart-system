@@ -48,14 +48,16 @@ class TestMowerDeviceParsing:
         mower = devices[MOWER_DEVICE_ID].mower
         assert mower is not None
 
-        mower.update_from_api({
-            "attributes": {
-                "activity": {"value": "OK_CUTTING"},
-                "state": {"value": "OK"},
-                "lastErrorCode": {"value": "LIFTED"},
-                "operatingHours": {"value": 200},
+        mower.update_from_api(
+            {
+                "attributes": {
+                    "activity": {"value": "OK_CUTTING"},
+                    "state": {"value": "OK"},
+                    "lastErrorCode": {"value": "LIFTED"},
+                    "operatingHours": {"value": 200},
+                }
             }
-        })
+        )
         assert mower.activity == "OK_CUTTING"
         assert mower.state == "OK"
         assert mower.last_error_code == "LIFTED"
@@ -157,7 +159,8 @@ class TestPowerSocketUpdateCoverage:
     """Test all PowerSocketService.update_from_api branches."""
 
     def _get_power_socket(self):  # type: ignore[no-untyped-def]
-        from .fixtures import POWER_SOCKET_LOCATION_RESPONSE, POWER_SOCKET_DEVICE_ID
+        from .fixtures import POWER_SOCKET_DEVICE_ID, POWER_SOCKET_LOCATION_RESPONSE
+
         devices = _parse_devices(POWER_SOCKET_LOCATION_RESPONSE, LOCATION_ID)
         return devices[POWER_SOCKET_DEVICE_ID].power_socket
 

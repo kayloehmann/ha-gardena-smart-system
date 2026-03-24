@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
@@ -17,15 +17,9 @@ from custom_components.gardena_smart_system.const import (
 
 from .conftest import ENTRY_DATA, MOCK_LOCATION_NAME, make_mock_device
 
-_PATCH_CLIENT = (
-    "custom_components.gardena_smart_system.coordinator.GardenaClient"
-)
-_PATCH_AUTH = (
-    "custom_components.gardena_smart_system.coordinator.GardenaAuth"
-)
-_PATCH_WS = (
-    "custom_components.gardena_smart_system.coordinator.GardenaWebSocket"
-)
+_PATCH_CLIENT = "custom_components.gardena_smart_system.coordinator.GardenaClient"
+_PATCH_AUTH = "custom_components.gardena_smart_system.coordinator.GardenaAuth"
+_PATCH_WS = "custom_components.gardena_smart_system.coordinator.GardenaWebSocket"
 
 
 async def _setup_with_devices(hass, mock_config_entry, devices):
@@ -78,7 +72,8 @@ class TestSwitchEntityCreation:
 
         entity_reg = er.async_get(hass)
         switch_entities = [
-            e for e in entity_reg.entities.values()
+            e
+            for e in entity_reg.entities.values()
             if e.domain == "switch" and e.platform == "gardena_smart_system"
         ]
         assert len(switch_entities) == 0
@@ -123,9 +118,7 @@ class TestSwitchTranslationKey:
 class TestSwitchStateMapping:
     """Test switch state mapping from power socket activity."""
 
-    async def test_off_state(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
+    async def test_off_state(self, hass: HomeAssistant, mock_config_entry: object) -> None:
         device = make_mock_device(has_sensor=False, has_power_socket=True)
         device.power_socket.activity = "OFF"
         devices = {device.device_id: device}
@@ -137,9 +130,7 @@ class TestSwitchStateMapping:
         assert state is not None
         assert state.state == STATE_OFF
 
-    async def test_forever_on_state(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
+    async def test_forever_on_state(self, hass: HomeAssistant, mock_config_entry: object) -> None:
         device = make_mock_device(has_sensor=False, has_power_socket=True)
         device.power_socket.activity = "FOREVER_ON"
         devices = {device.device_id: device}
@@ -165,9 +156,7 @@ class TestSwitchStateMapping:
         assert state is not None
         assert state.state == STATE_ON
 
-    async def test_scheduled_on_state(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
+    async def test_scheduled_on_state(self, hass: HomeAssistant, mock_config_entry: object) -> None:
         device = make_mock_device(has_sensor=False, has_power_socket=True)
         device.power_socket.activity = "SCHEDULED_ON"
         devices = {device.device_id: device}
@@ -248,7 +237,8 @@ class TestSwitchCommands:
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
-                "switch", "turn_on",
+                "switch",
+                "turn_on",
                 {"entity_id": "switch.my_sensor_power"},
                 blocking=True,
             )
@@ -269,7 +259,8 @@ class TestSwitchCommands:
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
-                "switch", "turn_off",
+                "switch",
+                "turn_off",
                 {"entity_id": "switch.my_sensor_power"},
                 blocking=True,
             )
@@ -288,7 +279,8 @@ class TestSwitchCommands:
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
-                "gardena_smart_system", "turn_on_for",
+                "gardena_smart_system",
+                "turn_on_for",
                 {"entity_id": "switch.my_sensor_power", "duration": 45},
                 blocking=True,
             )
@@ -313,13 +305,12 @@ class TestSwitchErrorHandling:
         devices = {device.device_id: device}
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
-            mock_client.async_send_command.side_effect = GardenaAuthenticationError(
-                "token expired"
-            )
+            mock_client.async_send_command.side_effect = GardenaAuthenticationError("token expired")
 
             with pytest.raises(HomeAssistantError):
                 await hass.services.async_call(
-                    "switch", "turn_on",
+                    "switch",
+                    "turn_on",
                     {"entity_id": "switch.my_sensor_power"},
                     blocking=True,
                 )
@@ -337,7 +328,8 @@ class TestSwitchErrorHandling:
 
             with pytest.raises(HomeAssistantError):
                 await hass.services.async_call(
-                    "switch", "turn_on",
+                    "switch",
+                    "turn_on",
                     {"entity_id": "switch.my_sensor_power"},
                     blocking=True,
                 )
@@ -356,7 +348,8 @@ class TestSwitchErrorHandling:
 
             # HA silently skips service calls on unavailable entities
             await hass.services.async_call(
-                "switch", "turn_on",
+                "switch",
+                "turn_on",
                 {"entity_id": "switch.my_sensor_power"},
                 blocking=True,
             )
@@ -414,7 +407,8 @@ class TestSwitchDynamicDevices:
             # No switch initially
             entity_reg = er.async_get(hass)
             switch_entities = [
-                e for e in entity_reg.entities.values()
+                e
+                for e in entity_reg.entities.values()
                 if e.domain == "switch" and e.platform == "gardena_smart_system"
             ]
             assert len(switch_entities) == 0
@@ -435,13 +429,13 @@ class TestSwitchDynamicDevices:
 class TestSwitchOptionsIntegration:
     """Test that switch commands use configured options."""
 
-    async def test_turn_on_uses_configured_duration(
-        self, hass: HomeAssistant
-    ) -> None:
+    async def test_turn_on_uses_configured_duration(self, hass: HomeAssistant) -> None:
         try:
             from tests.common import MockConfigEntry
         except ImportError:
-            from pytest_homeassistant_custom_component.common import MockConfigEntry  # type: ignore[no-redef]
+            from pytest_homeassistant_custom_component.common import (
+                MockConfigEntry,  # type: ignore[no-redef]
+            )
 
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -455,7 +449,8 @@ class TestSwitchOptionsIntegration:
 
         async for mock_client in _setup_with_devices(hass, entry, devices):
             await hass.services.async_call(
-                "switch", "turn_on",
+                "switch",
+                "turn_on",
                 {"entity_id": "switch.my_sensor_power"},
                 blocking=True,
             )

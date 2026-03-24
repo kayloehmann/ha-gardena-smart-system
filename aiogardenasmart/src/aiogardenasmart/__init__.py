@@ -24,22 +24,22 @@ from .models import (
 from .websocket import GardenaWebSocket
 
 __all__ = [
+    "CommonService",
+    "Device",
     "GardenaAuth",
-    "GardenaClient",
-    "GardenaException",
     "GardenaAuthenticationError",
+    "GardenaClient",
     "GardenaConnectionError",
+    "GardenaException",
     "GardenaForbiddenError",
     "GardenaRateLimitError",
     "GardenaRequestError",
+    "GardenaWebSocket",
     "GardenaWebSocketError",
-    "CommonService",
-    "Device",
     "Location",
     "MowerService",
     "PowerSocketService",
     "SensorService",
     "ValveService",
     "ValveSetService",
-    "GardenaWebSocket",
 ]

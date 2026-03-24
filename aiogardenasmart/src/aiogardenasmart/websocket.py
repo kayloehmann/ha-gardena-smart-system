@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 from collections.abc import Callable
@@ -79,10 +80,8 @@ class GardenaWebSocket:
             await self._ws.close()
         if self._listen_task and not self._listen_task.done():
             self._listen_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._listen_task
-            except asyncio.CancelledError:
-                pass
 
     async def _async_listen_loop(self, ws_url: str) -> None:
         """Outer loop that reconnects on failure."""
@@ -93,7 +92,7 @@ class GardenaWebSocket:
                 attempt = 0  # reset on clean exit
             except asyncio.CancelledError:
                 break
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 if not self._running:
                     break
                 attempt += 1

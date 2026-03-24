@@ -5,17 +5,17 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from aiogardenasmart import Device
 from aiogardenasmart.const import BatteryState, ServiceState
-
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
-from homeassistant.core import HomeAssistant, callback
 from homeassistant.const import EntityCategory
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from aiogardenasmart import Device
 
 from . import GardenaConfigEntry
 from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
@@ -53,10 +53,7 @@ BINARY_SENSORS: tuple[GardenaBinarySensorDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
         is_on_fn=lambda d: (
-            any(
-                v.state in (ServiceState.WARNING, ServiceState.ERROR)
-                for v in d.valves.values()
-            )
+            any(v.state in (ServiceState.WARNING, ServiceState.ERROR) for v in d.valves.values())
             if d.valves
             else None
         ),
@@ -68,9 +65,7 @@ BINARY_SENSORS: tuple[GardenaBinarySensorDescription, ...] = (
         device_class=BinarySensorDeviceClass.PROBLEM,
         entity_category=EntityCategory.DIAGNOSTIC,
         is_on_fn=lambda d: (
-            d.mower.state in (ServiceState.WARNING, ServiceState.ERROR)
-            if d.mower
-            else None
+            d.mower.state in (ServiceState.WARNING, ServiceState.ERROR) if d.mower else None
         ),
         exists_fn=lambda d: d.mower is not None,
     ),
@@ -100,9 +95,7 @@ async def async_setup_entry(
                 key = (device.device_id, description.key)
                 if key not in known_keys and description.exists_fn(device):
                     known_keys.add(key)
-                    new_entities.append(
-                        GardenaBinarySensorEntity(coordinator, device, description)
-                    )
+                    new_entities.append(GardenaBinarySensorEntity(coordinator, device, description))
         if new_entities:
             async_add_entities(new_entities)
 

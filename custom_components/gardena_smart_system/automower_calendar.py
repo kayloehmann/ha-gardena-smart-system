@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-from aioautomower import AutomowerDevice, ScheduleTask
-
 from homeassistant.components.calendar import CalendarEntity, CalendarEvent
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
+
+from aioautomower import AutomowerDevice
 
 from . import GardenaConfigEntry
 from .automower_coordinator import AutomowerCoordinator
@@ -47,9 +47,7 @@ async def async_setup_entry(
         for device in coordinator.data.values():
             if device.mower_id not in known_ids:
                 known_ids.add(device.mower_id)
-                new_entities.append(
-                    AutomowerCalendarEntity(coordinator, device)
-                )
+                new_entities.append(AutomowerCalendarEntity(coordinator, device))
         if new_entities:
             async_add_entities(new_entities)
 
@@ -62,9 +60,7 @@ class AutomowerCalendarEntity(AutomowerEntity, CalendarEntity):
 
     _attr_translation_key = "automower_schedule"
 
-    def __init__(
-        self, coordinator: AutomowerCoordinator, device: AutomowerDevice
-    ) -> None:
+    def __init__(self, coordinator: AutomowerCoordinator, device: AutomowerDevice) -> None:
         """Initialize the calendar entity."""
         super().__init__(coordinator, device, "schedule")
 
@@ -127,9 +123,7 @@ class AutomowerCalendarEntity(AutomowerEntity, CalendarEntity):
                     if wa:
                         work_area_name = f" ({wa.name})"
                         if wa.cutting_height is not None:
-                            description_parts.append(
-                                f"Cutting height: {wa.cutting_height}%"
-                            )
+                            description_parts.append(f"Cutting height: {wa.cutting_height}%")
 
                 if device.settings.cutting_height is not None:
                     description_parts.append(
@@ -141,9 +135,7 @@ class AutomowerCalendarEntity(AutomowerEntity, CalendarEntity):
                         start=task_start,
                         end=task_end,
                         summary=f"Mowing{work_area_name}",
-                        description="\n".join(description_parts)
-                        if description_parts
-                        else None,
+                        description="\n".join(description_parts) if description_parts else None,
                     )
                 )
 

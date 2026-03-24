@@ -69,9 +69,7 @@ def _serialize_gardena_devices(
                 "sensor": _service_to_dict(device.sensor),
                 "power_socket": _service_to_dict(device.power_socket),
                 "valve_set": _service_to_dict(device.valve_set),
-                "valves": {
-                    sid: _service_to_dict(v) for sid, v in device.valves.items()
-                },
+                "valves": {sid: _service_to_dict(v) for sid, v in device.valves.items()},
             },
             TO_REDACT,
         )
@@ -96,9 +94,7 @@ def _serialize_automower_devices(
                 "battery": asdict(device.battery),
                 "mower": asdict(device.mower),
                 "planner": {
-                    "next_start_timestamp": str(
-                        device.planner.next_start_timestamp
-                    ),
+                    "next_start_timestamp": str(device.planner.next_start_timestamp),
                     "restricted_reason": device.planner.restricted_reason,
                     "override_action": device.planner.override.action,
                 },

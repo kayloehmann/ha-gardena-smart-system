@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
 try:
     from tests.common import MockConfigEntry
 except ImportError:
-    from pytest_homeassistant_custom_component.common import MockConfigEntry  # type: ignore[no-redef]
+    from pytest_homeassistant_custom_component.common import (
+        MockConfigEntry,  # type: ignore[no-redef]
+    )
 
 from custom_components.gardena_smart_system.const import (
     CONF_CLIENT_ID,

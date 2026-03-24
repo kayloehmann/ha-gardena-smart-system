@@ -110,7 +110,9 @@ class GardenaAuth:
                         f"Invalid credentials: {body.get('error_description', '')}"
                     )
                 if resp.status == 401:
-                    raise GardenaAuthenticationError("Token refresh rejected — re-authentication required")
+                    raise GardenaAuthenticationError(
+                        "Token refresh rejected — re-authentication required"
+                    )
                 if resp.status == 429:
                     raise GardenaRateLimitError("Rate limited by Husqvarna auth endpoint")
                 resp.raise_for_status()

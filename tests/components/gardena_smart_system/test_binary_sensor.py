@@ -2,26 +2,18 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
-from custom_components.gardena_smart_system.const import DOMAIN
+from .conftest import make_mock_device
 
-from .conftest import ENTRY_DATA, make_mock_device
-
-_PATCH_CLIENT = (
-    "custom_components.gardena_smart_system.coordinator.GardenaClient"
-)
-_PATCH_AUTH = (
-    "custom_components.gardena_smart_system.coordinator.GardenaAuth"
-)
-_PATCH_WS = (
-    "custom_components.gardena_smart_system.coordinator.GardenaWebSocket"
-)
+_PATCH_CLIENT = "custom_components.gardena_smart_system.coordinator.GardenaClient"
+_PATCH_AUTH = "custom_components.gardena_smart_system.coordinator.GardenaAuth"
+_PATCH_WS = "custom_components.gardena_smart_system.coordinator.GardenaWebSocket"
 
 
 @pytest.fixture
@@ -153,9 +145,7 @@ class TestValveErrorBinarySensor:
 
         # Enable the entity
         entity_reg = er.async_get(hass)
-        entity_reg.async_update_entity(
-            "binary_sensor.my_sensor_valve_error", disabled_by=None
-        )
+        entity_reg.async_update_entity("binary_sensor.my_sensor_valve_error", disabled_by=None)
         await hass.config_entries.async_reload(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 

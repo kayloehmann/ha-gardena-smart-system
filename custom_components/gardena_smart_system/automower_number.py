@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from aioautomower import AutomowerDevice
 from aioautomower.exceptions import AutomowerAuthenticationError, AutomowerException
-
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from aioautomower import AutomowerDevice
 
 from . import GardenaConfigEntry
 from .automower_coordinator import AutomowerCoordinator
@@ -38,9 +38,7 @@ async def async_setup_entry(
             key = f"{device.mower_id}_cutting_height"
             if key not in known_ids:
                 known_ids.add(key)
-                new_entities.append(
-                    AutomowerCuttingHeightEntity(coordinator, device)
-                )
+                new_entities.append(AutomowerCuttingHeightEntity(coordinator, device))
             # Per-work-area cutting height
             if device.capabilities.work_areas:
                 for wa in device.work_areas.values():
@@ -48,9 +46,7 @@ async def async_setup_entry(
                     if wa_key not in known_ids:
                         known_ids.add(wa_key)
                         new_entities.append(
-                            AutomowerWorkAreaHeightEntity(
-                                coordinator, device, wa.work_area_id
-                            )
+                            AutomowerWorkAreaHeightEntity(coordinator, device, wa.work_area_id)
                         )
         if new_entities:
             async_add_entities(new_entities)
@@ -68,9 +64,7 @@ class AutomowerCuttingHeightEntity(AutomowerEntity, NumberEntity):
     _attr_native_step = 1
     _attr_mode = NumberMode.SLIDER
 
-    def __init__(
-        self, coordinator: AutomowerCoordinator, device: AutomowerDevice
-    ) -> None:
+    def __init__(self, coordinator: AutomowerCoordinator, device: AutomowerDevice) -> None:
         """Initialize the cutting height entity."""
         super().__init__(coordinator, device, "cutting_height")
 
@@ -92,9 +86,7 @@ class AutomowerCuttingHeightEntity(AutomowerEntity, NumberEntity):
             )
         self.coordinator.check_command_throttle()
         try:
-            await self.coordinator.client.async_set_cutting_height(
-                device.mower_id, int(value)
-            )
+            await self.coordinator.client.async_set_cutting_height(device.mower_id, int(value))
         except AutomowerAuthenticationError as err:
             raise ConfigEntryAuthFailed(
                 translation_domain="gardena_smart_system",
@@ -125,9 +117,7 @@ class AutomowerWorkAreaHeightEntity(AutomowerEntity, NumberEntity):
         work_area_id: int,
     ) -> None:
         """Initialize the work area cutting height entity."""
-        super().__init__(
-            coordinator, device, f"wa_{work_area_id}_height"
-        )
+        super().__init__(coordinator, device, f"wa_{work_area_id}_height")
         self._work_area_id = work_area_id
         wa = device.work_areas.get(work_area_id)
         wa_name = wa.name if wa else f"Work area {work_area_id}"

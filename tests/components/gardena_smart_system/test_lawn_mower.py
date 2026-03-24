@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.const import STATE_UNAVAILABLE
@@ -10,19 +10,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 
-from custom_components.gardena_smart_system.const import DOMAIN
+from .conftest import make_mock_device
 
-from .conftest import ENTRY_DATA, make_mock_device
-
-_PATCH_CLIENT = (
-    "custom_components.gardena_smart_system.coordinator.GardenaClient"
-)
-_PATCH_AUTH = (
-    "custom_components.gardena_smart_system.coordinator.GardenaAuth"
-)
-_PATCH_WS = (
-    "custom_components.gardena_smart_system.coordinator.GardenaWebSocket"
-)
+_PATCH_CLIENT = "custom_components.gardena_smart_system.coordinator.GardenaClient"
+_PATCH_AUTH = "custom_components.gardena_smart_system.coordinator.GardenaAuth"
+_PATCH_WS = "custom_components.gardena_smart_system.coordinator.GardenaWebSocket"
 
 
 async def _setup_with_devices(hass, mock_config_entry, devices):
@@ -75,7 +67,8 @@ class TestLawnMowerEntityCreation:
 
         entity_reg = er.async_get(hass)
         mower_entities = [
-            e for e in entity_reg.entities.values()
+            e
+            for e in entity_reg.entities.values()
             if e.domain == "lawn_mower" and e.platform == "gardena_smart_system"
         ]
         assert len(mower_entities) == 0
@@ -84,9 +77,7 @@ class TestLawnMowerEntityCreation:
 class TestLawnMowerUniqueId:
     """Test lawn mower unique ID."""
 
-    async def test_mower_unique_id(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
+    async def test_mower_unique_id(self, hass: HomeAssistant, mock_config_entry: object) -> None:
         device = make_mock_device(has_sensor=False, has_mower=True)
         devices = {device.device_id: device}
 
@@ -343,7 +334,8 @@ class TestLawnMowerCommands:
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
-                "lawn_mower", "start_mowing",
+                "lawn_mower",
+                "start_mowing",
                 {"entity_id": "lawn_mower.my_sensor_mower"},
                 blocking=True,
             )
@@ -354,9 +346,7 @@ class TestLawnMowerCommands:
                 command="START_DONT_OVERRIDE",
             )
 
-    async def test_dock_command(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
+    async def test_dock_command(self, hass: HomeAssistant, mock_config_entry: object) -> None:
         device = make_mock_device(has_sensor=False, has_mower=True)
         device.mower.activity = "OK_CUTTING"
         device.mower.state = "OK"
@@ -364,7 +354,8 @@ class TestLawnMowerCommands:
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
-                "lawn_mower", "dock",
+                "lawn_mower",
+                "dock",
                 {"entity_id": "lawn_mower.my_sensor_mower"},
                 blocking=True,
             )
@@ -375,9 +366,7 @@ class TestLawnMowerCommands:
                 command="PARK_UNTIL_NEXT_TASK",
             )
 
-    async def test_pause_command(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
+    async def test_pause_command(self, hass: HomeAssistant, mock_config_entry: object) -> None:
         device = make_mock_device(has_sensor=False, has_mower=True)
         device.mower.activity = "OK_CUTTING"
         device.mower.state = "OK"
@@ -385,7 +374,8 @@ class TestLawnMowerCommands:
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
-                "lawn_mower", "pause",
+                "lawn_mower",
+                "pause",
                 {"entity_id": "lawn_mower.my_sensor_mower"},
                 blocking=True,
             )
@@ -404,7 +394,8 @@ class TestLawnMowerCommands:
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
-                "gardena_smart_system", "override_schedule",
+                "gardena_smart_system",
+                "override_schedule",
                 {"entity_id": "lawn_mower.my_sensor_mower", "duration": 120},
                 blocking=True,
             )
@@ -428,7 +419,8 @@ class TestLawnMowerServiceActions:
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
-                "gardena_smart_system", "park_until_further_notice",
+                "gardena_smart_system",
+                "park_until_further_notice",
                 {"entity_id": "lawn_mower.my_sensor_mower"},
                 blocking=True,
             )
@@ -447,7 +439,8 @@ class TestLawnMowerServiceActions:
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
-                "gardena_smart_system", "resume_schedule",
+                "gardena_smart_system",
+                "resume_schedule",
                 {"entity_id": "lawn_mower.my_sensor_mower"},
                 blocking=True,
             )
@@ -471,13 +464,12 @@ class TestLawnMowerErrorHandling:
         devices = {device.device_id: device}
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
-            mock_client.async_send_command.side_effect = GardenaAuthenticationError(
-                "token expired"
-            )
+            mock_client.async_send_command.side_effect = GardenaAuthenticationError("token expired")
 
             with pytest.raises(HomeAssistantError):
                 await hass.services.async_call(
-                    "lawn_mower", "start_mowing",
+                    "lawn_mower",
+                    "start_mowing",
                     {"entity_id": "lawn_mower.my_sensor_mower"},
                     blocking=True,
                 )
@@ -495,7 +487,8 @@ class TestLawnMowerErrorHandling:
 
             with pytest.raises(HomeAssistantError):
                 await hass.services.async_call(
-                    "lawn_mower", "start_mowing",
+                    "lawn_mower",
+                    "start_mowing",
                     {"entity_id": "lawn_mower.my_sensor_mower"},
                     blocking=True,
                 )
@@ -514,7 +507,8 @@ class TestLawnMowerErrorHandling:
 
             # HA silently skips service calls on unavailable entities
             await hass.services.async_call(
-                "lawn_mower", "start_mowing",
+                "lawn_mower",
+                "start_mowing",
                 {"entity_id": "lawn_mower.my_sensor_mower"},
                 blocking=True,
             )
@@ -653,15 +647,14 @@ class TestLawnMowerDynamicDevices:
             # No mower initially
             entity_reg = er.async_get(hass)
             mower_entities = [
-                e for e in entity_reg.entities.values()
+                e
+                for e in entity_reg.entities.values()
                 if e.domain == "lawn_mower" and e.platform == "gardena_smart_system"
             ]
             assert len(mower_entities) == 0
 
             # Add mower device
-            device2 = make_mock_device(
-                "dev-2", "SN002", "SILENO", has_sensor=False, has_mower=True
-            )
+            device2 = make_mock_device("dev-2", "SN002", "SILENO", has_sensor=False, has_mower=True)
             new_devices = {"dev-1": device1, "dev-2": device2}
             coordinator = mock_config_entry.runtime_data
             coordinator.async_set_updated_data(new_devices)

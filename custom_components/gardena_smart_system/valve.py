@@ -10,9 +10,7 @@ import logging
 from typing import Any
 
 import voluptuous as vol
-from aiogardenasmart import Device, GardenaAuthenticationError, GardenaException, ValveService
 from aiogardenasmart.const import ControlType, ValveActivity
-
 from homeassistant.components.valve import (
     ValveDeviceClass,
     ValveEntity,
@@ -22,6 +20,8 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers import entity_platform as ep
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from aiogardenasmart import Device, GardenaAuthenticationError, GardenaException, ValveService
 
 from . import GardenaConfigEntry
 from .const import DEFAULT_WATERING_MINUTES, OPT_DEFAULT_WATERING_MINUTES
@@ -51,9 +51,7 @@ async def async_setup_entry(
             for service_id in device.valves:
                 if service_id not in known_service_ids:
                     known_service_ids.add(service_id)
-                    new_entities.append(
-                        GardenaValveEntity(coordinator, device, service_id)
-                    )
+                    new_entities.append(GardenaValveEntity(coordinator, device, service_id))
         if new_entities:
             async_add_entities(new_entities)
 
@@ -76,9 +74,7 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
     """Represents a single Gardena irrigation valve."""
 
     _attr_device_class = ValveDeviceClass.WATER
-    _attr_supported_features = (
-        ValveEntityFeature.OPEN | ValveEntityFeature.CLOSE
-    )
+    _attr_supported_features = ValveEntityFeature.OPEN | ValveEntityFeature.CLOSE
     _attr_reports_position = False
     _attr_assumed_state = True
 

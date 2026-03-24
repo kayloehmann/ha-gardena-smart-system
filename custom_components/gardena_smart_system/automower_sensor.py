@@ -6,10 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 
-from aioautomower import AutomowerDevice
-
 from aioautomower.const import MowerActivity, MowerState
-
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -19,6 +16,8 @@ from homeassistant.components.sensor import (
 from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfLength, UnitOfTime
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from aioautomower import AutomowerDevice
 
 from . import GardenaConfigEntry
 from .automower_coordinator import AutomowerCoordinator
@@ -159,9 +158,9 @@ SENSOR_DESCRIPTIONS: tuple[AutomowerSensorDescription, ...] = (
             MowerActivity.PARKED_IN_CS.lower(),
             MowerActivity.STOPPED_IN_GARDEN.lower(),
         ],
-        value_fn=lambda d: d.mower.activity.lower()
-        if d.mower.activity.lower() in _KNOWN_ACTIVITIES
-        else None,
+        value_fn=lambda d: (
+            d.mower.activity.lower() if d.mower.activity.lower() in _KNOWN_ACTIVITIES else None
+        ),
     ),
     AutomowerSensorDescription(
         key="state",
@@ -182,9 +181,9 @@ SENSOR_DESCRIPTIONS: tuple[AutomowerSensorDescription, ...] = (
             MowerState.ERROR_AT_POWER_UP.lower(),
         ],
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: d.mower.state.lower()
-        if d.mower.state.lower() in _KNOWN_STATES
-        else None,
+        value_fn=lambda d: (
+            d.mower.state.lower() if d.mower.state.lower() in _KNOWN_STATES else None
+        ),
     ),
 )
 
@@ -209,9 +208,7 @@ async def async_setup_entry(
                 entity_key = f"{device.mower_id}_{desc.key}"
                 if entity_key not in known_ids:
                     known_ids.add(entity_key)
-                    new_entities.append(
-                        AutomowerSensorEntity(coordinator, device, desc)
-                    )
+                    new_entities.append(AutomowerSensorEntity(coordinator, device, desc))
         if new_entities:
             async_add_entities(new_entities)
 

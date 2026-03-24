@@ -32,7 +32,9 @@ from .fixtures import (
 
 
 @pytest.fixture
-async def authenticated_client() -> AsyncGenerator[tuple[GardenaClient, aiohttp.ClientSession], None]:
+async def authenticated_client() -> AsyncGenerator[
+    tuple[GardenaClient, aiohttp.ClientSession], None
+]:
     """Return a GardenaClient with a pre-acquired token."""
     async with aiohttp.ClientSession() as session:
         auth = GardenaAuth("client-id", "secret", session)
@@ -49,7 +51,7 @@ class TestGetLocations:
     async def test_returns_locations(
         self, authenticated_client: tuple[GardenaClient, aiohttp.ClientSession]
     ) -> None:
-        client, session = authenticated_client
+        client, _session = authenticated_client
         payload = {
             "data": [
                 {
@@ -70,7 +72,7 @@ class TestGetLocations:
     async def test_empty_locations(
         self, authenticated_client: tuple[GardenaClient, aiohttp.ClientSession]
     ) -> None:
-        client, session = authenticated_client
+        client, _session = authenticated_client
         with aioresponses() as m:
             m.get(f"{API_BASE_URL}/locations", payload={"data": []})
             locations = await client.async_get_locations()
@@ -82,7 +84,7 @@ class TestGetDevices:
     async def test_returns_sensor_device(
         self, authenticated_client: tuple[GardenaClient, aiohttp.ClientSession]
     ) -> None:
-        client, session = authenticated_client
+        client, _session = authenticated_client
         with aioresponses() as m:
             m.get(f"{API_BASE_URL}/locations/{LOCATION_ID}", payload=SENSOR_LOCATION_RESPONSE)
             devices = await client.async_get_devices(LOCATION_ID)
@@ -93,7 +95,7 @@ class TestGetDevices:
     async def test_returns_water_control_device(
         self, authenticated_client: tuple[GardenaClient, aiohttp.ClientSession]
     ) -> None:
-        client, session = authenticated_client
+        client, _session = authenticated_client
         with aioresponses() as m:
             m.get(
                 f"{API_BASE_URL}/locations/{LOCATION_ID}",
@@ -107,7 +109,7 @@ class TestGetDevices:
     async def test_returns_irrigation_controller(
         self, authenticated_client: tuple[GardenaClient, aiohttp.ClientSession]
     ) -> None:
-        client, session = authenticated_client
+        client, _session = authenticated_client
         with aioresponses() as m:
             m.get(
                 f"{API_BASE_URL}/locations/{LOCATION_ID}",
@@ -122,7 +124,7 @@ class TestGetWebSocketUrl:
     async def test_returns_ws_url(
         self, authenticated_client: tuple[GardenaClient, aiohttp.ClientSession]
     ) -> None:
-        client, session = authenticated_client
+        client, _session = authenticated_client
         with aioresponses() as m:
             m.post(f"{API_BASE_URL}/websocket", payload=WEBSOCKET_URL_RESPONSE)
             url = await client.async_get_websocket_url(LOCATION_ID)
@@ -134,7 +136,7 @@ class TestSendCommand:
     async def test_valve_open_command(
         self, authenticated_client: tuple[GardenaClient, aiohttp.ClientSession]
     ) -> None:
-        client, session = authenticated_client
+        client, _session = authenticated_client
         service_id = f"{WATER_CONTROL_DEVICE_ID}:1"
         with aioresponses() as m:
             m.put(f"{API_BASE_URL}/command/{service_id}", status=202, payload={})
@@ -149,7 +151,7 @@ class TestSendCommand:
     async def test_command_with_no_params(
         self, authenticated_client: tuple[GardenaClient, aiohttp.ClientSession]
     ) -> None:
-        client, session = authenticated_client
+        client, _session = authenticated_client
         service_id = f"{WATER_CONTROL_DEVICE_ID}:1"
         with aioresponses() as m:
             m.put(f"{API_BASE_URL}/command/{service_id}", status=202, payload={})
@@ -164,7 +166,7 @@ class TestErrorHandling:
     async def test_401_raises_auth_error(
         self, authenticated_client: tuple[GardenaClient, aiohttp.ClientSession]
     ) -> None:
-        client, session = authenticated_client
+        client, _session = authenticated_client
         with aioresponses() as m:
             m.get(f"{API_BASE_URL}/locations", status=401, payload={})
             with pytest.raises(GardenaAuthenticationError):
@@ -173,7 +175,7 @@ class TestErrorHandling:
     async def test_403_raises_forbidden_error(
         self, authenticated_client: tuple[GardenaClient, aiohttp.ClientSession]
     ) -> None:
-        client, session = authenticated_client
+        client, _session = authenticated_client
         with aioresponses() as m:
             m.get(f"{API_BASE_URL}/locations", status=403, payload={})
             with pytest.raises(GardenaForbiddenError):
@@ -182,7 +184,7 @@ class TestErrorHandling:
     async def test_500_raises_request_error(
         self, authenticated_client: tuple[GardenaClient, aiohttp.ClientSession]
     ) -> None:
-        client, session = authenticated_client
+        client, _session = authenticated_client
         with aioresponses() as m:
             m.get(f"{API_BASE_URL}/locations", status=500, body="Internal Error")
             with pytest.raises(GardenaRequestError) as exc_info:
@@ -192,7 +194,7 @@ class TestErrorHandling:
     async def test_network_error_raises_connection_error(
         self, authenticated_client: tuple[GardenaClient, aiohttp.ClientSession]
     ) -> None:
-        client, session = authenticated_client
+        client, _session = authenticated_client
         with aioresponses() as m:
             m.get(
                 f"{API_BASE_URL}/locations",
@@ -204,7 +206,7 @@ class TestErrorHandling:
     async def test_204_returns_empty_dict(
         self, authenticated_client: tuple[GardenaClient, aiohttp.ClientSession]
     ) -> None:
-        client, session = authenticated_client
+        client, _session = authenticated_client
         service_id = f"{WATER_CONTROL_DEVICE_ID}:1"
         with aioresponses() as m:
             m.put(f"{API_BASE_URL}/command/{service_id}", status=204, body="")

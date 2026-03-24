@@ -3,19 +3,21 @@
 from __future__ import annotations
 
 import time
-from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
-from homeassistant.helpers import device_registry as dr, issue_registry as ir
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
 try:
     from tests.common import MockConfigEntry
 except ImportError:
-    from pytest_homeassistant_custom_component.common import MockConfigEntry  # type: ignore[no-redef]
+    from pytest_homeassistant_custom_component.common import (
+        MockConfigEntry,  # type: ignore[no-redef]
+    )
 
 from custom_components.gardena_smart_system.const import (
     DOMAIN,
@@ -27,9 +29,7 @@ from custom_components.gardena_smart_system.coordinator import GardenaCoordinato
 
 from .conftest import ENTRY_DATA, make_mock_device
 
-_PATCH_WS = (
-    "custom_components.gardena_smart_system.coordinator.GardenaWebSocket"
-)
+_PATCH_WS = "custom_components.gardena_smart_system.coordinator.GardenaWebSocket"
 
 
 @pytest.fixture
@@ -47,9 +47,7 @@ def coordinator(hass: HomeAssistant, entry: MockConfigEntry) -> GardenaCoordinat
 
 
 class TestAsyncUpdateData:
-    async def test_returns_devices_from_api(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    async def test_returns_devices_from_api(self, coordinator: GardenaCoordinator) -> None:
         devices = {"dev-1": make_mock_device()}
         coordinator._client = AsyncMock()
         coordinator._client.async_get_devices = AsyncMock(return_value=devices)
@@ -116,9 +114,7 @@ class TestAsyncUpdateData:
 
 
 class TestStartWebSocket:
-    async def test_websocket_connected_on_success(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    async def test_websocket_connected_on_success(self, coordinator: GardenaCoordinator) -> None:
         coordinator._client = AsyncMock()
         coordinator._client.async_get_websocket_url = AsyncMock(
             return_value="wss://gardena.example/ws"
@@ -157,9 +153,7 @@ class TestStartWebSocket:
 
         with patch(_PATCH_WS) as mock_ws_cls:
             mock_ws = AsyncMock()
-            mock_ws.async_connect = AsyncMock(
-                side_effect=OSError("Connection refused")
-            )
+            mock_ws.async_connect = AsyncMock(side_effect=OSError("Connection refused"))
             mock_ws_cls.return_value = mock_ws
             await coordinator._async_start_websocket({})
 
@@ -177,9 +171,7 @@ class TestStartWebSocket:
 
         # Reconnect should clear it
         coordinator._client = AsyncMock()
-        coordinator._client.async_get_websocket_url = AsyncMock(
-            return_value="wss://test"
-        )
+        coordinator._client.async_get_websocket_url = AsyncMock(return_value="wss://test")
         with patch(_PATCH_WS) as mock_ws_cls:
             mock_ws_cls.return_value = AsyncMock()
             await coordinator._async_start_websocket({})
@@ -188,9 +180,7 @@ class TestStartWebSocket:
 
 
 class TestOnDeviceUpdate:
-    def test_device_update_replaces_device_in_data(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    def test_device_update_replaces_device_in_data(self, coordinator: GardenaCoordinator) -> None:
         old_device = make_mock_device("dev-1", "SN001")
         coordinator.data = {"dev-1": old_device}
 
@@ -199,9 +189,7 @@ class TestOnDeviceUpdate:
 
         assert coordinator.data["dev-1"] is new_device
 
-    def test_device_update_with_no_existing_data(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    def test_device_update_with_no_existing_data(self, coordinator: GardenaCoordinator) -> None:
         coordinator.data = None
         device = make_mock_device()
         # Should not raise
@@ -277,9 +265,7 @@ class TestStaleDevices:
 
         assert dev_reg.async_get_device(identifiers={(DOMAIN, device.serial)}) is not None
 
-    def test_no_op_on_first_poll_when_data_is_none(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    def test_no_op_on_first_poll_when_data_is_none(self, coordinator: GardenaCoordinator) -> None:
         coordinator.data = None
         # Should not raise
         coordinator._async_remove_stale_devices({})
@@ -308,18 +294,14 @@ class TestRepairIssues:
         assert issue.severity == ir.IssueSeverity.WARNING
         assert issue.is_fixable
 
-    def test_ws_error_sets_connected_false(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    def test_ws_error_sets_connected_false(self, coordinator: GardenaCoordinator) -> None:
         coordinator._ws_connected = True
         coordinator._on_ws_error(RuntimeError("dropped"))
         assert coordinator._ws_connected is False
 
 
 class TestShutdown:
-    async def test_shutdown_disconnects_websocket(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    async def test_shutdown_disconnects_websocket(self, coordinator: GardenaCoordinator) -> None:
         mock_ws = AsyncMock()
         mock_ws.async_disconnect = AsyncMock()
         coordinator._ws = mock_ws
@@ -331,9 +313,7 @@ class TestShutdown:
         assert coordinator._ws is None
         assert coordinator._ws_connected is False
 
-    async def test_shutdown_with_no_websocket(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    async def test_shutdown_with_no_websocket(self, coordinator: GardenaCoordinator) -> None:
         coordinator._ws = None
         # Should not raise
         await coordinator.async_shutdown()
@@ -342,15 +322,11 @@ class TestShutdown:
 class TestRateLimitBackoff:
     """Test rate limit handling in _async_update_data."""
 
-    async def test_rate_limit_raises_update_failed(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    async def test_rate_limit_raises_update_failed(self, coordinator: GardenaCoordinator) -> None:
         from aiogardenasmart.exceptions import GardenaRateLimitError
 
         coordinator._client = AsyncMock()
-        coordinator._client.async_get_devices = AsyncMock(
-            side_effect=GardenaRateLimitError("429")
-        )
+        coordinator._client.async_get_devices = AsyncMock(side_effect=GardenaRateLimitError("429"))
 
         with pytest.raises(UpdateFailed, match="Rate limited"):
             await coordinator._async_update_data()
@@ -361,9 +337,7 @@ class TestRateLimitBackoff:
         from aiogardenasmart.exceptions import GardenaRateLimitError
 
         coordinator._client = AsyncMock()
-        coordinator._client.async_get_devices = AsyncMock(
-            side_effect=GardenaRateLimitError("429")
-        )
+        coordinator._client.async_get_devices = AsyncMock(side_effect=GardenaRateLimitError("429"))
 
         with pytest.raises(UpdateFailed):
             await coordinator._async_update_data()
@@ -404,9 +378,7 @@ class TestRateLimitBackoff:
         from aiogardenasmart.exceptions import GardenaRateLimitError
 
         coordinator._client = AsyncMock()
-        coordinator._client.async_get_devices = AsyncMock(
-            side_effect=GardenaRateLimitError("429")
-        )
+        coordinator._client.async_get_devices = AsyncMock(side_effect=GardenaRateLimitError("429"))
 
         for _ in range(3):
             with pytest.raises(UpdateFailed):
@@ -417,9 +389,7 @@ class TestRateLimitBackoff:
 class TestWebSocketPollIntervalAdaptation:
     """Test that poll interval adapts based on WebSocket connection state."""
 
-    async def test_ws_connect_extends_poll_interval(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    async def test_ws_connect_extends_poll_interval(self, coordinator: GardenaCoordinator) -> None:
         coordinator._client = AsyncMock()
         coordinator._client.async_get_websocket_url = AsyncMock(
             return_value="wss://gardena.example/ws"
@@ -431,9 +401,7 @@ class TestWebSocketPollIntervalAdaptation:
 
         assert coordinator.update_interval == SCAN_INTERVAL_WS_CONNECTED
 
-    def test_ws_error_restores_short_poll_interval(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    def test_ws_error_restores_short_poll_interval(self, coordinator: GardenaCoordinator) -> None:
         coordinator._ws_connected = True
         coordinator.update_interval = SCAN_INTERVAL_WS_CONNECTED
 
@@ -451,12 +419,8 @@ class TestWebSocketAuthReauth:
     ) -> None:
         from aiogardenasmart.exceptions import GardenaAuthenticationError
 
-        with patch.object(
-            coordinator.config_entry, "async_start_reauth"
-        ) as mock_reauth:
-            coordinator._on_ws_error(
-                GardenaAuthenticationError("token expired")
-            )
+        with patch.object(coordinator.config_entry, "async_start_reauth") as mock_reauth:
+            coordinator._on_ws_error(GardenaAuthenticationError("token expired"))
 
         mock_reauth.assert_called_once_with(hass)
 
@@ -466,9 +430,7 @@ class TestWebSocketAuthReauth:
         from aiogardenasmart.exceptions import GardenaAuthenticationError
 
         with patch.object(coordinator.config_entry, "async_start_reauth"):
-            coordinator._on_ws_error(
-                GardenaAuthenticationError("token expired")
-            )
+            coordinator._on_ws_error(GardenaAuthenticationError("token expired"))
 
         issue_reg = ir.async_get(hass)
         assert issue_reg.async_get_issue(DOMAIN, "websocket_connection_failed") is None
@@ -509,7 +471,9 @@ class TestRepairFlow:
         flow = WebSocketReconnectRepairFlow()
         flow.hass = hass
 
-        with patch.object(coordinator, "async_request_refresh", new_callable=AsyncMock) as mock_refresh:
+        with patch.object(
+            coordinator, "async_request_refresh", new_callable=AsyncMock
+        ) as mock_refresh:
             result = await flow.async_step_init(user_input={})
 
         mock_refresh.assert_called_once()
@@ -519,23 +483,17 @@ class TestRepairFlow:
 class TestCommandThrottle:
     """Test command throttling to prevent API quota exhaustion."""
 
-    def test_first_command_allowed(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    def test_first_command_allowed(self, coordinator: GardenaCoordinator) -> None:
         # Should not raise
         coordinator.check_command_throttle()
 
-    def test_rapid_second_command_blocked(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    def test_rapid_second_command_blocked(self, coordinator: GardenaCoordinator) -> None:
         coordinator.check_command_throttle()  # first succeeds
 
         with pytest.raises(HomeAssistantError):
             coordinator.check_command_throttle()  # immediate second blocked
 
-    def test_command_allowed_after_interval(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    def test_command_allowed_after_interval(self, coordinator: GardenaCoordinator) -> None:
         coordinator.check_command_throttle()
 
         # Simulate time passing

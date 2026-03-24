@@ -7,23 +7,24 @@ import time
 from datetime import timedelta
 
 import aiohttp
-from aioautomower import (
-    AutomowerClient,
-    AutomowerDevice,
-    AutomowerWebSocket,
-)
 from aioautomower.exceptions import (
     AutomowerAuthenticationError,
     AutomowerConnectionError,
     AutomowerRateLimitError,
 )
 from aiogardenasmart.auth import GardenaAuth
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+
+from aioautomower import (
+    AutomowerClient,
+    AutomowerDevice,
+    AutomowerWebSocket,
+)
 
 from .const import (
     AUTOMOWER_RATE_LIMIT_COOLDOWN,
@@ -81,8 +82,7 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
         self._last_command_time: float = 0.0
         self._custom_poll_interval: timedelta | None = (
             timedelta(minutes=int(custom_minutes))
-            if custom_minutes is not None
-            and int(custom_minutes) != DEFAULT_POLL_INTERVAL_AUTOMOWER
+            if custom_minutes is not None and int(custom_minutes) != DEFAULT_POLL_INTERVAL_AUTOMOWER
             else None
         )
         self._stale_miss_counts: dict[str, int] = {}
@@ -105,8 +105,7 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
                 AUTOMOWER_RATE_LIMIT_COOLDOWN,
             )
             raise UpdateFailed(
-                f"Rate limited by Automower API, retrying in "
-                f"{AUTOMOWER_RATE_LIMIT_COOLDOWN}: {err}"
+                f"Rate limited by Automower API, retrying in {AUTOMOWER_RATE_LIMIT_COOLDOWN}: {err}"
             ) from err
         except AutomowerConnectionError as err:
             raise UpdateFailed(f"Cannot connect to Automower API: {err}") from err
@@ -136,9 +135,7 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
 
     _STALE_THRESHOLD = 3
 
-    def _async_remove_stale_devices(
-        self, fresh_devices: dict[str, AutomowerDevice]
-    ) -> None:
+    def _async_remove_stale_devices(self, fresh_devices: dict[str, AutomowerDevice]) -> None:
         """Remove HA device registry entries for mowers no longer in the API response.
 
         Devices must be absent for _STALE_THRESHOLD consecutive polls before removal.
@@ -146,7 +143,7 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
         retains them for the next comparison.
         """
         if self.data is None:
-            return
+            return  # type: ignore[unreachable]
 
         stale_ids = set(self.data) - set(fresh_devices)
 
@@ -160,9 +157,7 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
 
         device_registry = dr.async_get(self.hass)
         for mower_id in stale_ids:
-            self._stale_miss_counts[mower_id] = (
-                self._stale_miss_counts.get(mower_id, 0) + 1
-            )
+            self._stale_miss_counts[mower_id] = self._stale_miss_counts.get(mower_id, 0) + 1
             miss_count = self._stale_miss_counts[mower_id]
 
             if miss_count < self._STALE_THRESHOLD:
@@ -192,9 +187,7 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
                 device_registry.async_remove_device(ha_device.id)
             del self._stale_miss_counts[mower_id]
 
-    async def _async_start_websocket(
-        self, devices: dict[str, AutomowerDevice]
-    ) -> None:
+    async def _async_start_websocket(self, devices: dict[str, AutomowerDevice]) -> None:
         """Start the WebSocket for real-time updates."""
         ws_url = "wss://ws.openapi.husqvarna.dev/v1"
 
@@ -207,7 +200,7 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
         )
         try:
             await self._ws.async_connect(ws_url)
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             _LOGGER.warning(
                 "Could not connect Automower WebSocket, will rely on polling: %s",
                 err,
@@ -218,6 +211,7 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
         self._ws_connected = True
         ws_interval = self._custom_poll_interval or AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED
         self.update_interval = ws_interval
+        ir.async_delete_issue(self.hass, DOMAIN, "automower_websocket_connection_failed")
         _LOGGER.debug(
             "Automower WebSocket started, poll interval set to %s",
             ws_interval,
@@ -239,9 +233,16 @@ class AutomowerCoordinator(DataUpdateCoordinator[dict[str, AutomowerDevice]]):
             self.config_entry.async_start_reauth(self.hass)
             return
 
-        _LOGGER.warning(
-            "Automower WebSocket connection lost, falling back to polling: %s", err
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            "automower_websocket_connection_failed",
+            is_fixable=True,
+            is_persistent=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="websocket_connection_failed",
         )
+        _LOGGER.warning("Automower WebSocket connection lost, falling back to polling: %s", err)
 
     async def async_shutdown(self) -> None:
         """Disconnect the WebSocket and clean up resources."""

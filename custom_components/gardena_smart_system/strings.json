@@ -282,5 +282,18 @@
     "command_throttled": {
       "message": "Commands are being sent too quickly. Please wait a few seconds between commands to avoid exceeding the API rate limit."
     }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "WebSocket connection lost",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Reconnect WebSocket",
+            "description": "The real-time connection to the Husqvarna cloud was lost. The integration is falling back to polling. Confirm to attempt reconnection."
+          }
+        }
+      }
+    }
   }
 }

@@ -8,14 +8,14 @@ from __future__ import annotations
 from typing import Any
 
 import voluptuous as vol
-from aiogardenasmart import Device, GardenaAuthenticationError, GardenaException
 from aiogardenasmart.const import ControlType, PowerSocketActivity
-
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers import entity_platform as ep
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from aiogardenasmart import Device, GardenaAuthenticationError, GardenaException
 
 from . import GardenaConfigEntry
 from .const import (
@@ -102,10 +102,7 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
         if device is None or device.power_socket is None:
             return None
         attrs: dict[str, Any] = {"activity": device.power_socket.activity}
-        if (
-            device.power_socket.duration is not None
-            and device.power_socket.duration > 0
-        ):
+        if device.power_socket.duration is not None and device.power_socket.duration > 0:
             attrs["duration"] = device.power_socket.duration
         return attrs
 

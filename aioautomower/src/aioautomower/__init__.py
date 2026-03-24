@@ -29,16 +29,16 @@ from .models import (
 from .websocket import AutomowerWebSocket
 
 __all__ = [
+    "AutomowerAuthenticationError",
     "AutomowerClient",
+    "AutomowerConnectionError",
     "AutomowerDevice",
     "AutomowerException",
-    "AutomowerAuthenticationError",
-    "AutomowerConnectionError",
     "AutomowerForbiddenError",
     "AutomowerRateLimitError",
     "AutomowerRequestError",
-    "AutomowerWebSocketError",
     "AutomowerWebSocket",
+    "AutomowerWebSocketError",
     "BatteryInfo",
     "CalendarInfo",
     "CapabilitiesInfo",

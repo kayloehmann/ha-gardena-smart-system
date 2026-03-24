@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import logging
 
-from aiogardenasmart import Device
-
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+from aiogardenasmart import Device
 
 from .const import DOMAIN
 from .coordinator import GardenaCoordinator
@@ -53,17 +53,14 @@ class GardenaEntity(CoordinatorEntity[GardenaCoordinator]):
     def _device(self) -> Device | None:
         """Return the current device state from the coordinator."""
         if self.coordinator.data is None:
-            return None
+            return None  # type: ignore[unreachable]
         return self.coordinator.data.get(self._device_id)
 
     @property
     def available(self) -> bool:
         """Return True only when coordinator has data and device is RF-online."""
         device = self._device
-        if device is None:
-            is_available = False
-        else:
-            is_available = super().available and device.is_online
+        is_available = False if device is None else super().available and device.is_online
 
         if self._was_available is not None and is_available != self._was_available:
             if is_available:

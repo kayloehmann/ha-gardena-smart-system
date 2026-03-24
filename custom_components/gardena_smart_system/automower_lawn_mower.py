@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from aioautomower import AutomowerDevice
 from aioautomower.const import MowerActivity, MowerState
 from aioautomower.exceptions import AutomowerAuthenticationError, AutomowerException
-
 from homeassistant.components.lawn_mower import LawnMowerEntity
 from homeassistant.components.lawn_mower.const import (
     LawnMowerActivity,
@@ -20,10 +18,12 @@ from homeassistant.helpers.entity_platform import (
     async_get_current_platform,
 )
 
+from aioautomower import AutomowerDevice
+
 from . import GardenaConfigEntry
 from .automower_coordinator import AutomowerCoordinator
 from .automower_entity import AutomowerEntity
-from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE, DOMAIN
+from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
 
 PARALLEL_UPDATES = 1
 
@@ -58,9 +58,7 @@ async def async_setup_entry(
         for device in coordinator.data.values():
             if device.mower_id not in known_ids:
                 known_ids.add(device.mower_id)
-                new_entities.append(
-                    AutomowerLawnMowerEntity(coordinator, device)
-                )
+                new_entities.append(AutomowerLawnMowerEntity(coordinator, device))
         if new_entities:
             async_add_entities(new_entities)
 
@@ -90,9 +88,7 @@ class AutomowerLawnMowerEntity(AutomowerEntity, LawnMowerEntity):
     )
     _attr_translation_key = "automower"
 
-    def __init__(
-        self, coordinator: AutomowerCoordinator, device: AutomowerDevice
-    ) -> None:
+    def __init__(self, coordinator: AutomowerCoordinator, device: AutomowerDevice) -> None:
         """Initialize the lawn mower entity."""
         super().__init__(coordinator, device, "automower")
 

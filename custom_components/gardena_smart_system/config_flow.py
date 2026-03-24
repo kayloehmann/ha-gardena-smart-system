@@ -7,14 +7,12 @@ from typing import Any
 
 import aiohttp
 import voluptuous as vol
-from aiogardenasmart import GardenaAuth, GardenaClient
 from aiogardenasmart.exceptions import (
     GardenaAuthenticationError,
     GardenaConnectionError,
     GardenaForbiddenError,
     GardenaRateLimitError,
 )
-
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
@@ -33,6 +31,8 @@ from homeassistant.helpers.selector import (
     TextSelectorConfig,
     TextSelectorType,
 )
+
+from aiogardenasmart import GardenaAuth, GardenaClient
 
 from .const import (
     API_TYPE_AUTOMOWER,
@@ -80,9 +80,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
         self._client_secret: str = ""
         self._locations: list[dict[str, str]] = []
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle the credentials step."""
         errors: dict[str, str] = {}
 
@@ -100,7 +98,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "rate_limited"
             except GardenaConnectionError:
                 errors["base"] = "cannot_connect"
-            except Exception:  # noqa: BLE001
+            except Exception:
                 _LOGGER.exception("Unexpected error during credential test")
                 errors["base"] = "unknown"
             else:
@@ -166,11 +164,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="api_type",
             data_schema=vol.Schema(
-                {
-                    vol.Required(CONF_API_TYPE): SelectSelector(
-                        SelectSelectorConfig(options=options)
-                    )
-                }
+                {vol.Required(CONF_API_TYPE): SelectSelector(SelectSelectorConfig(options=options))}
             ),
             errors=errors,
         )
@@ -182,10 +176,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             return await self._async_create_gardena_entry(user_input[CONF_LOCATION_ID])
 
-        options = [
-            SelectOptionDict(value=loc["id"], label=loc["name"])
-            for loc in self._locations
-        ]
+        options = [SelectOptionDict(value=loc["id"], label=loc["name"]) for loc in self._locations]
         return self.async_show_form(
             step_id="location",
             data_schema=vol.Schema(
@@ -197,9 +188,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
             ),
         )
 
-    async def async_step_reauth(
-        self, entry_data: dict[str, Any]
-    ) -> ConfigFlowResult:
+    async def async_step_reauth(self, entry_data: dict[str, Any]) -> ConfigFlowResult:
         """Handle re-authentication when the token is no longer valid."""
         return await self.async_step_reauth_confirm()
 
@@ -218,13 +207,9 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
             api_type = entry.data.get(CONF_API_TYPE, API_TYPE_GARDENA)
 
             if api_type == API_TYPE_AUTOMOWER:
-                error = await self._async_test_automower(
-                    session, client_id, client_secret
-                )
+                error = await self._async_test_automower(session, client_id, client_secret)
             else:
-                _, error = await self._async_test_gardena(
-                    session, client_id, client_secret
-                )
+                _, error = await self._async_test_gardena(session, client_id, client_secret)
 
             if not error:
                 return self.async_update_reload_and_abort(
@@ -275,9 +260,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
             api_type = entry.data.get(CONF_API_TYPE, API_TYPE_GARDENA)
 
             if api_type == API_TYPE_AUTOMOWER:
-                error = await self._async_test_automower(
-                    session, client_id, client_secret
-                )
+                error = await self._async_test_automower(session, client_id, client_secret)
                 if not error:
                     return self.async_update_reload_and_abort(
                         entry,
@@ -288,9 +271,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                         },
                     )
             else:
-                locations, error = await self._async_test_gardena(
-                    session, client_id, client_secret
-                )
+                locations, error = await self._async_test_gardena(session, client_id, client_secret)
                 if not error:
                     self._client_id = client_id
                     self._client_secret = client_secret
@@ -298,7 +279,9 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                     if len(locations) > 1:
                         return await self.async_step_reconfigure_location()
                     # Single location — update with that location
-                    location_id = locations[0]["id"] if locations else entry.data.get(CONF_LOCATION_ID, "")
+                    location_id = (
+                        locations[0]["id"] if locations else entry.data.get(CONF_LOCATION_ID, "")
+                    )
                     return self.async_update_reload_and_abort(
                         entry,
                         data={
@@ -353,10 +336,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
         entry = self._get_reconfigure_entry()
         current_location = entry.data.get(CONF_LOCATION_ID, "")
 
-        options = [
-            SelectOptionDict(value=loc["id"], label=loc["name"])
-            for loc in self._locations
-        ]
+        options = [SelectOptionDict(value=loc["id"], label=loc["name"]) for loc in self._locations]
         schema = self.add_suggested_values_to_schema(
             vol.Schema(
                 {
@@ -443,7 +423,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
             return [], "rate_limited"
         except GardenaConnectionError:
             return [], "cannot_connect"
-        except Exception:  # noqa: BLE001
+        except Exception:
             _LOGGER.exception("Unexpected error during Gardena credential test")
             return [], "unknown"
 
@@ -454,13 +434,14 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
         client_secret: str,
     ) -> str:
         """Test Automower API access. Returns error key or empty string."""
-        from aioautomower import AutomowerClient
         from aioautomower.exceptions import (
             AutomowerAuthenticationError,
             AutomowerConnectionError,
             AutomowerForbiddenError,
             AutomowerRateLimitError,
         )
+
+        from aioautomower import AutomowerClient
 
         auth = GardenaAuth(client_id, client_secret, session)
         client = AutomowerClient(auth, session)
@@ -475,7 +456,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
             return "rate_limited"
         except AutomowerConnectionError:
             return "cannot_connect"
-        except Exception:  # noqa: BLE001
+        except Exception:
             _LOGGER.exception("Unexpected error during Automower credential test")
             return "unknown"
 
@@ -483,9 +464,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
 class GardenaOptionsFlowHandler(OptionsFlow):
     """Handle Gardena Smart System options."""
 
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Manage the options for the Gardena integration."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
@@ -494,13 +473,9 @@ class GardenaOptionsFlowHandler(OptionsFlow):
         is_automower = api_type == API_TYPE_AUTOMOWER
 
         default_poll = (
-            DEFAULT_POLL_INTERVAL_AUTOMOWER
-            if is_automower
-            else DEFAULT_POLL_INTERVAL_GARDENA
+            DEFAULT_POLL_INTERVAL_AUTOMOWER if is_automower else DEFAULT_POLL_INTERVAL_GARDENA
         )
-        current_poll = self.config_entry.options.get(
-            OPT_POLL_INTERVAL_MINUTES, default_poll
-        )
+        current_poll = self.config_entry.options.get(OPT_POLL_INTERVAL_MINUTES, default_poll)
 
         if is_automower:
             schema_dict: dict[vol.Required, NumberSelector] = {}

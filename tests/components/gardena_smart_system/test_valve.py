@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.const import STATE_UNAVAILABLE
@@ -17,15 +17,9 @@ from custom_components.gardena_smart_system.const import (
 
 from .conftest import ENTRY_DATA, MOCK_LOCATION_NAME, make_mock_device
 
-_PATCH_CLIENT = (
-    "custom_components.gardena_smart_system.coordinator.GardenaClient"
-)
-_PATCH_AUTH = (
-    "custom_components.gardena_smart_system.coordinator.GardenaAuth"
-)
-_PATCH_WS = (
-    "custom_components.gardena_smart_system.coordinator.GardenaWebSocket"
-)
+_PATCH_CLIENT = "custom_components.gardena_smart_system.coordinator.GardenaClient"
+_PATCH_AUTH = "custom_components.gardena_smart_system.coordinator.GardenaAuth"
+_PATCH_WS = "custom_components.gardena_smart_system.coordinator.GardenaWebSocket"
 
 
 async def _setup_with_devices(hass, mock_config_entry, devices):
@@ -79,7 +73,8 @@ class TestValveEntityCreation:
         # With valve_count=3, service IDs are device-uuid:1, device-uuid:2, device-uuid:3
         entity_reg = er.async_get(hass)
         valve_entities = [
-            e for e in entity_reg.entities.values()
+            e
+            for e in entity_reg.entities.values()
             if e.domain == "valve" and e.platform == "gardena_smart_system"
         ]
         assert len(valve_entities) == 3
@@ -95,7 +90,8 @@ class TestValveEntityCreation:
 
         entity_reg = er.async_get(hass)
         valve_entities = [
-            e for e in entity_reg.entities.values()
+            e
+            for e in entity_reg.entities.values()
             if e.domain == "valve" and e.platform == "gardena_smart_system"
         ]
         assert len(valve_entities) == 0
@@ -116,7 +112,8 @@ class TestValveUniqueIds:
         entity_reg = er.async_get(hass)
         valve_entities = sorted(
             [
-                e for e in entity_reg.entities.values()
+                e
+                for e in entity_reg.entities.values()
                 if e.domain == "valve" and e.platform == "gardena_smart_system"
             ],
             key=lambda e: e.unique_id,
@@ -161,7 +158,7 @@ class TestValveNaming:
     ) -> None:
         device = make_mock_device(valve_count=1, has_sensor=False)
         # Clear the valve name to trigger fallback
-        valve_id = list(device.valves.keys())[0]
+        valve_id = next(iter(device.valves.keys()))
         device.valves[valve_id].name = None
         devices = {device.device_id: device}
 
@@ -170,7 +167,8 @@ class TestValveNaming:
 
         entity_reg = er.async_get(hass)
         valve_entities = [
-            e for e in entity_reg.entities.values()
+            e
+            for e in entity_reg.entities.values()
             if e.domain == "valve" and e.platform == "gardena_smart_system"
         ]
         assert len(valve_entities) == 1
@@ -180,9 +178,7 @@ class TestValveNaming:
 class TestValveStateMapping:
     """Test valve state mapping from API activity to HA state."""
 
-    async def test_closed_valve_state(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
+    async def test_closed_valve_state(self, hass: HomeAssistant, mock_config_entry: object) -> None:
         device = make_mock_device(valve_count=1, has_sensor=False)
         # Default activity is "CLOSED"
         devices = {device.device_id: device}
@@ -198,7 +194,7 @@ class TestValveStateMapping:
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         device = make_mock_device(valve_count=1, has_sensor=False)
-        valve_id = list(device.valves.keys())[0]
+        valve_id = next(iter(device.valves.keys()))
         device.valves[valve_id].activity = "MANUAL_WATERING"
         devices = {device.device_id: device}
 
@@ -213,7 +209,7 @@ class TestValveStateMapping:
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         device = make_mock_device(valve_count=1, has_sensor=False)
-        valve_id = list(device.valves.keys())[0]
+        valve_id = next(iter(device.valves.keys()))
         device.valves[valve_id].activity = "SCHEDULED_WATERING"
         devices = {device.device_id: device}
 
@@ -228,7 +224,7 @@ class TestValveStateMapping:
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         device = make_mock_device(valve_count=1, has_sensor=False)
-        valve_id = list(device.valves.keys())[0]
+        valve_id = next(iter(device.valves.keys()))
         device.valves[valve_id].activity = "MANUAL_WATERING"
         devices = {device.device_id: device}
 
@@ -243,7 +239,7 @@ class TestValveStateMapping:
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         device = make_mock_device(valve_count=1, has_sensor=False)
-        valve_id = list(device.valves.keys())[0]
+        valve_id = next(iter(device.valves.keys()))
         device.valves[valve_id].activity = "MANUAL_WATERING"
         device.valves[valve_id].duration = 1800
         devices = {device.device_id: device}
@@ -259,7 +255,7 @@ class TestValveStateMapping:
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         device = make_mock_device(valve_count=1, has_sensor=False)
-        valve_id = list(device.valves.keys())[0]
+        valve_id = next(iter(device.valves.keys()))
         device.valves[valve_id].duration = None
         devices = {device.device_id: device}
 
@@ -274,7 +270,7 @@ class TestValveStateMapping:
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         device = make_mock_device(valve_count=1, has_sensor=False)
-        valve_id = list(device.valves.keys())[0]
+        valve_id = next(iter(device.valves.keys()))
         device.valves[valve_id].duration = 0
         devices = {device.device_id: device}
 
@@ -293,12 +289,13 @@ class TestValveCommands:
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         device = make_mock_device(valve_count=1, has_sensor=False)
-        valve_id = list(device.valves.keys())[0]
+        valve_id = next(iter(device.valves.keys()))
         devices = {device.device_id: device}
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
-                "valve", "open_valve",
+                "valve",
+                "open_valve",
                 {"entity_id": "valve.my_sensor_valve_1"},
                 blocking=True,
             )
@@ -314,12 +311,13 @@ class TestValveCommands:
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         device = make_mock_device(valve_count=1, has_sensor=False)
-        valve_id = list(device.valves.keys())[0]
+        valve_id = next(iter(device.valves.keys()))
         devices = {device.device_id: device}
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
-                "valve", "close_valve",
+                "valve",
+                "close_valve",
                 {"entity_id": "valve.my_sensor_valve_1"},
                 blocking=True,
             )
@@ -334,12 +332,13 @@ class TestValveCommands:
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         device = make_mock_device(valve_count=1, has_sensor=False)
-        valve_id = list(device.valves.keys())[0]
+        valve_id = next(iter(device.valves.keys()))
         devices = {device.device_id: device}
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             await hass.services.async_call(
-                "gardena_smart_system", "start_watering",
+                "gardena_smart_system",
+                "start_watering",
                 {"entity_id": "valve.my_sensor_valve_1", "duration": 30},
                 blocking=True,
             )
@@ -364,15 +363,14 @@ class TestValveErrorHandling:
         devices = {device.device_id: device}
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
-            mock_client.async_send_command.side_effect = GardenaAuthenticationError(
-                "token expired"
-            )
+            mock_client.async_send_command.side_effect = GardenaAuthenticationError("token expired")
 
             # ConfigEntryAuthFailed is caught by HA and triggers reauth flow,
             # but at the service call level it manifests as HomeAssistantError
             with pytest.raises(HomeAssistantError):
                 await hass.services.async_call(
-                    "valve", "open_valve",
+                    "valve",
+                    "open_valve",
                     {"entity_id": "valve.my_sensor_valve_1"},
                     blocking=True,
                 )
@@ -386,13 +384,12 @@ class TestValveErrorHandling:
         devices = {device.device_id: device}
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
-            mock_client.async_send_command.side_effect = GardenaException(
-                "API error"
-            )
+            mock_client.async_send_command.side_effect = GardenaException("API error")
 
             with pytest.raises(HomeAssistantError):
                 await hass.services.async_call(
-                    "valve", "open_valve",
+                    "valve",
+                    "open_valve",
                     {"entity_id": "valve.my_sensor_valve_1"},
                     blocking=True,
                 )
@@ -450,7 +447,8 @@ class TestValveDynamicDevices:
             # No valve entities initially
             entity_reg = er.async_get(hass)
             valve_entities = [
-                e for e in entity_reg.entities.values()
+                e
+                for e in entity_reg.entities.values()
                 if e.domain == "valve" and e.platform == "gardena_smart_system"
             ]
             assert len(valve_entities) == 0
@@ -465,7 +463,8 @@ class TestValveDynamicDevices:
             await hass.async_block_till_done()
 
             valve_entities = [
-                e for e in entity_reg.entities.values()
+                e
+                for e in entity_reg.entities.values()
                 if e.domain == "valve" and e.platform == "gardena_smart_system"
             ]
             assert len(valve_entities) == 2
@@ -474,13 +473,13 @@ class TestValveDynamicDevices:
 class TestValveOptionsIntegration:
     """Test that valve commands use configured options."""
 
-    async def test_open_valve_uses_configured_duration(
-        self, hass: HomeAssistant
-    ) -> None:
+    async def test_open_valve_uses_configured_duration(self, hass: HomeAssistant) -> None:
         try:
             from tests.common import MockConfigEntry
         except ImportError:
-            from pytest_homeassistant_custom_component.common import MockConfigEntry  # type: ignore[no-redef]
+            from pytest_homeassistant_custom_component.common import (
+                MockConfigEntry,  # type: ignore[no-redef]
+            )
 
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -490,12 +489,13 @@ class TestValveOptionsIntegration:
         )
 
         device = make_mock_device(valve_count=1, has_sensor=False)
-        valve_id = list(device.valves.keys())[0]
+        valve_id = next(iter(device.valves.keys()))
         devices = {device.device_id: device}
 
         async for mock_client in _setup_with_devices(hass, entry, devices):
             await hass.services.async_call(
-                "valve", "open_valve",
+                "valve",
+                "open_valve",
                 {"entity_id": "valve.my_sensor_valve_1"},
                 blocking=True,
             )

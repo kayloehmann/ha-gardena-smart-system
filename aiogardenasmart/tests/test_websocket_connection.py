@@ -6,10 +6,9 @@ import asyncio
 import json
 from collections.abc import AsyncGenerator
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import aiohttp
-import pytest
 
 from aiogardenasmart.auth import GardenaAuth
 from aiogardenasmart.client import _parse_devices
@@ -64,10 +63,12 @@ class TestWebSocketConnect:
         # Make ws_connect return a mock that closes immediately
         close_msg = _make_close_msg()
         mock_ws = _make_mock_ws([close_msg])
-        session.ws_connect = MagicMock(return_value=AsyncMock(
-            __aenter__=AsyncMock(return_value=mock_ws),
-            __aexit__=AsyncMock(return_value=False),
-        ))
+        session.ws_connect = MagicMock(
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_ws),
+                __aexit__=AsyncMock(return_value=False),
+            )
+        )
 
         devices: dict[str, Any] = {}
         ws = GardenaWebSocket(
@@ -133,14 +134,14 @@ class TestWebSocketConnect:
         auth.client_id = "test"
         auth.async_ensure_valid_token = AsyncMock(return_value="token")
 
-        error_msg = aiohttp.WSMessage(
-            type=aiohttp.WSMsgType.ERROR, data=None, extra=None
-        )
+        error_msg = aiohttp.WSMessage(type=aiohttp.WSMsgType.ERROR, data=None, extra=None)
         mock_ws = _make_mock_ws([error_msg])
-        session.ws_connect = MagicMock(return_value=AsyncMock(
-            __aenter__=AsyncMock(return_value=mock_ws),
-            __aexit__=AsyncMock(return_value=False),
-        ))
+        session.ws_connect = MagicMock(
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_ws),
+                __aexit__=AsyncMock(return_value=False),
+            )
+        )
 
         ws = GardenaWebSocket(
             auth=auth,
@@ -278,9 +279,7 @@ class TestApplyServiceUpdateAllTypes:
             {
                 "id": SENSOR_DEVICE_ID,
                 "attributes": {"soilHumidity": {"value": 50}},
-                "relationships": {
-                    "device": {"data": {"id": SENSOR_DEVICE_ID, "type": "DEVICE"}}
-                },
+                "relationships": {"device": {"data": {"id": SENSOR_DEVICE_ID, "type": "DEVICE"}}},
             },
         )
         assert device.sensor is not None

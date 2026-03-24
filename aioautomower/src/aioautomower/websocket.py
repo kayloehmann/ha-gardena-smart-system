@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 from collections.abc import Callable
 from typing import Any
 
 import aiohttp
-
 from aiogardenasmart.auth import GardenaAuth
 
 from .const import (
@@ -65,10 +65,8 @@ class AutomowerWebSocket:
             await self._ws.close()
         if self._listen_task and not self._listen_task.done():
             self._listen_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._listen_task
-            except asyncio.CancelledError:
-                pass
 
     async def _async_listen_loop(self, ws_url: str) -> None:
         """Outer loop that reconnects on failure."""
@@ -79,7 +77,7 @@ class AutomowerWebSocket:
                 attempt = 0
             except asyncio.CancelledError:
                 break
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 if not self._running:
                     break
                 attempt += 1
@@ -89,9 +87,7 @@ class AutomowerWebSocket:
                         attempt,
                     )
                     if self._on_error:
-                        self._on_error(
-                            AutomowerWebSocketError(f"Max reconnects reached: {err}")
-                        )
+                        self._on_error(AutomowerWebSocketError(f"Max reconnects reached: {err}"))
                     break
                 delay = WEBSOCKET_RECONNECT_BASE_DELAY * (2 ** (attempt - 1))
                 _LOGGER.warning(
@@ -122,9 +118,7 @@ class AutomowerWebSocket:
                 if msg.type == aiohttp.WSMsgType.TEXT:
                     self._handle_message(msg.data)
                 elif msg.type == aiohttp.WSMsgType.ERROR:
-                    raise AutomowerWebSocketError(
-                        f"WebSocket error: {ws.exception()}"
-                    )
+                    raise AutomowerWebSocketError(f"WebSocket error: {ws.exception()}")
                 elif msg.type in (
                     aiohttp.WSMsgType.CLOSE,
                     aiohttp.WSMsgType.CLOSING,
@@ -138,9 +132,7 @@ class AutomowerWebSocket:
         try:
             message: dict[str, Any] = json.loads(raw)
         except json.JSONDecodeError:
-            _LOGGER.warning(
-                "Automower WebSocket: received non-JSON message: %s", raw
-            )
+            _LOGGER.warning("Automower WebSocket: received non-JSON message: %s", raw)
             return
 
         # The Automower WS sends status updates with mower ID and attributes

@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any, cast
 
 import aiohttp
-
 from aiogardenasmart.auth import GardenaAuth
 
 from .const import API_BASE_URL, AUTHORIZATION_PROVIDER, REQUEST_TIMEOUT, ActionType
@@ -79,8 +78,7 @@ class AutomowerClient:
                     )
                 if resp.status == 429:
                     raise AutomowerRateLimitError(
-                        "Automower API rate limit reached. "
-                        "Wait a few minutes and try again."
+                        "Automower API rate limit reached. Wait a few minutes and try again."
                     )
                 if resp.status >= 400:
                     body = await resp.text()
@@ -172,9 +170,7 @@ class AutomowerClient:
 
     # ── Calendar ───────────────────────────────────────────────────
 
-    async def async_update_calendar(
-        self, mower_id: str, tasks: list[dict[str, Any]]
-    ) -> None:
+    async def async_update_calendar(self, mower_id: str, tasks: list[dict[str, Any]]) -> None:
         """Update the mowing schedule calendar."""
         payload: dict[str, Any] = {
             "data": {
@@ -203,9 +199,7 @@ class AutomowerClient:
 
     # ── Stay-Out Zones ─────────────────────────────────────────────
 
-    async def async_set_stay_out_zone(
-        self, mower_id: str, zone_id: str, enabled: bool
-    ) -> None:
+    async def async_set_stay_out_zone(self, mower_id: str, zone_id: str, enabled: bool) -> None:
         """Enable or disable a stay-out zone."""
         payload: dict[str, Any] = {
             "data": {

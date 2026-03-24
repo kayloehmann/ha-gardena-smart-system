@@ -14,6 +14,7 @@ from .const import (
     API_TYPE_GARDENA,
     AUTOMOWER_PLATFORMS,
     CONF_API_TYPE,
+    DOMAIN,
     GARDENA_PLATFORMS,
 )
 
@@ -56,9 +57,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: GardenaConfigEntry) -> 
     return await hass.config_entries.async_unload_platforms(entry, platforms)
 
 
-async def _async_options_updated(
-    hass: HomeAssistant, entry: GardenaConfigEntry
-) -> None:
+async def _async_options_updated(hass: HomeAssistant, entry: GardenaConfigEntry) -> None:
     """Reload the integration when options change."""
     await hass.config_entries.async_reload(entry.entry_id)
 
@@ -85,9 +84,7 @@ async def async_remove_config_entry_device(
     return True
 
 
-async def async_migrate_entry(
-    hass: HomeAssistant, config_entry: ConfigEntry
-) -> bool:
+async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Migrate config entries from older versions."""
     if config_entry.version < 2:
         # v1 → v2: add api_type field (existing entries are all Gardena)

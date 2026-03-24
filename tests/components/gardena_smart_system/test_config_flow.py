@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
 
-import pytest
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -16,9 +15,6 @@ from custom_components.gardena_smart_system.const import (
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
     CONF_LOCATION_ID,
-    DEFAULT_POLL_INTERVAL_GARDENA,
-    DEFAULT_SOCKET_MINUTES,
-    DEFAULT_WATERING_MINUTES,
     DOMAIN,
     OPT_DEFAULT_SOCKET_MINUTES,
     OPT_DEFAULT_WATERING_MINUTES,
@@ -86,9 +82,7 @@ class TestUserStep:
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "user"
 
-    async def test_valid_credentials_show_api_type_step(
-        self, hass: HomeAssistant
-    ) -> None:
+    async def test_valid_credentials_show_api_type_step(self, hass: HomeAssistant) -> None:
         result = await _init_user_step(hass)
         result = await _submit_credentials(hass, result["flow_id"])
 
@@ -100,9 +94,7 @@ class TestUserStep:
         result = await _submit_credentials(hass, result["flow_id"])
 
         assert result["step_id"] == "api_type"
-        result = await _submit_api_type_gardena(
-            hass, result["flow_id"], [make_mock_location()]
-        )
+        result = await _submit_api_type_gardena(hass, result["flow_id"], [make_mock_location()])
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["title"] == MOCK_LOCATION_NAME
@@ -111,9 +103,7 @@ class TestUserStep:
         assert result["data"][CONF_LOCATION_ID] == MOCK_LOCATION_ID
         assert result["data"][CONF_API_TYPE] == API_TYPE_GARDENA
 
-    async def test_multiple_locations_shows_location_step(
-        self, hass: HomeAssistant
-    ) -> None:
+    async def test_multiple_locations_shows_location_step(self, hass: HomeAssistant) -> None:
         result = await _init_user_step(hass)
         result = await _submit_credentials(hass, result["flow_id"])
 
@@ -229,9 +219,7 @@ class TestLocationStep:
 
 
 class TestReauthFlow:
-    async def test_reauth_shows_form(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
+    async def test_reauth_shows_form(self, hass: HomeAssistant, mock_config_entry: object) -> None:
         mock_config_entry.add_to_hass(hass)
         result = await mock_config_entry.start_reauth_flow(hass)
 
@@ -245,9 +233,7 @@ class TestReauthFlow:
         result = await mock_config_entry.start_reauth_flow(hass)
 
         mock_client = AsyncMock()
-        mock_client.async_get_locations = AsyncMock(
-            return_value=[make_mock_location()]
-        )
+        mock_client.async_get_locations = AsyncMock(return_value=[make_mock_location()])
         with patch(_PATCH_CLIENT, return_value=mock_client):
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
@@ -298,9 +284,7 @@ class TestReconfigureFlow:
         result = await mock_config_entry.start_reconfigure_flow(hass)
 
         mock_client = AsyncMock()
-        mock_client.async_get_locations = AsyncMock(
-            return_value=[make_mock_location()]
-        )
+        mock_client.async_get_locations = AsyncMock(return_value=[make_mock_location()])
         with patch(_PATCH_CLIENT, return_value=mock_client):
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
@@ -351,9 +335,7 @@ class TestReconfigureFlow:
         result = await mock_config_entry.start_reconfigure_flow(hass)
 
         mock_client = AsyncMock()
-        mock_client.async_get_locations = AsyncMock(
-            side_effect=GardenaConnectionError("offline")
-        )
+        mock_client.async_get_locations = AsyncMock(side_effect=GardenaConnectionError("offline"))
         with patch(_PATCH_CLIENT, return_value=mock_client):
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
@@ -371,9 +353,7 @@ class TestOptionsFlow:
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         mock_config_entry.add_to_hass(hass)
-        result = await hass.config_entries.options.async_init(
-            mock_config_entry.entry_id
-        )
+        result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "init"
@@ -382,9 +362,7 @@ class TestOptionsFlow:
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         mock_config_entry.add_to_hass(hass)
-        result = await hass.config_entries.options.async_init(
-            mock_config_entry.entry_id
-        )
+        result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
 
         result = await hass.config_entries.options.async_configure(
             result["flow_id"],
@@ -400,13 +378,13 @@ class TestOptionsFlow:
         assert mock_config_entry.options[OPT_DEFAULT_SOCKET_MINUTES] == 120
         assert mock_config_entry.options[OPT_POLL_INTERVAL_MINUTES] == 15
 
-    async def test_options_flow_prefills_existing_values(
-        self, hass: HomeAssistant
-    ) -> None:
+    async def test_options_flow_prefills_existing_values(self, hass: HomeAssistant) -> None:
         try:
             from tests.common import MockConfigEntry
         except ImportError:
-            from pytest_homeassistant_custom_component.common import MockConfigEntry  # type: ignore[no-redef]
+            from pytest_homeassistant_custom_component.common import (
+                MockConfigEntry,  # type: ignore[no-redef]
+            )
 
         entry = MockConfigEntry(
             domain=DOMAIN,

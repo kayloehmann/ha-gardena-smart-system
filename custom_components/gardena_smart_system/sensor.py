@@ -6,8 +6,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from aiogardenasmart import Device
-
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -16,12 +14,14 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import (
     PERCENTAGE,
+    EntityCategory,
     UnitOfTemperature,
     UnitOfTime,
 )
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.const import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from aiogardenasmart import Device
 
 from . import GardenaConfigEntry
 from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
@@ -93,9 +93,7 @@ SENSOR_SENSORS: tuple[GardenaSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
         value_fn=lambda d: d.sensor.ambient_temperature if d.sensor else None,
-        exists_fn=lambda d: (
-            d.sensor is not None and d.sensor.ambient_temperature is not None
-        ),
+        exists_fn=lambda d: d.sensor is not None and d.sensor.ambient_temperature is not None,
     ),
     GardenaSensorDescription(
         key="light_intensity",
@@ -104,9 +102,7 @@ SENSOR_SENSORS: tuple[GardenaSensorDescription, ...] = (
         device_class=SensorDeviceClass.ILLUMINANCE,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda d: d.sensor.light_intensity if d.sensor else None,
-        exists_fn=lambda d: (
-            d.sensor is not None and d.sensor.light_intensity is not None
-        ),
+        exists_fn=lambda d: d.sensor is not None and d.sensor.light_intensity is not None,
     ),
 )
 
@@ -162,9 +158,7 @@ async def async_setup_entry(
                 key = (device.device_id, description.key)
                 if key not in known_keys and description.exists_fn(device):
                     known_keys.add(key)
-                    new_entities.append(
-                        GardenaSensorEntity(coordinator, device, description)
-                    )
+                    new_entities.append(GardenaSensorEntity(coordinator, device, description))
         if new_entities:
             async_add_entities(new_entities)
 

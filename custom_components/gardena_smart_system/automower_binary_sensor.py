@@ -5,9 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from aioautomower import AutomowerDevice
 from aioautomower.const import MowerState
-
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -16,6 +14,8 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from aioautomower import AutomowerDevice
 
 from . import GardenaConfigEntry
 from .automower_coordinator import AutomowerCoordinator
@@ -70,9 +70,7 @@ async def async_setup_entry(
                 entity_key = f"{device.mower_id}_{desc.key}"
                 if entity_key not in known_ids:
                     known_ids.add(entity_key)
-                    new_entities.append(
-                        AutomowerBinarySensorEntity(coordinator, device, desc)
-                    )
+                    new_entities.append(AutomowerBinarySensorEntity(coordinator, device, desc))
         if new_entities:
             async_add_entities(new_entities)
 

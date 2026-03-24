@@ -183,9 +183,7 @@ class GardenaClient:
         )
 
 
-def _parse_devices(
-    response: dict[str, Any], location_id: str
-) -> dict[str, Device]:
+def _parse_devices(response: dict[str, Any], location_id: str) -> dict[str, Device]:
     """Parse a location response into Device objects keyed by device ID."""
     devices: dict[str, Device] = {}
 

@@ -50,11 +50,7 @@ SENSOR_LOCATION_RESPONSE = {
         "id": LOCATION_ID,
         "type": "LOCATION",
         "attributes": {"name": {"value": LOCATION_NAME}},
-        "relationships": {
-            "devices": {
-                "data": [{"id": SENSOR_DEVICE_ID, "type": "DEVICE"}]
-            }
-        },
+        "relationships": {"devices": {"data": [{"id": SENSOR_DEVICE_ID, "type": "DEVICE"}]}},
     },
     "included": [
         {
@@ -104,11 +100,7 @@ WATER_CONTROL_LOCATION_RESPONSE = {
         "id": LOCATION_ID,
         "type": "LOCATION",
         "attributes": {"name": {"value": LOCATION_NAME}},
-        "relationships": {
-            "devices": {
-                "data": [{"id": WATER_CONTROL_DEVICE_ID, "type": "DEVICE"}]
-            }
-        },
+        "relationships": {"devices": {"data": [{"id": WATER_CONTROL_DEVICE_ID, "type": "DEVICE"}]}},
     },
     "included": [
         {
@@ -137,7 +129,9 @@ WATER_CONTROL_LOCATION_RESPONSE = {
                 "rfLinkLevel": {"value": 80},
                 "rfLinkState": {"value": "ONLINE"},
             },
-            "relationships": {"device": {"data": {"id": WATER_CONTROL_DEVICE_ID, "type": "DEVICE"}}},
+            "relationships": {
+                "device": {"data": {"id": WATER_CONTROL_DEVICE_ID, "type": "DEVICE"}}
+            },
         },
         {
             "id": WATER_CONTROL_DEVICE_ID,
@@ -146,7 +140,9 @@ WATER_CONTROL_LOCATION_RESPONSE = {
                 "state": {"value": "OK"},
                 "lastErrorCode": {"value": "NO_MESSAGE"},
             },
-            "relationships": {"device": {"data": {"id": WATER_CONTROL_DEVICE_ID, "type": "DEVICE"}}},
+            "relationships": {
+                "device": {"data": {"id": WATER_CONTROL_DEVICE_ID, "type": "DEVICE"}}
+            },
         },
         {
             "id": f"{WATER_CONTROL_DEVICE_ID}:1",
@@ -158,7 +154,9 @@ WATER_CONTROL_LOCATION_RESPONSE = {
                 "duration": {"value": 0},
                 "lastErrorCode": {"value": "NO_MESSAGE"},
             },
-            "relationships": {"device": {"data": {"id": WATER_CONTROL_DEVICE_ID, "type": "DEVICE"}}},
+            "relationships": {
+                "device": {"data": {"id": WATER_CONTROL_DEVICE_ID, "type": "DEVICE"}}
+            },
         },
     ],
 }
@@ -169,11 +167,7 @@ IRRIGATION_LOCATION_RESPONSE = {
         "id": LOCATION_ID,
         "type": "LOCATION",
         "attributes": {"name": {"value": LOCATION_NAME}},
-        "relationships": {
-            "devices": {
-                "data": [{"id": IRRIGATION_DEVICE_ID, "type": "DEVICE"}]
-            }
-        },
+        "relationships": {"devices": {"data": [{"id": IRRIGATION_DEVICE_ID, "type": "DEVICE"}]}},
     },
     "included": [
         {
@@ -239,9 +233,7 @@ POWER_SOCKET_LOCATION_RESPONSE = {
         "id": LOCATION_ID,
         "type": "LOCATION",
         "attributes": {"name": {"value": LOCATION_NAME}},
-        "relationships": {
-            "devices": {"data": [{"id": POWER_SOCKET_DEVICE_ID, "type": "DEVICE"}]}
-        },
+        "relationships": {"devices": {"data": [{"id": POWER_SOCKET_DEVICE_ID, "type": "DEVICE"}]}},
     },
     "included": [
         {
@@ -289,9 +281,7 @@ MOWER_LOCATION_RESPONSE = {
         "id": LOCATION_ID,
         "type": "LOCATION",
         "attributes": {"name": {"value": LOCATION_NAME}},
-        "relationships": {
-            "devices": {"data": [{"id": MOWER_DEVICE_ID, "type": "DEVICE"}]}
-        },
+        "relationships": {"devices": {"data": [{"id": MOWER_DEVICE_ID, "type": "DEVICE"}]}},
     },
     "included": [
         {
@@ -341,9 +331,7 @@ SERVICE_BEFORE_DEVICE_RESPONSE = {
         "id": LOCATION_ID,
         "type": "LOCATION",
         "attributes": {"name": {"value": LOCATION_NAME}},
-        "relationships": {
-            "devices": {"data": [{"id": SENSOR_DEVICE_ID, "type": "DEVICE"}]}
-        },
+        "relationships": {"devices": {"data": [{"id": SENSOR_DEVICE_ID, "type": "DEVICE"}]}},
     },
     "included": [
         # SENSOR and COMMON appear BEFORE the DEVICE entry

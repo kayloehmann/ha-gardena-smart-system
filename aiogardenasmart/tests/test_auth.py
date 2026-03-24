@@ -28,9 +28,7 @@ async def auth(session: aiohttp.ClientSession) -> GardenaAuth:
 
 
 class TestTokenAcquisition:
-    async def test_acquire_token_success(
-        self, auth: GardenaAuth
-    ) -> None:
+    async def test_acquire_token_success(self, auth: GardenaAuth) -> None:
         with aioresponses() as m:
             m.post(AUTH_TOKEN_URL, payload=TOKEN_RESPONSE)
             token = await auth.async_ensure_valid_token()
@@ -38,18 +36,14 @@ class TestTokenAcquisition:
         assert token == "test-access-token"
         assert auth.access_token == "test-access-token"
 
-    async def test_acquire_token_stores_refresh_token(
-        self, auth: GardenaAuth
-    ) -> None:
+    async def test_acquire_token_stores_refresh_token(self, auth: GardenaAuth) -> None:
         with aioresponses() as m:
             m.post(AUTH_TOKEN_URL, payload=TOKEN_RESPONSE)
             await auth.async_ensure_valid_token()
 
         assert auth._refresh_token == "test-refresh-token"
 
-    async def test_acquire_token_without_refresh_token(
-        self, auth: GardenaAuth
-    ) -> None:
+    async def test_acquire_token_without_refresh_token(self, auth: GardenaAuth) -> None:
         with aioresponses() as m:
             m.post(AUTH_TOKEN_URL, payload=TOKEN_RESPONSE_NO_REFRESH)
             token = await auth.async_ensure_valid_token()
@@ -57,9 +51,7 @@ class TestTokenAcquisition:
         assert token == "test-access-token"
         assert auth._refresh_token is None
 
-    async def test_invalid_credentials_raises_auth_error(
-        self, auth: GardenaAuth
-    ) -> None:
+    async def test_invalid_credentials_raises_auth_error(self, auth: GardenaAuth) -> None:
         with aioresponses() as m:
             m.post(
                 AUTH_TOKEN_URL,
@@ -75,9 +67,7 @@ class TestTokenAcquisition:
             with pytest.raises(GardenaAuthenticationError):
                 await auth.async_ensure_valid_token()
 
-    async def test_network_error_raises_connection_error(
-        self, auth: GardenaAuth
-    ) -> None:
+    async def test_network_error_raises_connection_error(self, auth: GardenaAuth) -> None:
         with aioresponses() as m:
             m.post(AUTH_TOKEN_URL, exception=aiohttp.ClientConnectionError())
             with pytest.raises(GardenaConnectionError):
@@ -117,8 +107,8 @@ class TestTokenValidity:
 
         reauth_payload = {**TOKEN_RESPONSE, "access_token": "reauth-token"}
         with aioresponses() as m:
-            m.post(AUTH_TOKEN_URL, status=401, payload={})   # refresh fails
-            m.post(AUTH_TOKEN_URL, payload=reauth_payload)   # re-auth succeeds
+            m.post(AUTH_TOKEN_URL, status=401, payload={})  # refresh fails
+            m.post(AUTH_TOKEN_URL, payload=reauth_payload)  # re-auth succeeds
             token = await auth.async_ensure_valid_token()
 
         assert token == "reauth-token"

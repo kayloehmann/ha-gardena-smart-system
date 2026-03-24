@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from aioautomower import AutomowerDevice
-
 from homeassistant.components.device_tracker.config_entry import TrackerEntity
 from homeassistant.components.device_tracker.const import SourceType
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from aioautomower import AutomowerDevice
 
 from . import GardenaConfigEntry
 from .automower_coordinator import AutomowerCoordinator
@@ -33,14 +33,9 @@ async def async_setup_entry(
     def _async_add_new_entities() -> None:
         new_entities: list[AutomowerTrackerEntity] = []
         for device in coordinator.data.values():
-            if (
-                device.mower_id not in known_ids
-                and device.capabilities.position
-            ):
+            if device.mower_id not in known_ids and device.capabilities.position:
                 known_ids.add(device.mower_id)
-                new_entities.append(
-                    AutomowerTrackerEntity(coordinator, device)
-                )
+                new_entities.append(AutomowerTrackerEntity(coordinator, device))
         if new_entities:
             async_add_entities(new_entities)
 
@@ -53,9 +48,7 @@ class AutomowerTrackerEntity(AutomowerEntity, TrackerEntity):
 
     _attr_translation_key = "automower_position"
 
-    def __init__(
-        self, coordinator: AutomowerCoordinator, device: AutomowerDevice
-    ) -> None:
+    def __init__(self, coordinator: AutomowerCoordinator, device: AutomowerDevice) -> None:
         """Initialize the tracker entity."""
         super().__init__(coordinator, device, "position")
 

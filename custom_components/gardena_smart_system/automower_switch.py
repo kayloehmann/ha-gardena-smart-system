@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from aioautomower import AutomowerDevice
 from aioautomower.const import HeadlightMode
 from aioautomower.exceptions import AutomowerAuthenticationError, AutomowerException
-
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from aioautomower import AutomowerDevice
 
 from . import GardenaConfigEntry
 from .automower_coordinator import AutomowerCoordinator
@@ -42,9 +42,7 @@ async def async_setup_entry(
                 key = f"{device.mower_id}_headlight"
                 if key not in known_ids:
                     known_ids.add(key)
-                    new_entities.append(
-                        AutomowerHeadlightSwitch(coordinator, device)
-                    )
+                    new_entities.append(AutomowerHeadlightSwitch(coordinator, device))
 
             # Stay-out zone switches
             if device.capabilities.stay_out_zones:
@@ -53,9 +51,7 @@ async def async_setup_entry(
                     if key not in known_ids:
                         known_ids.add(key)
                         new_entities.append(
-                            AutomowerStayOutZoneSwitch(
-                                coordinator, device, zone.zone_id
-                            )
+                            AutomowerStayOutZoneSwitch(coordinator, device, zone.zone_id)
                         )
 
         if new_entities:
@@ -70,9 +66,7 @@ class AutomowerHeadlightSwitch(AutomowerEntity, SwitchEntity):
 
     _attr_translation_key = "automower_headlight"
 
-    def __init__(
-        self, coordinator: AutomowerCoordinator, device: AutomowerDevice
-    ) -> None:
+    def __init__(self, coordinator: AutomowerCoordinator, device: AutomowerDevice) -> None:
         """Initialize the headlight switch."""
         super().__init__(coordinator, device, "headlight")
 
@@ -101,9 +95,7 @@ class AutomowerHeadlightSwitch(AutomowerEntity, SwitchEntity):
             )
         self.coordinator.check_command_throttle()
         try:
-            await self.coordinator.client.async_set_headlight_mode(
-                device.mower_id, mode
-            )
+            await self.coordinator.client.async_set_headlight_mode(device.mower_id, mode)
         except AutomowerAuthenticationError as err:
             raise ConfigEntryAuthFailed(
                 translation_domain="gardena_smart_system",

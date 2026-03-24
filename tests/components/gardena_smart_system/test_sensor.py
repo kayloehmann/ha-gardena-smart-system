@@ -2,27 +2,18 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
-from homeassistant.config_entries import ConfigEntryState
-from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
-from custom_components.gardena_smart_system.const import DOMAIN
+from .conftest import make_mock_device
 
-from .conftest import ENTRY_DATA, make_mock_device
-
-_PATCH_CLIENT = (
-    "custom_components.gardena_smart_system.coordinator.GardenaClient"
-)
-_PATCH_AUTH = (
-    "custom_components.gardena_smart_system.coordinator.GardenaAuth"
-)
-_PATCH_WS = (
-    "custom_components.gardena_smart_system.coordinator.GardenaWebSocket"
-)
+_PATCH_CLIENT = "custom_components.gardena_smart_system.coordinator.GardenaClient"
+_PATCH_AUTH = "custom_components.gardena_smart_system.coordinator.GardenaAuth"
+_PATCH_WS = "custom_components.gardena_smart_system.coordinator.GardenaWebSocket"
 
 
 def _setup_mock_api(devices: dict) -> tuple:
@@ -229,9 +220,7 @@ class TestSensorEntityCreation:
 
             # Enable the disabled entity and reload within the mock context
             entity_reg = er.async_get(hass)
-            entity_reg.async_update_entity(
-                "sensor.my_mower_last_error_code", disabled_by=None
-            )
+            entity_reg.async_update_entity("sensor.my_mower_last_error_code", disabled_by=None)
             await hass.config_entries.async_reload(mock_config_entry.entry_id)
             await hass.async_block_till_done()
 
@@ -250,9 +239,7 @@ class TestSensorEntityCreation:
     async def test_no_sensor_entities_for_device_without_sensor_service(
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
-        device = make_mock_device(
-            "no-sensor-dev", "SN-NS", "No Sensor", has_sensor=False
-        )
+        device = make_mock_device("no-sensor-dev", "SN-NS", "No Sensor", has_sensor=False)
         devices = {device.device_id: device}
 
         with (
@@ -434,8 +421,7 @@ class TestSensorUnavailability:
             assert state.state == STATE_UNAVAILABLE
 
             assert any(
-                "Device My Sensor is offline" in r.message
-                and r.levelno == logging.WARNING
+                "Device My Sensor is offline" in r.message and r.levelno == logging.WARNING
                 for r in caplog.records
             )
 
@@ -449,8 +435,7 @@ class TestSensorUnavailability:
             assert state.state == "85"
 
             assert any(
-                "Device My Sensor is back online" in r.message
-                and r.levelno == logging.INFO
+                "Device My Sensor is back online" in r.message and r.levelno == logging.INFO
                 for r in caplog.records
             )
 

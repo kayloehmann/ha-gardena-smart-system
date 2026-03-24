@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import logging
 
-from aioautomower import AutomowerDevice
-
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+from aioautomower import AutomowerDevice
 
 from .automower_coordinator import AutomowerCoordinator
 from .const import DOMAIN
@@ -52,17 +52,14 @@ class AutomowerEntity(CoordinatorEntity[AutomowerCoordinator]):
     def _device(self) -> AutomowerDevice | None:
         """Return the current device state from the coordinator."""
         if self.coordinator.data is None:
-            return None
+            return None  # type: ignore[unreachable]
         return self.coordinator.data.get(self._mower_id)
 
     @property
     def available(self) -> bool:
         """Return True only when coordinator has data and device is connected."""
         device = self._device
-        if device is None:
-            is_available = False
-        else:
-            is_available = super().available and device.is_connected
+        is_available = False if device is None else super().available and device.is_connected
 
         if self._was_available is not None and is_available != self._was_available:
             if is_available:

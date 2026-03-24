@@ -8,9 +8,7 @@ from __future__ import annotations
 from typing import Any
 
 import voluptuous as vol
-from aiogardenasmart import Device, GardenaAuthenticationError, GardenaException
 from aiogardenasmart.const import ControlType, MowerActivity, ServiceState
-
 from homeassistant.components.lawn_mower import LawnMowerEntity
 from homeassistant.components.lawn_mower.const import (
     LawnMowerActivity,
@@ -22,6 +20,8 @@ from homeassistant.helpers.entity_platform import (
     AddEntitiesCallback,
     async_get_current_platform,
 )
+
+from aiogardenasmart import Device, GardenaAuthenticationError, GardenaException
 
 from . import GardenaConfigEntry
 from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
@@ -121,9 +121,7 @@ class GardenaLawnMowerEntity(GardenaEntity, LawnMowerEntity):
             return None
         if device.mower.state == ServiceState.ERROR:
             return LawnMowerActivity.ERROR
-        return _MOWER_ACTIVITY_MAP.get(
-            device.mower.activity or "", LawnMowerActivity.PAUSED
-        )
+        return _MOWER_ACTIVITY_MAP.get(device.mower.activity or "", LawnMowerActivity.PAUSED)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
@@ -137,9 +135,8 @@ class GardenaLawnMowerEntity(GardenaEntity, LawnMowerEntity):
                 attrs["activity"] = device.mower.activity
             if device.mower.last_error_code is not None:
                 attrs["last_error_code"] = device.mower.last_error_code
-        if device.common is not None:
-            if device.common.battery_state is not None:
-                attrs["battery_state"] = device.common.battery_state
+        if device.common is not None and device.common.battery_state is not None:
+            attrs["battery_state"] = device.common.battery_state
         return attrs if attrs else None
 
     async def async_start_mowing(self) -> None:
