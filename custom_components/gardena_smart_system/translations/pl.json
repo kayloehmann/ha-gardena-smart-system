@@ -1,0 +1,299 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Połącz z Husqvarna",
+        "description": "Podaj dane uwierzytelniające aplikacji z portalu Husqvarna Developer Portal.",
+        "data": {
+          "client_id": "Klucz aplikacji (Client ID)",
+          "client_secret": "Sekret aplikacji"
+        },
+        "data_description": {
+          "client_id": "Klucz aplikacji z twojego konta Husqvarna Developer.",
+          "client_secret": "Sekret aplikacji z twojego konta Husqvarna Developer."
+        }
+      },
+      "api_type": {
+        "title": "Wybierz API",
+        "description": "Wybierz API Husqvarna, którego chcesz użyć. Możesz dodać oba, konfigurując integrację dwukrotnie.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Wybierz ogród",
+        "description": "Na twoim koncie znaleziono wiele ogrodów. Wybierz ogród, który chcesz dodać.",
+        "data": {
+          "location_id": "Ogród"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Ponowna autoryzacja",
+        "description": "Twoje dane uwierzytelniające wygasły. Podaj ponownie dane aplikacji.",
+        "data": {
+          "client_id": "Klucz aplikacji (Client ID)",
+          "client_secret": "Sekret aplikacji"
+        }
+      },
+      "reconfigure": {
+        "title": "Ponowna konfiguracja",
+        "description": "Zaktualizuj dane uwierzytelniające aplikacji.",
+        "data": {
+          "client_id": "Klucz aplikacji (Client ID)",
+          "client_secret": "Sekret aplikacji"
+        }
+      },
+      "reconfigure_location": {
+        "title": "Wybierz ogród",
+        "description": "Znaleziono wiele ogrodów. Wybierz ogród, który ma być przypisany do tego wpisu.",
+        "data": {
+          "location_id": "Ogród"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Nieprawidłowe dane uwierzytelniające. Sprawdź klucz aplikacji i sekret w portalu Husqvarna Developer Portal.",
+      "forbidden": "Odmowa dostępu do API. Upewnij się, że Gardena Smart System API jest połączone z twoją aplikacją w portalu Husqvarna Developer Portal.",
+      "automower_not_connected": "Automower Connect API nie jest połączone z twoją aplikacją. Włącz je w portalu Husqvarna Developer Portal w sekcji 'Połączone API'.",
+      "rate_limited": "Osiągnięto limit zapytań API lub tymczasową blokadę. Poczekaj kilka minut i spróbuj ponownie, albo utwórz nową aplikację w portalu Husqvarna Developer Portal.",
+      "cannot_connect": "Nie udało się połączyć z API. Sprawdź połączenie sieciowe i spróbuj ponownie.",
+      "unknown": "Wystąpił nieoczekiwany błąd."
+    },
+    "abort": {
+      "already_configured": "Ta konfiguracja już istnieje.",
+      "reauth_successful": "Ponowna autoryzacja zakończona pomyślnie.",
+      "reconfigure_successful": "Ponowna konfiguracja zakończona pomyślnie."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opcje Gardena Smart System",
+        "data": {
+          "default_watering_minutes": "Domyślny czas podlewania",
+          "default_socket_minutes": "Domyślny czas pracy gniazdka",
+          "poll_interval_minutes": "Interwał odpytywania"
+        },
+        "data_description": {
+          "default_watering_minutes": "Czas w minutach przy otwieraniu zaworu bez podania czasu trwania (1–1440).",
+          "default_socket_minutes": "Czas w minutach przy włączaniu gniazdka (1–1440). Ustaw na 1440 (24 godz.) dla praktycznie ciągłej pracy.",
+          "poll_interval_minutes": "Jak często API jest odpytywane o aktualizacje, w minutach (5–1440). Niższe wartości dają aktualniejsze dane, ale zużywają więcej limitu API. Domyślnie: 30 (Gardena) / 15 (Automower)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Bateria"
+      },
+      "rf_link_level": {
+        "name": "Siła sygnału"
+      },
+      "soil_humidity": {
+        "name": "Wilgotność gleby"
+      },
+      "soil_temperature": {
+        "name": "Temperatura gleby"
+      },
+      "ambient_temperature": {
+        "name": "Temperatura otoczenia"
+      },
+      "light_intensity": {
+        "name": "Natężenie światła"
+      },
+      "mower_operating_hours": {
+        "name": "Godziny pracy"
+      },
+      "mower_activity": {
+        "name": "Aktywność kosiarki"
+      },
+      "mower_last_error_code": {
+        "name": "Ostatni kod błędu"
+      },
+      "automower_battery_level": {
+        "name": "Bateria"
+      },
+      "automower_cutting_height": {
+        "name": "Wysokość koszenia"
+      },
+      "automower_next_start": {
+        "name": "Następny start"
+      },
+      "automower_total_cutting_time": {
+        "name": "Całkowity czas koszenia"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Cykle ładowania"
+      },
+      "automower_total_collisions": {
+        "name": "Kolizje"
+      },
+      "automower_total_drive_distance": {
+        "name": "Całkowity dystans"
+      },
+      "automower_blade_usage_time": {
+        "name": "Czas pracy noży"
+      },
+      "automower_total_running_time": {
+        "name": "Całkowity czas pracy"
+      },
+      "automower_total_searching_time": {
+        "name": "Całkowity czas szukania"
+      },
+      "automower_activity": {
+        "name": "Aktywność",
+        "state": {
+          "unknown": "Nieznana",
+          "not_applicable": "Nie dotyczy",
+          "mowing": "Kosi",
+          "going_home": "Wraca do stacji",
+          "charging": "Ładuje",
+          "leaving": "Opuszcza stację",
+          "parked_in_cs": "Zaparkowana",
+          "stopped_in_garden": "Zatrzymana w ogrodzie"
+        }
+      },
+      "automower_state": {
+        "name": "Stan",
+        "state": {
+          "unknown": "Nieznany",
+          "not_applicable": "Nie dotyczy",
+          "paused": "Wstrzymana",
+          "in_operation": "W trakcie pracy",
+          "wait_updating": "Aktualizuje się",
+          "wait_power_up": "Uruchamia się",
+          "restricted": "Ograniczona",
+          "off": "Wyłączona",
+          "stopped": "Zatrzymana",
+          "error": "Błąd",
+          "fatal_error": "Błąd krytyczny",
+          "error_at_power_up": "Błąd przy uruchomieniu"
+        }
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Niski poziom baterii"
+      },
+      "valve_error": {
+        "name": "Błąd zaworu"
+      },
+      "mower_error": {
+        "name": "Błąd kosiarki"
+      },
+      "automower_error": {
+        "name": "Błąd"
+      },
+      "automower_connected": {
+        "name": "Połączona"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Gniazdko"
+      },
+      "automower_headlight": {
+        "name": "Reflektor"
+      },
+      "automower_stay_out_zone": {
+        "name": "Strefa zakazana: {zone_name}"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Zawór"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Kosiarka"
+      },
+      "automower": {
+        "name": "Kosiarka"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Wysokość koszenia"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Wysokość koszenia: {work_area}"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Pozycja"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Harmonogram koszenia"
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Rozpocznij podlewanie",
+      "description": "Rozpoczyna podlewanie wybranego zaworu na określony czas, nadpisując harmonogram.",
+      "fields": {
+        "duration": {
+          "name": "Czas trwania",
+          "description": "Czas trwania w minutach (1–1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Włącz na czas",
+      "description": "Włącza inteligentne gniazdko na określony czas.",
+      "fields": {
+        "duration": {
+          "name": "Czas trwania",
+          "description": "Czas trwania w minutach (1–1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Nadpisz harmonogram",
+      "description": "Wymusza koszenie przez określony czas, niezależnie od harmonogramu.",
+      "fields": {
+        "duration": {
+          "name": "Czas trwania",
+          "description": "Czas trwania w minutach (1–480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Zaparkuj do odwołania",
+      "description": "Parkuje kosiarkę na czas nieokreślony. Pozostanie w stacji ładowania aż do ręcznego uruchomienia."
+    },
+    "resume_schedule": {
+      "name": "Wznów harmonogram",
+      "description": "Wznawia automatyczny harmonogram koszenia."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Nie udało się wysłać polecenia do urządzenia: {error}"
+    },
+    "device_unavailable": {
+      "message": "Urządzenie jest obecnie niedostępne."
+    },
+    "command_throttled": {
+      "message": "Polecenia są wysyłane zbyt szybko. Poczekaj kilka sekund między poleceniami, aby nie przekroczyć limitu API."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "Utracono połączenie WebSocket",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Połącz ponownie WebSocket",
+            "description": "Połączenie w czasie rzeczywistym z chmurą Husqvarna zostało przerwane. Integracja korzysta obecnie z odpytywania jako rozwiązania awaryjnego. Potwierdź, aby spróbować połączyć się ponownie."
+          }
+        }
+      }
+    }
+  }
+}

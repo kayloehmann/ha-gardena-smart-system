@@ -1,0 +1,299 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Verbinden met Husqvarna",
+        "description": "Voer de inloggegevens van je applicatie in vanuit het Husqvarna Developer Portal.",
+        "data": {
+          "client_id": "Applicatiesleutel (Client ID)",
+          "client_secret": "Applicatiegeheim"
+        },
+        "data_description": {
+          "client_id": "De applicatiesleutel uit je Husqvarna-ontwikkelaarsaccount.",
+          "client_secret": "Het applicatiegeheim uit je Husqvarna-ontwikkelaarsaccount."
+        }
+      },
+      "api_type": {
+        "title": "API selecteren",
+        "description": "Kies de gewenste Husqvarna API. Je kunt beide toevoegen door de integratie tweemaal in te stellen.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Tuin selecteren",
+        "description": "Er zijn meerdere tuinen gevonden in je account. Kies de tuin die je wilt toevoegen.",
+        "data": {
+          "location_id": "Tuin"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Opnieuw verifiëren",
+        "description": "Je inloggegevens zijn niet meer geldig. Voer je applicatiegegevens opnieuw in.",
+        "data": {
+          "client_id": "Applicatiesleutel (Client ID)",
+          "client_secret": "Applicatiegeheim"
+        }
+      },
+      "reconfigure": {
+        "title": "Opnieuw configureren",
+        "description": "Werk je applicatiegegevens bij.",
+        "data": {
+          "client_id": "Applicatiesleutel (Client ID)",
+          "client_secret": "Applicatiegeheim"
+        }
+      },
+      "reconfigure_location": {
+        "title": "Tuin selecteren",
+        "description": "Er zijn meerdere tuinen gevonden. Kies de tuin die dit item moet gebruiken.",
+        "data": {
+          "location_id": "Tuin"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Ongeldige inloggegevens. Controleer je applicatiesleutel en geheim in het Husqvarna Developer Portal.",
+      "forbidden": "API-toegang geweigerd. Zorg ervoor dat de Gardena Smart System API gekoppeld is aan je applicatie in het Husqvarna Developer Portal.",
+      "automower_not_connected": "De Automower Connect API is niet gekoppeld aan je applicatie. Schakel deze in via het Husqvarna Developer Portal onder \"Verbonden API's\".",
+      "rate_limited": "API-limiet bereikt of tijdelijk geblokkeerd. Wacht een paar minuten en probeer het opnieuw, of maak een nieuwe applicatie aan in het Husqvarna Developer Portal.",
+      "cannot_connect": "Kan geen verbinding maken met de API. Controleer je netwerkverbinding en probeer het opnieuw.",
+      "unknown": "Er is een onverwachte fout opgetreden."
+    },
+    "abort": {
+      "already_configured": "Deze configuratie bestaat al.",
+      "reauth_successful": "Opnieuw verifiëren is gelukt.",
+      "reconfigure_successful": "Opnieuw configureren is gelukt."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Gardena Smart System opties",
+        "data": {
+          "default_watering_minutes": "Standaard bewateringsduur",
+          "default_socket_minutes": "Standaard stopcontactduur",
+          "poll_interval_minutes": "Polling-interval"
+        },
+        "data_description": {
+          "default_watering_minutes": "Duur in minuten bij het openen van een klep zonder opgegeven duur (1–1440).",
+          "default_socket_minutes": "Duur in minuten bij het inschakelen van een stopcontact (1–1440). Stel in op 1440 (24 uur) voor vrijwel onbeperkt gebruik.",
+          "poll_interval_minutes": "Hoe vaak de API wordt bevraagd voor updates, in minuten (5–1440). Lagere waarden geven actuelere gegevens, maar verbruiken meer API-tegoed. Standaard: 30 (Gardena) / 15 (Automower)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Accu"
+      },
+      "rf_link_level": {
+        "name": "Signaalsterkte"
+      },
+      "soil_humidity": {
+        "name": "Bodemvochtigheid"
+      },
+      "soil_temperature": {
+        "name": "Bodemtemperatuur"
+      },
+      "ambient_temperature": {
+        "name": "Omgevingstemperatuur"
+      },
+      "light_intensity": {
+        "name": "Lichtsterkte"
+      },
+      "mower_operating_hours": {
+        "name": "Bedrijfsuren"
+      },
+      "mower_activity": {
+        "name": "Maaiactiviteit"
+      },
+      "mower_last_error_code": {
+        "name": "Laatste foutcode"
+      },
+      "automower_battery_level": {
+        "name": "Accu"
+      },
+      "automower_cutting_height": {
+        "name": "Maaihoogte"
+      },
+      "automower_next_start": {
+        "name": "Volgende start"
+      },
+      "automower_total_cutting_time": {
+        "name": "Totale maaitijd"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Laadcycli"
+      },
+      "automower_total_collisions": {
+        "name": "Botsingen"
+      },
+      "automower_total_drive_distance": {
+        "name": "Totale rijafstand"
+      },
+      "automower_blade_usage_time": {
+        "name": "Gebruiksduur messen"
+      },
+      "automower_total_running_time": {
+        "name": "Totale looptijd"
+      },
+      "automower_total_searching_time": {
+        "name": "Totale zoektijd"
+      },
+      "automower_activity": {
+        "name": "Activiteit",
+        "state": {
+          "unknown": "Onbekend",
+          "not_applicable": "Niet van toepassing",
+          "mowing": "Aan het maaien",
+          "going_home": "Onderweg naar station",
+          "charging": "Aan het laden",
+          "leaving": "Verlaat station",
+          "parked_in_cs": "Geparkeerd",
+          "stopped_in_garden": "Gestopt in tuin"
+        }
+      },
+      "automower_state": {
+        "name": "Status",
+        "state": {
+          "unknown": "Onbekend",
+          "not_applicable": "Niet van toepassing",
+          "paused": "Gepauzeerd",
+          "in_operation": "In bedrijf",
+          "wait_updating": "Bezig met bijwerken",
+          "wait_power_up": "Bezig met opstarten",
+          "restricted": "Beperkt",
+          "off": "Uit",
+          "stopped": "Gestopt",
+          "error": "Fout",
+          "fatal_error": "Ernstige fout",
+          "error_at_power_up": "Fout bij opstarten"
+        }
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Accu bijna leeg"
+      },
+      "valve_error": {
+        "name": "Klepfout"
+      },
+      "mower_error": {
+        "name": "Maaierfout"
+      },
+      "automower_error": {
+        "name": "Fout"
+      },
+      "automower_connected": {
+        "name": "Verbonden"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Stopcontact"
+      },
+      "automower_headlight": {
+        "name": "Koplampen"
+      },
+      "automower_stay_out_zone": {
+        "name": "Verbodszone: {zone_name}"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Klep"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Maaier"
+      },
+      "automower": {
+        "name": "Maaier"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Maaihoogte"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Maaihoogte: {work_area}"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Positie"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Maaischema"
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Bewatering starten",
+      "description": "Start de bewatering van een klep voor een bepaalde duur en overschrijft het schema.",
+      "fields": {
+        "duration": {
+          "name": "Duur",
+          "description": "Duur in minuten (1–1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Inschakelen voor",
+      "description": "Schakelt een slim stopcontact in voor een bepaalde duur.",
+      "fields": {
+        "duration": {
+          "name": "Duur",
+          "description": "Duur in minuten (1–1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Schema overschrijven",
+      "description": "Forceert het maaien voor een bepaalde duur, ongeacht het schema.",
+      "fields": {
+        "duration": {
+          "name": "Duur",
+          "description": "Duur in minuten (1–480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Parkeren tot nader order",
+      "description": "Parkeert de maaier voor onbepaalde tijd. Hij blijft in het laadstation totdat je hem handmatig weer start."
+    },
+    "resume_schedule": {
+      "name": "Schema hervatten",
+      "description": "Hervat het automatische maaierschema."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Opdracht kon niet naar het apparaat worden verzonden: {error}"
+    },
+    "device_unavailable": {
+      "message": "Het apparaat is momenteel niet beschikbaar."
+    },
+    "command_throttled": {
+      "message": "Opdrachten worden te snel verzonden. Wacht een paar seconden tussen opdrachten om de API-limiet niet te overschrijden."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "WebSocket-verbinding verloren",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "WebSocket opnieuw verbinden",
+            "description": "De realtimeverbinding met de Husqvarna-cloud is verbroken. De integratie gebruikt momenteel polling als terugvaloptie. Bevestig om opnieuw te proberen verbinding te maken."
+          }
+        }
+      }
+    }
+  }
+}

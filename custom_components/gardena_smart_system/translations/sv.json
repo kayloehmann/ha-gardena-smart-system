@@ -1,0 +1,299 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Anslut till Husqvarna",
+        "description": "Ange uppgifterna f\u00f6r din applikation fr\u00e5n Husqvarna Developer Portal.",
+        "data": {
+          "client_id": "Applikationsnyckel (Client ID)",
+          "client_secret": "Applikationshemlighet"
+        },
+        "data_description": {
+          "client_id": "Applikationsnyckeln fr\u00e5n ditt Husqvarna-utvecklarkonto.",
+          "client_secret": "Applikationshemligheten fr\u00e5n ditt Husqvarna-utvecklarkonto."
+        }
+      },
+      "api_type": {
+        "title": "V\u00e4lj API",
+        "description": "V\u00e4lj \u00f6nskad Husqvarna API. Du kan l\u00e4gga till b\u00e5da genom att konfigurera integrationen tv\u00e5 g\u00e5nger.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "V\u00e4lj tr\u00e4dg\u00e5rd",
+        "description": "Flera tr\u00e4dg\u00e5rdar hittades p\u00e5 ditt konto. V\u00e4lj den tr\u00e4dg\u00e5rd du vill l\u00e4gga till.",
+        "data": {
+          "location_id": "Tr\u00e4dg\u00e5rd"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Autentisera igen",
+        "description": "Dina uppgifter \u00e4r inte l\u00e4ngre giltiga. Ange dina applikationsuppgifter p\u00e5 nytt.",
+        "data": {
+          "client_id": "Applikationsnyckel (Client ID)",
+          "client_secret": "Applikationshemlighet"
+        }
+      },
+      "reconfigure": {
+        "title": "Konfigurera om",
+        "description": "Uppdatera dina applikationsuppgifter.",
+        "data": {
+          "client_id": "Applikationsnyckel (Client ID)",
+          "client_secret": "Applikationshemlighet"
+        }
+      },
+      "reconfigure_location": {
+        "title": "V\u00e4lj tr\u00e4dg\u00e5rd",
+        "description": "Flera tr\u00e4dg\u00e5rdar hittades. V\u00e4lj den tr\u00e4dg\u00e5rd som denna post ska anv\u00e4nda.",
+        "data": {
+          "location_id": "Tr\u00e4dg\u00e5rd"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Ogiltiga uppgifter. Kontrollera din applikationsnyckel och hemlighet i Husqvarna Developer Portal.",
+      "forbidden": "API-\u00e5tkomst nekad. Kontrollera att Gardena Smart System API \u00e4r kopplad till din applikation i Husqvarna Developer Portal.",
+      "automower_not_connected": "Automower Connect API \u00e4r inte kopplad till din applikation. Aktivera den i Husqvarna Developer Portal under \u201cAnslutna API:er\u201d.",
+      "rate_limited": "API-hastighetsgr\u00e4ns uppn\u00e5dd eller tillf\u00e4lligt blockerad. V\u00e4nta n\u00e5gra minuter och f\u00f6rs\u00f6k igen, eller skapa en ny applikation i Husqvarna Developer Portal.",
+      "cannot_connect": "Kan inte ansluta till API:et. Kontrollera din n\u00e4tverksanslutning och f\u00f6rs\u00f6k igen.",
+      "unknown": "Ett ov\u00e4ntat fel uppstod."
+    },
+    "abort": {
+      "already_configured": "Denna konfiguration finns redan.",
+      "reauth_successful": "Autentiseringen lyckades.",
+      "reconfigure_successful": "Omkonfigureringen lyckades."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Gardena Smart System-alternativ",
+        "data": {
+          "default_watering_minutes": "Standard bevattningsl\u00e4ngd",
+          "default_socket_minutes": "Standard uttaksl\u00e4ngd",
+          "poll_interval_minutes": "Pollningsintervall"
+        },
+        "data_description": {
+          "default_watering_minutes": "L\u00e4ngd i minuter vid \u00f6ppning av en ventil utan angiven tid (1\u20131440).",
+          "default_socket_minutes": "L\u00e4ngd i minuter vid p\u00e5slag av ett uttag (1\u20131440). S\u00e4tt till 1440 (24 tim.) f\u00f6r praktiskt taget obegr\u00e4nsad drift.",
+          "poll_interval_minutes": "Hur ofta API:et tillfr\u00e5gas om uppdateringar, i minuter (5\u20131440). L\u00e4gre v\u00e4rden ger f\u00e4rskare data men f\u00f6rbrukar mer API-kvot. Standard: 30 (Gardena) / 15 (Automower)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Batteri"
+      },
+      "rf_link_level": {
+        "name": "Signalstyrka"
+      },
+      "soil_humidity": {
+        "name": "Markfuktighet"
+      },
+      "soil_temperature": {
+        "name": "Marktemperatur"
+      },
+      "ambient_temperature": {
+        "name": "Omgivningstemperatur"
+      },
+      "light_intensity": {
+        "name": "Ljusstyrka"
+      },
+      "mower_operating_hours": {
+        "name": "Drifttimmar"
+      },
+      "mower_activity": {
+        "name": "Klipparaktivitet"
+      },
+      "mower_last_error_code": {
+        "name": "Senaste felkod"
+      },
+      "automower_battery_level": {
+        "name": "Batteri"
+      },
+      "automower_cutting_height": {
+        "name": "Klipph\u00f6jd"
+      },
+      "automower_next_start": {
+        "name": "N\u00e4sta start"
+      },
+      "automower_total_cutting_time": {
+        "name": "Total klipptid"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Laddningscykler"
+      },
+      "automower_total_collisions": {
+        "name": "Kollisioner"
+      },
+      "automower_total_drive_distance": {
+        "name": "Total k\u00f6rstr\u00e4cka"
+      },
+      "automower_blade_usage_time": {
+        "name": "Knivslitage"
+      },
+      "automower_total_running_time": {
+        "name": "Total k\u00f6rtid"
+      },
+      "automower_total_searching_time": {
+        "name": "Total s\u00f6ktid"
+      },
+      "automower_activity": {
+        "name": "Aktivitet",
+        "state": {
+          "unknown": "Ok\u00e4nd",
+          "not_applicable": "Ej till\u00e4mpligt",
+          "mowing": "Klipper",
+          "going_home": "\u00c5ker hem",
+          "charging": "Laddar",
+          "leaving": "L\u00e4mnar stationen",
+          "parked_in_cs": "Parkerad",
+          "stopped_in_garden": "Stoppad i tr\u00e4dg\u00e5rden"
+        }
+      },
+      "automower_state": {
+        "name": "Status",
+        "state": {
+          "unknown": "Ok\u00e4nd",
+          "not_applicable": "Ej till\u00e4mpligt",
+          "paused": "Pausad",
+          "in_operation": "I drift",
+          "wait_updating": "Uppdaterar",
+          "wait_power_up": "Startar",
+          "restricted": "Begr\u00e4nsad",
+          "off": "Av",
+          "stopped": "Stoppad",
+          "error": "Fel",
+          "fatal_error": "Allvarligt fel",
+          "error_at_power_up": "Fel vid start"
+        }
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "L\u00e5gt batteri"
+      },
+      "valve_error": {
+        "name": "Ventilfel"
+      },
+      "mower_error": {
+        "name": "Klipparfel"
+      },
+      "automower_error": {
+        "name": "Fel"
+      },
+      "automower_connected": {
+        "name": "Ansluten"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Uttag"
+      },
+      "automower_headlight": {
+        "name": "Str\u00e5lkastare"
+      },
+      "automower_stay_out_zone": {
+        "name": "Sp\u00e4rrzon: {zone_name}"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Ventil"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Klippare"
+      },
+      "automower": {
+        "name": "Klippare"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Klipph\u00f6jd"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Klipph\u00f6jd: {work_area}"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Position"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Klippschema"
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Starta bevattning",
+      "description": "Startar bevattning av en ventil under en angiven tid och \u00e5sidos\u00e4tter schemat.",
+      "fields": {
+        "duration": {
+          "name": "L\u00e4ngd",
+          "description": "L\u00e4ngd i minuter (1\u20131440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Sl\u00e5 p\u00e5 under",
+      "description": "Sl\u00e5r p\u00e5 ett smart uttag under en angiven tid.",
+      "fields": {
+        "duration": {
+          "name": "L\u00e4ngd",
+          "description": "L\u00e4ngd i minuter (1\u20131440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "\u00c5sidos\u00e4tt schema",
+      "description": "Tvingar klippning under en angiven tid, oavsett schema.",
+      "fields": {
+        "duration": {
+          "name": "L\u00e4ngd",
+          "description": "L\u00e4ngd i minuter (1\u2013480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Parkera tillsvidare",
+      "description": "Parkerar klipparen p\u00e5 obest\u00e4md tid. Den stannar i laddstationen tills du startar den manuellt."
+    },
+    "resume_schedule": {
+      "name": "\u00c5terg\u00e5 till schema",
+      "description": "\u00c5terupptar det automatiska klippschemat."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Kunde inte skicka kommando till enheten: {error}"
+    },
+    "device_unavailable": {
+      "message": "Enheten \u00e4r f\u00f6r n\u00e4rvarande inte tillg\u00e4nglig."
+    },
+    "command_throttled": {
+      "message": "Kommandon skickas f\u00f6r snabbt. V\u00e4nta n\u00e5gra sekunder mellan kommandona f\u00f6r att inte \u00f6verskrida API-hastighetsgr\u00e4nserna."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "WebSocket-anslutningen f\u00f6rlorad",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "\u00c5teranslut WebSocket",
+            "description": "Realtidsanslutningen till Husqvarna-molnet har avbrutits. Integrationen anv\u00e4nder f\u00f6r n\u00e4rvarande pollning som reservl\u00f6sning. Bekr\u00e4fta f\u00f6r att f\u00f6rs\u00f6ka \u00e5teransluta."
+          }
+        }
+      }
+    }
+  }
+}
