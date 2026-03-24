@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import STATE_UNAVAILABLE
@@ -662,3 +662,60 @@ class TestLawnMowerDynamicDevices:
 
             state = hass.states.get("lawn_mower.sileno_mower")
             assert state is not None
+
+
+class TestLawnMowerDeviceNoneGuards:
+    """Test property guards when the device is removed from coordinator data."""
+
+    async def test_activity_returns_none_when_device_gone(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        from custom_components.gardena_smart_system.lawn_mower import (
+            GardenaLawnMowerEntity,
+        )
+
+        device = make_mock_device(has_sensor=False, has_mower=True)
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            coordinator = mock_config_entry.runtime_data
+            entity = GardenaLawnMowerEntity(coordinator, device)
+
+            # Remove device from data
+            coordinator.async_set_updated_data({})
+            assert entity.activity is None
+
+    async def test_extra_state_attributes_returns_none_when_device_gone(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        from custom_components.gardena_smart_system.lawn_mower import (
+            GardenaLawnMowerEntity,
+        )
+
+        device = make_mock_device(has_sensor=False, has_mower=True)
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            coordinator = mock_config_entry.runtime_data
+            entity = GardenaLawnMowerEntity(coordinator, device)
+
+            coordinator.async_set_updated_data({})
+            assert entity.extra_state_attributes is None
+
+    async def test_send_command_raises_when_device_gone(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        from custom_components.gardena_smart_system.lawn_mower import (
+            GardenaLawnMowerEntity,
+        )
+
+        device = make_mock_device(has_sensor=False, has_mower=True)
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            coordinator = mock_config_entry.runtime_data
+            entity = GardenaLawnMowerEntity(coordinator, device)
+
+            coordinator.async_set_updated_data({})
+            with pytest.raises(HomeAssistantError):
+                await entity._async_send_command("START_DONT_OVERRIDE")

@@ -1661,6 +1661,120 @@ class TestAutomowerCoordinatorWebSocket:
             issue = issue_reg.async_get_issue(DOMAIN, "automower_websocket_connection_failed")
             assert issue is not None
 
+    async def test_ws_reconnect_clears_repair_issue(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Successful WS reconnect deletes the repair issue."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            # Create the issue first via WS error
+            coordinator._on_ws_error(Exception("connection lost"))
+            issue_reg = ir.async_get(hass)
+            assert issue_reg.async_get_issue(DOMAIN, "automower_websocket_connection_failed") is not None
+
+            # Reconnect clears the issue (line 214)
+            coordinator._ws_connected = False
+            await coordinator._async_start_websocket(devices)
+
+            assert issue_reg.async_get_issue(DOMAIN, "automower_websocket_connection_failed") is None
+
+    async def test_ws_auth_error_triggers_reauth(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Auth errors trigger reauth, not repair issues (lines 233-234)."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            with patch.object(coordinator.config_entry, "async_start_reauth") as mock_reauth:
+                coordinator._on_ws_error(AutomowerAuthenticationError("token expired"))
+
+            mock_reauth.assert_called_once_with(hass)
+
+            # No repair issue should be created
+            issue_reg = ir.async_get(hass)
+            assert issue_reg.async_get_issue(DOMAIN, "automower_websocket_connection_failed") is None
+
+    async def test_custom_poll_interval_restored_after_rate_limit(
+        self, hass: HomeAssistant
+    ) -> None:
+        """Custom poll interval takes precedence over defaults after rate limit (line 115)."""
+        from custom_components.gardena_smart_system.const import (
+            AUTOMOWER_RATE_LIMIT_COOLDOWN,
+            OPT_POLL_INTERVAL_MINUTES,
+        )
+
+        # Create entry with custom poll interval in options
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=AUTOMOWER_ENTRY_DATA,
+            title="Automower",
+            version=2,
+            options={OPT_POLL_INTERVAL_MINUTES: 45},
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, entry, devices) as mock_client:
+            coordinator = entry.runtime_data
+
+            # Simulate rate limit then recovery
+            coordinator.update_interval = AUTOMOWER_RATE_LIMIT_COOLDOWN
+            mock_client.async_get_mowers = AsyncMock(return_value=devices)
+
+            await coordinator._async_update_data()
+
+            assert coordinator.update_interval == timedelta(minutes=45)
+
+    async def test_stale_device_reappears_clears_miss_count(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """A device that reappears clears its stale miss count (line 153)."""
+        device_a = make_mock_automower_device(mower_id="mower-a", serial_number="SN-A")
+        device_b = make_mock_automower_device(mower_id="mower-b", serial_number="SN-B")
+        devices = {device_a.mower_id: device_a, device_b.mower_id: device_b}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            # Simulate mower-b absent for 1 poll
+            coordinator._stale_miss_counts["mower-b"] = 1
+
+            # mower-b reappears — miss count should be cleared
+            fresh = {device_a.mower_id: device_a, device_b.mower_id: device_b}
+            coordinator._async_remove_stale_devices(fresh)
+
+            assert "mower-b" not in coordinator._stale_miss_counts
+
+    async def test_stale_device_without_serial_skipped(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Stale devices without serial_number are skipped (lines 176-177)."""
+        device = make_mock_automower_device(mower_id="mower-no-serial", serial_number="SN-1")
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            # Fake device with no serial in stale data
+            no_serial_device = make_mock_automower_device(
+                mower_id="mower-no-serial", serial_number=""
+            )
+            coordinator.data = {"mower-no-serial": no_serial_device}
+            coordinator._stale_miss_counts["mower-no-serial"] = 2  # at threshold
+
+            coordinator._async_remove_stale_devices({})
+
+            # Should be cleaned up without error
+            assert "mower-no-serial" not in coordinator._stale_miss_counts
+
 
 # ──────────────────────────────────────────────────────────────────────
 # 12. Switch Error Handling

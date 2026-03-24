@@ -461,3 +461,59 @@ class TestSwitchOptionsIntegration:
                 command="START_SECONDS_TO_OVERRIDE",
                 seconds=2700,  # 45 minutes * 60
             )
+
+
+class TestSwitchDeviceNoneGuards:
+    """Test property guards when the device is removed from coordinator data."""
+
+    async def test_is_on_returns_none_when_device_gone(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        from custom_components.gardena_smart_system.switch import (
+            GardenaPowerSocketEntity,
+        )
+
+        device = make_mock_device(has_sensor=False, has_power_socket=True)
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            coordinator = mock_config_entry.runtime_data
+            entity = GardenaPowerSocketEntity(coordinator, device)
+
+            coordinator.async_set_updated_data({})
+            assert entity.is_on is None
+
+    async def test_extra_state_attributes_returns_none_when_device_gone(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        from custom_components.gardena_smart_system.switch import (
+            GardenaPowerSocketEntity,
+        )
+
+        device = make_mock_device(has_sensor=False, has_power_socket=True)
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            coordinator = mock_config_entry.runtime_data
+            entity = GardenaPowerSocketEntity(coordinator, device)
+
+            coordinator.async_set_updated_data({})
+            assert entity.extra_state_attributes is None
+
+    async def test_send_command_raises_when_device_gone(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        from custom_components.gardena_smart_system.switch import (
+            GardenaPowerSocketEntity,
+        )
+
+        device = make_mock_device(has_sensor=False, has_power_socket=True)
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            coordinator = mock_config_entry.runtime_data
+            entity = GardenaPowerSocketEntity(coordinator, device)
+
+            coordinator.async_set_updated_data({})
+            with pytest.raises(HomeAssistantError):
+                await entity._async_send_command("START_SECONDS_TO_OVERRIDE", seconds=60)

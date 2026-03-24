@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import STATE_UNAVAILABLE
@@ -506,3 +506,72 @@ class TestValveOptionsIntegration:
                 command="START_SECONDS_TO_OVERRIDE",
                 seconds=1800,  # 30 minutes * 60
             )
+
+
+class TestValveDeviceNoneGuards:
+    """Test property guards when the device is removed from coordinator data."""
+
+    async def test_valve_property_returns_none_when_device_gone(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        from custom_components.gardena_smart_system.valve import GardenaValveEntity
+
+        device = make_mock_device(valve_count=1, has_sensor=False)
+        valve_id = next(iter(device.valves.keys()))
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            coordinator = mock_config_entry.runtime_data
+            entity = GardenaValveEntity(coordinator, device, valve_id)
+
+            coordinator.async_set_updated_data({})
+            assert entity._valve is None
+
+    async def test_is_closed_returns_none_when_device_gone(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        from custom_components.gardena_smart_system.valve import GardenaValveEntity
+
+        device = make_mock_device(valve_count=1, has_sensor=False)
+        valve_id = next(iter(device.valves.keys()))
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            coordinator = mock_config_entry.runtime_data
+            entity = GardenaValveEntity(coordinator, device, valve_id)
+
+            coordinator.async_set_updated_data({})
+            assert entity.is_closed is None
+
+    async def test_extra_state_attributes_returns_none_when_device_gone(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        from custom_components.gardena_smart_system.valve import GardenaValveEntity
+
+        device = make_mock_device(valve_count=1, has_sensor=False)
+        valve_id = next(iter(device.valves.keys()))
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            coordinator = mock_config_entry.runtime_data
+            entity = GardenaValveEntity(coordinator, device, valve_id)
+
+            coordinator.async_set_updated_data({})
+            assert entity.extra_state_attributes is None
+
+    async def test_send_command_raises_when_device_gone(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        from custom_components.gardena_smart_system.valve import GardenaValveEntity
+
+        device = make_mock_device(valve_count=1, has_sensor=False)
+        valve_id = next(iter(device.valves.keys()))
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            coordinator = mock_config_entry.runtime_data
+            entity = GardenaValveEntity(coordinator, device, valve_id)
+
+            coordinator.async_set_updated_data({})
+            with pytest.raises(HomeAssistantError):
+                await entity._async_send_command("START_SECONDS_TO_OVERRIDE", seconds=60)

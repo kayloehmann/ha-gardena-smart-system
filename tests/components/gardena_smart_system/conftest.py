@@ -46,6 +46,7 @@ def make_mock_device(
     device = MagicMock()
     device.device_id = device_id
     device.serial = serial
+    device.serial_number = None  # Gardena devices use .serial, not .serial_number
     device.name = name
     device.is_online = True
 
