@@ -54,7 +54,7 @@
     "error": {
       "invalid_auth": "Ungültige Zugangsdaten. Überprüfe deinen Anwendungsschlüssel und dein Geheimnis im Husqvarna Developer Portal.",
       "forbidden": "API-Zugriff verweigert. Stelle sicher, dass die Gardena Smart System API mit deiner Anwendung im Husqvarna Developer Portal verbunden ist.",
-      "automower_not_connected": "Die Automower Connect API ist nicht mit deiner Anwendung verbunden. Aktiviere sie im Husqvarna Developer Portal unter „Verbundene APIs".",
+      "automower_not_connected": "Die Automower Connect API ist nicht mit deiner Anwendung verbunden. Aktiviere sie im Husqvarna Developer Portal unter \u201EVerbundene APIs\u201C.",
       "rate_limited": "API-Ratenlimit erreicht oder vorübergehend gesperrt. Warte einige Minuten und versuche es erneut, oder erstelle eine neue Anwendung im Husqvarna Developer Portal.",
       "cannot_connect": "Verbindung zur API nicht möglich. Überprüfe deine Netzwerkverbindung und versuche es erneut.",
       "unknown": "Ein unerwarteter Fehler ist aufgetreten."
