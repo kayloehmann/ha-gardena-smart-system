@@ -118,9 +118,7 @@ class TestRepairFlowConfirmStep:
         await flow.async_step_init(user_input={})
         coordinator.async_request_refresh.assert_awaited_once()
 
-    async def test_confirm_refreshes_multiple_entries(
-        self, hass: HomeAssistant
-    ) -> None:
+    async def test_confirm_refreshes_multiple_entries(self, hass: HomeAssistant) -> None:
         """All config entries with runtime_data get refreshed."""
         coordinators = []
         for i in range(3):
@@ -139,9 +137,7 @@ class TestRepairFlowConfirmStep:
         for coord in coordinators:
             coord.async_request_refresh.assert_awaited_once()
 
-    async def test_confirm_skips_entries_without_runtime_data(
-        self, hass: HomeAssistant
-    ) -> None:
+    async def test_confirm_skips_entries_without_runtime_data(self, hass: HomeAssistant) -> None:
         """Entries that have no runtime_data are silently skipped."""
         # Entry WITH coordinator
         entry_with = MockConfigEntry(domain=DOMAIN, data=ENTRY_DATA)

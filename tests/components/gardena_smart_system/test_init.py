@@ -208,9 +208,7 @@ class TestAsyncRemoveConfigEntryDevice:
             identifiers={(DOMAIN, "OLD-SERIAL-NOT-IN-DATA")},
         )
 
-        result = await async_remove_config_entry_device(
-            hass, mock_config_entry, device_entry
-        )
+        result = await async_remove_config_entry_device(hass, mock_config_entry, device_entry)
         assert result is True
 
     async def test_blocks_removal_when_device_still_in_coordinator(
@@ -235,9 +233,7 @@ class TestAsyncRemoveConfigEntryDevice:
             identifiers={(DOMAIN, "SN001")},
         )
 
-        result = await async_remove_config_entry_device(
-            hass, mock_config_entry, device_entry
-        )
+        result = await async_remove_config_entry_device(hass, mock_config_entry, device_entry)
         assert result is False
 
     async def test_allows_removal_when_coordinator_data_is_empty(
@@ -265,9 +261,7 @@ class TestAsyncRemoveConfigEntryDevice:
             identifiers={(DOMAIN, "SN001")},
         )
 
-        result = await async_remove_config_entry_device(
-            hass, mock_config_entry, device_entry
-        )
+        result = await async_remove_config_entry_device(hass, mock_config_entry, device_entry)
         assert result is True
 
     async def test_ignores_non_domain_identifiers(
@@ -291,9 +285,7 @@ class TestAsyncRemoveConfigEntryDevice:
             identifiers={("other_domain", "SN001")},
         )
 
-        result = await async_remove_config_entry_device(
-            hass, mock_config_entry, device_entry
-        )
+        result = await async_remove_config_entry_device(hass, mock_config_entry, device_entry)
         assert result is True
 
     async def test_blocks_removal_with_serial_number_attr(
@@ -324,9 +316,7 @@ class TestAsyncRemoveConfigEntryDevice:
             identifiers={(DOMAIN, "AUTOMOWER-SN")},
         )
 
-        result = await async_remove_config_entry_device(
-            hass, mock_config_entry, device_entry
-        )
+        result = await async_remove_config_entry_device(hass, mock_config_entry, device_entry)
         assert result is False
 
 
