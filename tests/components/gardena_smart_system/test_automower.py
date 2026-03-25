@@ -1674,13 +1674,14 @@ class TestAutomowerCoordinatorWebSocket:
             # Create the issue first via WS error
             coordinator._on_ws_error(Exception("connection lost"))
             issue_reg = ir.async_get(hass)
-            assert issue_reg.async_get_issue(DOMAIN, "automower_websocket_connection_failed") is not None
+            issue_id = "automower_websocket_connection_failed"
+            assert issue_reg.async_get_issue(DOMAIN, issue_id) is not None
 
             # Reconnect clears the issue (line 214)
             coordinator._ws_connected = False
             await coordinator._async_start_websocket(devices)
 
-            assert issue_reg.async_get_issue(DOMAIN, "automower_websocket_connection_failed") is None
+            assert issue_reg.async_get_issue(DOMAIN, issue_id) is None
 
     async def test_ws_auth_error_triggers_reauth(
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
@@ -1699,7 +1700,8 @@ class TestAutomowerCoordinatorWebSocket:
 
             # No repair issue should be created
             issue_reg = ir.async_get(hass)
-            assert issue_reg.async_get_issue(DOMAIN, "automower_websocket_connection_failed") is None
+            am_issue_id = "automower_websocket_connection_failed"
+            assert issue_reg.async_get_issue(DOMAIN, am_issue_id) is None
 
     async def test_custom_poll_interval_restored_after_rate_limit(
         self, hass: HomeAssistant

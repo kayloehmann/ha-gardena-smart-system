@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -22,7 +22,6 @@ from custom_components.gardena_smart_system.repairs import (
 )
 
 from .conftest import ENTRY_DATA
-
 
 # ── Fixtures ─────────────────────────────────────────────────────────
 
