@@ -2737,3 +2737,421 @@ class TestConfigFlowAdditional:
 
         assert result["type"] == "form"
         assert result["errors"]["base"] == "unknown"
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 18. Automower Platform Routing Guards (defensive early returns)
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerRoutingGuards:
+    """Test that automower_* async_setup_entry returns early for non-automower entries.
+
+    The main platform files already gate delegation, so these guards are defensive.
+    We call the automower_* setup functions directly with a Gardena config entry
+    to exercise the early-return branch.
+    """
+
+    @pytest.mark.parametrize(
+        "module_path",
+        [
+            "custom_components.gardena_smart_system.automower_sensor",
+            "custom_components.gardena_smart_system.automower_binary_sensor",
+            "custom_components.gardena_smart_system.automower_switch",
+            "custom_components.gardena_smart_system.automower_device_tracker",
+            "custom_components.gardena_smart_system.automower_number",
+            "custom_components.gardena_smart_system.automower_calendar",
+            "custom_components.gardena_smart_system.automower_lawn_mower",
+        ],
+    )
+    async def test_routing_guard_returns_early_for_gardena_entry(
+        self,
+        hass: HomeAssistant,
+        module_path: str,
+    ) -> None:
+        """Each automower_* module returns immediately for non-automower entries."""
+        import importlib
+
+        from .conftest import ENTRY_DATA, make_mock_device
+
+        module = importlib.import_module(module_path)
+
+        gardena_entry = MockConfigEntry(domain=DOMAIN, data=ENTRY_DATA, title="My Garden")
+
+        # Set up a Gardena coordinator so runtime_data exists
+        device = make_mock_device()
+        devices = {device.device_id: device}
+
+        _P_CLIENT = "custom_components.gardena_smart_system.coordinator.GardenaClient"
+        _P_AUTH = "custom_components.gardena_smart_system.coordinator.GardenaAuth"
+        _P_WS = "custom_components.gardena_smart_system.coordinator.GardenaWebSocket"
+
+        with patch(_P_CLIENT) as cls, patch(_P_AUTH), patch(_P_WS) as ws_cls:
+            client = AsyncMock()
+            client.async_get_devices = AsyncMock(return_value=devices)
+            client.async_get_websocket_url = AsyncMock(return_value="wss://t")
+            cls.return_value = client
+            ws_cls.return_value = AsyncMock()
+
+            gardena_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(gardena_entry.entry_id)
+            await hass.async_block_till_done()
+
+        add_entities = AsyncMock()
+        await module.async_setup_entry(hass, gardena_entry, add_entities)
+
+        # No entities should have been added
+        add_entities.assert_not_called()
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 19. Automower Entity None-Guards (direct property access)
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerEntityNoneGuards:
+    """Test entity properties return None/empty when device is gone from coordinator."""
+
+    async def test_binary_sensor_is_on_none_when_device_gone(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """automower_binary_sensor.py:100-101: is_on returns None."""
+        from custom_components.gardena_smart_system.automower_binary_sensor import (
+            BINARY_SENSOR_DESCRIPTIONS,
+            AutomowerBinarySensorEntity,
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            entity = AutomowerBinarySensorEntity(coordinator, device, BINARY_SENSOR_DESCRIPTIONS[0])
+            assert entity.is_on is None
+
+    async def test_sensor_native_value_none_when_device_gone(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """automower_sensor.py:238-239: native_value returns None."""
+        from custom_components.gardena_smart_system.automower_sensor import (
+            SENSOR_DESCRIPTIONS,
+            AutomowerSensorEntity,
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            entity = AutomowerSensorEntity(coordinator, device, SENSOR_DESCRIPTIONS[0])
+            assert entity.native_value is None
+
+    async def test_calendar_event_none_when_device_gone(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """automower_calendar.py:71-72: event returns None."""
+        from custom_components.gardena_smart_system.automower_calendar import (
+            AutomowerCalendarEntity,
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            entity = AutomowerCalendarEntity(coordinator, device)
+            assert entity.event is None
+
+    async def test_device_tracker_latitude_none_when_device_gone(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """automower_device_tracker.py:64: latitude returns None."""
+        from custom_components.gardena_smart_system.automower_device_tracker import (
+            AutomowerTrackerEntity,
+        )
+
+        device = make_mock_automower_device(has_position=True)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            entity = AutomowerTrackerEntity(coordinator, device)
+            assert entity.latitude is None
+            assert entity.longitude is None
+
+    async def test_zone_is_on_none_when_zone_missing(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """automower_switch.py:138-139: zone is_on returns None when zone missing."""
+        from custom_components.gardena_smart_system.automower_switch import (
+            AutomowerStayOutZoneSwitch,
+        )
+
+        zone = StayOutZone(zone_id="zone-1", name="Pond", enabled=True)
+        device = make_mock_automower_device(
+            has_stay_out_zones=True, stay_out_zones={"zone-1": zone}
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            # Entity references zone-99 which doesn't exist
+            entity = AutomowerStayOutZoneSwitch(coordinator, device, "zone-99")
+            assert entity.is_on is None
+
+    async def test_work_area_native_value_none_when_area_missing(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """automower_number.py:133-135: native_value None when work area missing."""
+        from custom_components.gardena_smart_system.automower_number import (
+            AutomowerWorkAreaHeightEntity,
+        )
+
+        wa = WorkArea(work_area_id=1, name="Front Yard", cutting_height=60, enabled=True)
+        device = make_mock_automower_device(has_work_areas=True, work_areas={1: wa})
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            # Entity references work_area_id=99 which doesn't exist
+            entity = AutomowerWorkAreaHeightEntity(coordinator, device, 99)
+            assert entity.native_value is None
+
+    async def test_headlight_is_on_none_when_device_gone(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """automower_switch.py:77-78: headlight is_on returns None."""
+        from custom_components.gardena_smart_system.automower_switch import (
+            AutomowerHeadlightSwitch,
+        )
+
+        device = make_mock_automower_device(has_headlights=True)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            entity = AutomowerHeadlightSwitch(coordinator, device)
+            assert entity.is_on is None
+
+    async def test_zone_is_on_none_when_device_gone(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """automower_switch.py:135-136: zone is_on None when device itself is gone."""
+        from custom_components.gardena_smart_system.automower_switch import (
+            AutomowerStayOutZoneSwitch,
+        )
+
+        zone = StayOutZone(zone_id="zone-1", name="Pond", enabled=True)
+        device = make_mock_automower_device(
+            has_stay_out_zones=True, stay_out_zones={"zone-1": zone}
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            entity = AutomowerStayOutZoneSwitch(coordinator, device, "zone-1")
+            assert entity.is_on is None
+
+    async def test_cutting_height_native_value_none_when_device_gone(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """automower_number.py:75-76: cutting height native_value None."""
+        from custom_components.gardena_smart_system.automower_number import (
+            AutomowerCuttingHeightEntity,
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            entity = AutomowerCuttingHeightEntity(coordinator, device)
+            assert entity.native_value is None
+
+    async def test_work_area_native_value_none_when_device_gone(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """automower_number.py:131-132: work area native_value None when device gone."""
+        from custom_components.gardena_smart_system.automower_number import (
+            AutomowerWorkAreaHeightEntity,
+        )
+
+        wa = WorkArea(work_area_id=1, name="Front Yard", cutting_height=60, enabled=True)
+        device = make_mock_automower_device(has_work_areas=True, work_areas={1: wa})
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            entity = AutomowerWorkAreaHeightEntity(coordinator, device, 1)
+            assert entity.native_value is None
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 20. Zone turn_off + Calendar async_get_events coverage
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerMiscCoverage:
+    """Cover remaining uncovered lines."""
+
+    async def test_zone_turn_off_calls_client(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """automower_switch.py:148: turn_off delegates to _async_set_zone(False)."""
+        zone = StayOutZone(zone_id="zone-1", name="Pond", enabled=True)
+        device = make_mock_automower_device(
+            has_stay_out_zones=True, stay_out_zones={"zone-1": zone}
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            entity_id = _find_entity_id(hass, "switch", "soz_zone-1")
+            await hass.services.async_call(
+                "switch",
+                "turn_off",
+                {"entity_id": entity_id},
+                blocking=True,
+            )
+
+            mock_client.async_set_stay_out_zone.assert_called_once_with(
+                device.mower_id, "zone-1", False
+            )
+
+    async def test_async_get_events_delegates_to_generate(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """automower_calendar.py:91: async_get_events calls _generate_events."""
+        from homeassistant.util import dt as dt_util
+
+        from custom_components.gardena_smart_system.automower_calendar import (
+            AutomowerCalendarEntity,
+        )
+
+        task = ScheduleTask(
+            start=480,
+            duration=120,
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True,
+            work_area_id=None,
+        )
+        device = make_mock_automower_device(tasks=[task])
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            entity = AutomowerCalendarEntity(coordinator, device)
+            entity.hass = hass
+
+            start = datetime(2025, 6, 16, 0, 0, 0, tzinfo=dt_util.DEFAULT_TIME_ZONE)
+            end = datetime(2025, 6, 22, 23, 59, 59, tzinfo=dt_util.DEFAULT_TIME_ZONE)
+            events = await entity.async_get_events(hass, start, end)
+            assert len(events) == 7  # Every day of the week
+
+    async def test_calendar_event_filter_skips_out_of_range(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """automower_calendar.py:117: tasks outside date range are skipped."""
+        from homeassistant.util import dt as dt_util
+
+        from custom_components.gardena_smart_system.automower_calendar import (
+            AutomowerCalendarEntity,
+        )
+
+        # Task runs 8:00-10:00
+        task = ScheduleTask(
+            start=480,
+            duration=120,
+            monday=True,
+            tuesday=False,
+            wednesday=False,
+            thursday=False,
+            friday=False,
+            saturday=False,
+            sunday=False,
+            work_area_id=None,
+        )
+        device = make_mock_automower_device(tasks=[task])
+
+        # Query window is 12:00-23:59 on Monday — task ends at 10:00, so it's skipped
+        start = datetime(2025, 6, 16, 12, 0, 0, tzinfo=dt_util.DEFAULT_TIME_ZONE)
+        end = datetime(2025, 6, 16, 23, 59, 59, tzinfo=dt_util.DEFAULT_TIME_ZONE)
+        events = AutomowerCalendarEntity._generate_events(device, start, end)
+        assert len(events) == 0
+
+    async def test_automower_options_flow(self, hass: HomeAssistant) -> None:
+        """config_flow.py:481: Automower options flow omits watering/socket fields."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=AUTOMOWER_ENTRY_DATA,
+            title="Automower",
+            version=2,
+        )
+        entry.add_to_hass(hass)
+
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        assert result["type"] == "form"
+
+        # Submit poll interval only (no watering/socket for automower)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            user_input={"poll_interval_minutes": 20},
+        )
+        assert result["type"] == "create_entry"
+        assert entry.options["poll_interval_minutes"] == 20
+
+    async def test_coordinator_location_id_property(self, hass: HomeAssistant) -> None:
+        """coordinator.py:101: location_id returns the stored ID."""
+        from .conftest import ENTRY_DATA, MOCK_LOCATION_ID, make_mock_device
+
+        gardena_entry = MockConfigEntry(domain=DOMAIN, data=ENTRY_DATA, title="My Garden")
+        device = make_mock_device()
+        devices = {device.device_id: device}
+
+        _P_CLIENT = "custom_components.gardena_smart_system.coordinator.GardenaClient"
+        _P_AUTH = "custom_components.gardena_smart_system.coordinator.GardenaAuth"
+        _P_WS = "custom_components.gardena_smart_system.coordinator.GardenaWebSocket"
+
+        with patch(_P_CLIENT) as cls, patch(_P_AUTH), patch(_P_WS) as ws_cls:
+            client = AsyncMock()
+            client.async_get_devices = AsyncMock(return_value=devices)
+            client.async_get_websocket_url = AsyncMock(return_value="wss://t")
+            cls.return_value = client
+            ws_cls.return_value = AsyncMock()
+
+            gardena_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(gardena_entry.entry_id)
+            await hass.async_block_till_done()
+
+        coordinator = gardena_entry.runtime_data
+        assert coordinator.location_id == MOCK_LOCATION_ID

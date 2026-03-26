@@ -322,3 +322,27 @@ class TestBinarySensorDynamicDevices:
 
             state = hass.states.get("binary_sensor.my_mower_mower_error")
             assert state is not None
+
+
+class TestBinarySensorDeviceNoneGuard:
+    """Test binary sensor is_on returns None when device disappears."""
+
+    async def test_is_on_returns_none_when_device_gone(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """binary_sensor.py:125-126: is_on returns None when device is None."""
+        from custom_components.gardena_smart_system.binary_sensor import (
+            BINARY_SENSORS,
+            GardenaBinarySensorEntity,
+        )
+
+        device = make_mock_device()
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        coordinator = mock_config_entry.runtime_data
+        coordinator.async_set_updated_data({})
+        await hass.async_block_till_done()
+
+        entity = GardenaBinarySensorEntity(coordinator, device, BINARY_SENSORS[0])
+        assert entity.is_on is None

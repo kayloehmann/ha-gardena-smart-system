@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/github/license/kayloehmann/ha-gardena-smart-system)](https://github.com/kayloehmann/ha-gardena-smart-system/blob/main/LICENSE)
 [![Quality Scale](https://img.shields.io/badge/Quality%20Scale-Platinum-blueviolet)](https://developers.home-assistant.io/docs/core/integration-quality-scale/)
 [![mypy](https://img.shields.io/badge/type%20checked-mypy%20strict-blue)](https://mypy-lang.org/)
-[![Test Coverage](https://img.shields.io/badge/coverage-98%25-brightgreen)](https://github.com/kayloehmann/ha-gardena-smart-system)
+[![Test Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen)](https://github.com/kayloehmann/ha-gardena-smart-system)
 
 A Home Assistant custom integration for **Husqvarna smart garden devices** — supporting both the **Gardena Smart System API** and the **Automower Connect API** through a single integration. Device states are updated in real time via cloud WebSocket connections, with automatic fallback to polling if the connection is interrupted.
 
@@ -539,7 +539,7 @@ This integration targets the [Home Assistant Integration Quality Scale](https://
 
 Key quality features:
 
-- **98% test coverage** across 343 automated tests
+- **99% test coverage** across 367 automated tests
 - **mypy --strict** passes with zero errors on all 23 source files
 - **PEP 561** compliant (`py.typed` markers on both client libraries)
 - **Full async** codebase — no blocking I/O in the event loop

@@ -474,3 +474,27 @@ class TestSensorDynamicDevices:
             await hass.async_block_till_done()
 
             assert hass.states.get("sensor.sensor_2_battery") is not None
+
+
+class TestSensorDeviceNoneGuard:
+    """Test sensor native_value returns None when device disappears."""
+
+    async def test_native_value_returns_none_when_device_gone(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        """sensor.py:188-189: native_value returns None when device is None."""
+        from custom_components.gardena_smart_system.sensor import (
+            COMMON_SENSORS,
+            GardenaSensorEntity,
+        )
+
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        coordinator = mock_config_entry.runtime_data
+        # Get a device to construct the entity
+        device = next(iter(coordinator.data.values()))
+        coordinator.async_set_updated_data({})
+        await hass.async_block_till_done()
+
+        entity = GardenaSensorEntity(coordinator, device, COMMON_SENSORS[0])
+        assert entity.native_value is None
