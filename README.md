@@ -28,7 +28,7 @@ All Gardena devices also expose common diagnostic sensors (battery level, RF sig
 
 | Device | Platform(s) | Description |
 |--------|-------------|-------------|
-| **Husqvarna Automower** | `lawn_mower`, `sensor`, `binary_sensor`, `switch`, `number`, `device_tracker`, `calendar` | Full-featured robotic mower with GPS tracking, mowing schedules, work areas, stay-out zones, headlight control, and cutting height adjustment |
+| **Husqvarna Automower** | `lawn_mower`, `sensor`, `binary_sensor`, `switch`, `number`, `device_tracker`, `calendar`, `event` | Full-featured robotic mower with GPS tracking, mowing schedules, work areas, stay-out zones, headlight control, cutting height adjustment, and state-transition events |
 
 > **Note:** SILENO mowers are supported through the Gardena Smart System API (above), not through the Automower Connect API. The Automower API is for Husqvarna Automower models (e.g., 305, 315, 405X, 435X AWD, 450X, NERA). Automowers do **not** require a Gardena Smart Gateway — they connect directly to the Husqvarna cloud.
 

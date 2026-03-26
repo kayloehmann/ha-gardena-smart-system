@@ -230,6 +230,26 @@
       "automower_schedule": {
         "name": "Klippschema"
       }
+    },
+    "event": {
+      "automower_event": {
+        "name": "Mower event",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Started mowing",
+              "stopped": "Stopped",
+              "going_home": "Going home",
+              "charging": "Charging",
+              "leaving": "Leaving station",
+              "parked": "Parked",
+              "paused": "Paused",
+              "error": "Error",
+              "error_cleared": "Error cleared"
+            }
+          }
+        }
+      }
     }
   },
   "services": {

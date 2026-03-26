@@ -2762,6 +2762,7 @@ class TestAutomowerRoutingGuards:
             "custom_components.gardena_smart_system.automower_number",
             "custom_components.gardena_smart_system.automower_calendar",
             "custom_components.gardena_smart_system.automower_lawn_mower",
+            "custom_components.gardena_smart_system.automower_event",
         ],
     )
     async def test_routing_guard_returns_early_for_gardena_entry(
@@ -3155,3 +3156,246 @@ class TestAutomowerMiscCoverage:
 
         coordinator = gardena_entry.runtime_data
         assert coordinator.location_id == MOCK_LOCATION_ID
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 21. Automower Event Entity
+# ──────────────────────────────────────────────────────────────────────
+
+EVENT_ENTITY_ID = "event.test_mower_mower_event"
+
+
+class TestAutomowerEventEntity:
+    """Test the Automower event entity fires on state transitions."""
+
+    async def test_event_entity_created(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Event entity is created for each Automower device."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_reg = er.async_get(hass)
+            event_entries = [
+                e
+                for e in entity_reg.entities.values()
+                if e.domain == "event" and e.platform == DOMAIN
+            ]
+            assert len(event_entries) == 1
+            assert event_entries[0].unique_id == "AM-SN-001_event"
+
+    async def test_event_fires_on_activity_change_to_mowing(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Transition to MOWING fires started_mowing event."""
+        device = make_mock_automower_device(mower_activity=MowerActivity.CHARGING)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            updated = make_mock_automower_device(mower_activity=MowerActivity.MOWING)
+            coordinator.async_set_updated_data({device.mower_id: updated})
+            await hass.async_block_till_done()
+
+            state = hass.states.get(EVENT_ENTITY_ID)
+            assert state is not None
+            assert state.attributes["event_type"] == "started_mowing"
+
+    async def test_event_fires_on_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Error state fires error event with error_code."""
+        device = make_mock_automower_device(
+            mower_state=MowerState.IN_OPERATION,
+            mower_activity=MowerActivity.MOWING,
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            error_device = make_mock_automower_device(
+                mower_state=MowerState.ERROR,
+                error_code=5,
+            )
+            coordinator.async_set_updated_data({device.mower_id: error_device})
+            await hass.async_block_till_done()
+
+            state = hass.states.get(EVENT_ENTITY_ID)
+            assert state is not None
+            assert state.attributes["event_type"] == "error"
+            assert state.attributes["error_code"] == "5"
+
+    async def test_event_fires_error_cleared(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Transition from error to normal fires error_cleared."""
+        device = make_mock_automower_device(mower_state=MowerState.ERROR)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            ok_device = make_mock_automower_device(
+                mower_state=MowerState.IN_OPERATION,
+                mower_activity=MowerActivity.MOWING,
+            )
+            coordinator.async_set_updated_data({device.mower_id: ok_device})
+            await hass.async_block_till_done()
+
+            state = hass.states.get(EVENT_ENTITY_ID)
+            assert state is not None
+            assert state.attributes["event_type"] == "error_cleared"
+
+    async def test_event_fires_going_home(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Transition to GOING_HOME fires going_home event."""
+        device = make_mock_automower_device(mower_activity=MowerActivity.MOWING)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            updated = make_mock_automower_device(mower_activity=MowerActivity.GOING_HOME)
+            coordinator.async_set_updated_data({device.mower_id: updated})
+            await hass.async_block_till_done()
+
+            state = hass.states.get(EVENT_ENTITY_ID)
+            assert state is not None
+            assert state.attributes["event_type"] == "going_home"
+
+    async def test_event_fires_parked(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Transition to PARKED_IN_CS fires parked event."""
+        device = make_mock_automower_device(mower_activity=MowerActivity.CHARGING)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            parked = make_mock_automower_device(mower_activity=MowerActivity.PARKED_IN_CS)
+            coordinator.async_set_updated_data({device.mower_id: parked})
+            await hass.async_block_till_done()
+
+            state = hass.states.get(EVENT_ENTITY_ID)
+            assert state is not None
+            assert state.attributes["event_type"] == "parked"
+
+    async def test_event_fires_paused_on_state_change(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """State change to PAUSED fires paused event."""
+        device = make_mock_automower_device(
+            mower_state=MowerState.IN_OPERATION,
+            mower_activity=MowerActivity.MOWING,
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            paused = make_mock_automower_device(
+                mower_state=MowerState.PAUSED,
+                mower_activity=MowerActivity.MOWING,
+            )
+            coordinator.async_set_updated_data({device.mower_id: paused})
+            await hass.async_block_till_done()
+
+            state = hass.states.get(EVENT_ENTITY_ID)
+            assert state is not None
+            assert state.attributes["event_type"] == "paused"
+
+    async def test_no_event_when_state_unchanged(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """No event fires when nothing changed."""
+        device = make_mock_automower_device(mower_activity=MowerActivity.MOWING)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            # Same state as before — no event should fire
+            same = make_mock_automower_device(mower_activity=MowerActivity.MOWING)
+            coordinator.async_set_updated_data({device.mower_id: same})
+            await hass.async_block_till_done()
+
+            state = hass.states.get(EVENT_ENTITY_ID)
+            assert state is not None
+            # Event entities show no event_type when none has fired
+            assert state.attributes.get("event_type") is None
+
+    async def test_no_event_when_device_gone(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """No event fires when device disappears from coordinator."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            state = hass.states.get(EVENT_ENTITY_ID)
+            assert state is not None
+            assert state.attributes.get("event_type") is None
+
+    async def test_event_fires_stopped(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Transition to STOPPED_IN_GARDEN fires stopped event."""
+        device = make_mock_automower_device(mower_activity=MowerActivity.MOWING)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            stopped = make_mock_automower_device(mower_activity=MowerActivity.STOPPED_IN_GARDEN)
+            coordinator.async_set_updated_data({device.mower_id: stopped})
+            await hass.async_block_till_done()
+
+            state = hass.states.get(EVENT_ENTITY_ID)
+            assert state is not None
+            assert state.attributes["event_type"] == "stopped"
+
+    async def test_event_fires_charging(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Transition to CHARGING fires charging event."""
+        device = make_mock_automower_device(mower_activity=MowerActivity.GOING_HOME)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            charging = make_mock_automower_device(mower_activity=MowerActivity.CHARGING)
+            coordinator.async_set_updated_data({device.mower_id: charging})
+            await hass.async_block_till_done()
+
+            state = hass.states.get(EVENT_ENTITY_ID)
+            assert state is not None
+            assert state.attributes["event_type"] == "charging"
+
+    async def test_event_fires_leaving(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Transition to LEAVING fires leaving event."""
+        device = make_mock_automower_device(mower_activity=MowerActivity.PARKED_IN_CS)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+
+            leaving = make_mock_automower_device(mower_activity=MowerActivity.LEAVING)
+            coordinator.async_set_updated_data({device.mower_id: leaving})
+            await hass.async_block_till_done()
+
+            state = hass.states.get(EVENT_ENTITY_ID)
+            assert state is not None
+            assert state.attributes["event_type"] == "leaving"

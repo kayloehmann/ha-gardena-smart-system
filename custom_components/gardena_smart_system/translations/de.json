@@ -230,6 +230,26 @@
       "automower_schedule": {
         "name": "Mähplan"
       }
+    },
+    "event": {
+      "automower_event": {
+        "name": "Mäher-Ereignis",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Mähen gestartet",
+              "stopped": "Gestoppt",
+              "going_home": "Fährt zur Station",
+              "charging": "Lädt",
+              "leaving": "Verlässt Station",
+              "parked": "Geparkt",
+              "paused": "Pausiert",
+              "error": "Fehler",
+              "error_cleared": "Fehler behoben"
+            }
+          }
+        }
+      }
     }
   },
   "services": {

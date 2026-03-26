@@ -59,6 +59,7 @@ AUTOMOWER_PLATFORMS: list[Platform] = [
     Platform.NUMBER,
     Platform.DEVICE_TRACKER,
     Platform.CALENDAR,
+    Platform.EVENT,
 ]
 
 # Keep PLATFORMS as the union for backward compat during migration

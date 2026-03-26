@@ -230,6 +230,26 @@
       "automower_schedule": {
         "name": "Mowing schedule"
       }
+    },
+    "event": {
+      "automower_event": {
+        "name": "Mower event",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Started mowing",
+              "stopped": "Stopped",
+              "going_home": "Going home",
+              "charging": "Charging",
+              "leaving": "Leaving station",
+              "parked": "Parked",
+              "paused": "Paused",
+              "error": "Error",
+              "error_cleared": "Error cleared"
+            }
+          }
+        }
+      }
     }
   },
   "services": {
@@ -281,6 +301,19 @@
     },
     "command_throttled": {
       "message": "Commands are being sent too quickly. Please wait a few seconds between commands to avoid exceeding the API rate limit."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "WebSocket connection lost",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Reconnect WebSocket",
+            "description": "The real-time connection to the Husqvarna cloud was interrupted. The integration is currently using polling as a fallback. Confirm to attempt reconnection."
+          }
+        }
+      }
     }
   }
 }
