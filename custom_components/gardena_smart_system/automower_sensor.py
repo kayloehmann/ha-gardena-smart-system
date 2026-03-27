@@ -232,6 +232,13 @@ SENSOR_DESCRIPTIONS: tuple[AutomowerSensorDescription, ...] = (
         ),
     ),
     AutomowerSensorDescription(
+        key="error_code",
+        translation_key="automower_error_code",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda d: d.mower.error_code,
+    ),
+    AutomowerSensorDescription(
         key="error_code_timestamp",
         translation_key="automower_error_code_timestamp",
         device_class=SensorDeviceClass.TIMESTAMP,

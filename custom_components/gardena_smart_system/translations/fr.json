@@ -197,6 +197,12 @@
       },
       "valve_last_error_code": {
         "name": "Code d'erreur vanne"
+      },
+      "automower_error_code": {
+        "name": "Code d'erreur"
+      },
+      "valve_remaining_duration": {
+        "name": "Durée d'arrosage restante"
       }
     },
     "binary_sensor": {
@@ -252,6 +258,9 @@
       },
       "automower_work_area_cutting_height": {
         "name": "Hauteur de coupe : {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Forçage du programme"
       }
     },
     "device_tracker": {

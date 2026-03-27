@@ -703,3 +703,108 @@ class TestSensorDeviceNoneGuard:
 
         entity = GardenaSensorEntity(coordinator, device, COMMON_SENSORS[0])
         assert entity.native_value is None
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Feature Tests: Valve Remaining Duration Sensor
+# ──────────────────────────────────────────────────────────────────────
+
+
+async def _setup_with_devices(hass, mock_config_entry, devices):
+    """Set up the integration with given device map."""
+    with (
+        patch(_PATCH_CLIENT) as mock_client_cls,
+        patch(_PATCH_AUTH),
+        patch(_PATCH_WS) as mock_ws_cls,
+    ):
+        mock_client = AsyncMock()
+        mock_client.async_get_devices = AsyncMock(return_value=devices)
+        mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+        mock_client_cls.return_value = mock_client
+        mock_ws = AsyncMock()
+        mock_ws.async_connect = AsyncMock()
+        mock_ws.async_disconnect = AsyncMock()
+        mock_ws_cls.return_value = mock_ws
+
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+
+class TestValveRemainingDurationSensor:
+    """Test the valve remaining duration sensor."""
+
+    async def test_remaining_duration_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=1)
+        device.valves["device-uuid:1"].duration = 300
+        await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
+
+        entity_reg = er.async_get(hass)
+        # Find the entity by unique_id substring
+        found = None
+        for entry in entity_reg.entities.values():
+            if "remaining_duration" in (entry.unique_id or ""):
+                found = entry
+                break
+        assert found is not None
+
+    async def test_remaining_duration_value_when_active(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=1)
+        device.valves["device-uuid:1"].duration = 300
+        await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
+
+        entity_reg = er.async_get(hass)
+        for entry in entity_reg.entities.values():
+            if "remaining_duration" in (entry.unique_id or ""):
+                state = hass.states.get(entry.entity_id)
+                assert state is not None
+                assert state.state == "300"
+                break
+
+    async def test_remaining_duration_none_when_zero(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=1)
+        device.valves["device-uuid:1"].duration = 0
+        await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
+
+        entity_reg = er.async_get(hass)
+        for entry in entity_reg.entities.values():
+            if "remaining_duration" in (entry.unique_id or ""):
+                state = hass.states.get(entry.entity_id)
+                assert state is not None
+                assert state.state == "unknown"
+                break
+
+    async def test_remaining_duration_none_when_duration_is_none(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=1)
+        device.valves["device-uuid:1"].duration = None
+        await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
+
+        entity_reg = er.async_get(hass)
+        for entry in entity_reg.entities.values():
+            if "remaining_duration" in (entry.unique_id or ""):
+                state = hass.states.get(entry.entity_id)
+                assert state is not None
+                assert state.state == "unknown"
+                break
+
+    async def test_no_remaining_duration_without_valves(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=0)
+        await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
+
+        entity_reg = er.async_get(hass)
+        found = False
+        for entry in entity_reg.entities.values():
+            if "remaining_duration" in (entry.unique_id or ""):
+                found = True
+                break
+        assert not found

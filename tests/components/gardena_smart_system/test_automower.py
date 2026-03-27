@@ -3728,3 +3728,201 @@ class TestAutomowerConfirmErrorButton:
                     {"entity_id": BUTTON_ENTITY_ID},
                     blocking=True,
                 )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Feature Tests: Schedule Override Number Entity
+# ──────────────────────────────────────────────────────────────────────
+
+SCHEDULE_OVERRIDE_ENTITY_ID = "number.test_mower_schedule_override"
+
+
+class TestAutomowerScheduleOverride:
+    """Test the Automower schedule override number entity."""
+
+    async def test_schedule_override_entity_created(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_reg = er.async_get(hass)
+            entry = entity_reg.async_get(SCHEDULE_OVERRIDE_ENTITY_ID)
+            assert entry is not None
+            assert entry.unique_id == "AM-SN-001_schedule_override"
+
+    async def test_schedule_override_value_none_when_no_override(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(override_action="NOT_ACTIVE")
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get(SCHEDULE_OVERRIDE_ENTITY_ID)
+            assert state is not None
+            assert state.state == "unknown"
+
+    async def test_schedule_override_value_when_force_mow(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(override_action="FORCE_MOW")
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get(SCHEDULE_OVERRIDE_ENTITY_ID)
+            assert state is not None
+            # native_value is None (no last_set_value) so state is unknown
+            assert state.state == "unknown"
+
+    async def test_schedule_override_set_value_calls_api(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            await hass.services.async_call(
+                "number",
+                "set_value",
+                {"entity_id": SCHEDULE_OVERRIDE_ENTITY_ID, "value": 60},
+                blocking=True,
+            )
+            mock_client.async_start.assert_called_once_with(
+                device.mower_id, duration=60
+            )
+
+    async def test_schedule_override_auth_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            mock_client.async_start.side_effect = AutomowerAuthenticationError("auth")
+            with pytest.raises(HomeAssistantError):
+                await hass.services.async_call(
+                    "number",
+                    "set_value",
+                    {"entity_id": SCHEDULE_OVERRIDE_ENTITY_ID, "value": 30},
+                    blocking=True,
+                )
+
+    async def test_schedule_override_generic_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            mock_client.async_start.side_effect = AutomowerException("fail")
+            with pytest.raises(HomeAssistantError):
+                await hass.services.async_call(
+                    "number",
+                    "set_value",
+                    {"entity_id": SCHEDULE_OVERRIDE_ENTITY_ID, "value": 30},
+                    blocking=True,
+                )
+
+    async def test_schedule_override_device_unavailable(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            # Remove device from coordinator data
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            state = hass.states.get(SCHEDULE_OVERRIDE_ENTITY_ID)
+            assert state is not None
+            assert state.state == "unavailable"
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Feature Tests: Automower Error Code Sensor
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerErrorCodeSensor:
+    """Test the Automower error code sensor."""
+
+    async def test_error_code_sensor_created_disabled(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(error_code=42)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "sensor", "error_code")
+            assert entity_id is not None
+            entity_reg = er.async_get(hass)
+            entry = entity_reg.async_get(entity_id)
+            assert entry is not None
+            assert entry.disabled_by is not None
+
+    async def test_error_code_sensor_value_after_enable(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(error_code=42)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "sensor", "error_code")
+            entity_reg = er.async_get(hass)
+            entity_reg.async_update_entity(entity_id, disabled_by=None)
+            await hass.config_entries.async_reload(automower_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == "42"
+
+    async def test_error_code_zero(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(error_code=0)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "sensor", "error_code")
+            entity_reg = er.async_get(hass)
+            entity_reg.async_update_entity(entity_id, disabled_by=None)
+            await hass.config_entries.async_reload(automower_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == "0"
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Feature Tests: Extended Diagnostics
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestExtendedDiagnostics:
+    """Test the extended diagnostics output."""
+
+    async def test_diagnostics_has_extended_fields(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        from custom_components.gardena_smart_system.diagnostics import (
+            async_get_config_entry_diagnostics,
+        )
+
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            result = await async_get_config_entry_diagnostics(hass, automower_config_entry)
+
+            coordinator_data = result["coordinator"]
+            assert "ws_connected" in coordinator_data
+            assert "device_count" in coordinator_data
+            assert coordinator_data["device_count"] == 1
+            assert "diagnostics_generated_at" in coordinator_data
+            assert "stale_miss_counts" in coordinator_data
+            assert "last_command_time_monotonic" in coordinator_data

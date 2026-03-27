@@ -175,6 +175,22 @@ async def async_setup_entry(
                 if key not in known_keys and description.exists_fn(device):
                     known_keys.add(key)
                     new_entities.append(GardenaSensorEntity(coordinator, device, description))
+            # Per-valve remaining duration sensors
+            for service_id in device.valves:
+                valve_suffix = (
+                    service_id.split(":")[-1] if ":" in service_id else service_id
+                )
+                dur_key = (
+                    device.device_id,
+                    f"valve_{valve_suffix}_remaining_duration",
+                )
+                if dur_key not in known_keys:
+                    known_keys.add(dur_key)
+                    new_entities.append(
+                        GardenaValveRemainingDurationSensor(
+                            coordinator, device, service_id
+                        )
+                    )
             # Per-valve error code sensors
             for service_id in device.valves:
                 valve_suffix = service_id.split(":")[-1] if ":" in service_id else service_id
@@ -211,6 +227,44 @@ class GardenaSensorEntity(GardenaEntity, SensorEntity):
         if device is None:
             return None
         return self.entity_description.value_fn(device)
+
+
+class GardenaValveRemainingDurationSensor(GardenaEntity, SensorEntity):
+    """Remaining watering duration sensor for a specific Gardena valve."""
+
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_native_unit_of_measurement = UnitOfTime.SECONDS
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 0
+    _attr_translation_key = "valve_remaining_duration"
+
+    def __init__(
+        self,
+        coordinator: GardenaCoordinator,
+        device: Device,
+        service_id: str,
+    ) -> None:
+        """Initialize the valve remaining duration sensor."""
+        suffix = (
+            "valve_" + service_id.split(":")[-1] + "_remaining_duration"
+            if ":" in service_id
+            else "valve_remaining_duration"
+        )
+        super().__init__(coordinator, device, suffix)
+        self._service_id = service_id
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the valve's remaining duration in seconds."""
+        device = self._device
+        if device is None:
+            return None
+        valve = device.valves.get(self._service_id)
+        if valve is None:
+            return None
+        if valve.duration is not None and valve.duration > 0:
+            return valve.duration
+        return None
 
 
 class GardenaValveErrorSensor(GardenaEntity, SensorEntity):

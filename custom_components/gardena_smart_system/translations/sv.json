@@ -197,6 +197,12 @@
       },
       "valve_last_error_code": {
         "name": "Ventilfelkod"
+      },
+      "automower_error_code": {
+        "name": "Felkod"
+      },
+      "valve_remaining_duration": {
+        "name": "Återstående bevattningstid"
       }
     },
     "binary_sensor": {
@@ -252,6 +258,9 @@
       },
       "automower_work_area_cutting_height": {
         "name": "Klipphöjd: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Schemaåsidosättning"
       }
     },
     "device_tracker": {

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from aioautomower.exceptions import AutomowerAuthenticationError, AutomowerException
 from homeassistant.components.number import NumberEntity, NumberMode
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -39,6 +40,11 @@ async def async_setup_entry(
             if key not in known_ids:
                 known_ids.add(key)
                 new_entities.append(AutomowerCuttingHeightEntity(coordinator, device))
+            # Schedule override
+            sched_key = f"{device.mower_id}_schedule_override"
+            if sched_key not in known_ids:
+                known_ids.add(sched_key)
+                new_entities.append(AutomowerScheduleOverrideEntity(coordinator, device))
             # Per-work-area cutting height
             if device.capabilities.work_areas:
                 for wa in device.work_areas.values():
@@ -99,6 +105,64 @@ class AutomowerCuttingHeightEntity(AutomowerEntity, NumberEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
+
+
+class AutomowerScheduleOverrideEntity(AutomowerEntity, NumberEntity):
+    """Override the mower schedule for a given duration in minutes.
+
+    Setting a value sends a Start command to the mower API, forcing it
+    to mow for the specified number of minutes regardless of its schedule.
+    The native_value reflects the planner override action so users can see
+    whether an override is currently active.
+    """
+
+    _attr_translation_key = "automower_schedule_override"
+    _attr_native_min_value = 1
+    _attr_native_max_value = 480
+    _attr_native_step = 1
+    _attr_mode = NumberMode.SLIDER
+    _attr_native_unit_of_measurement = "min"
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, coordinator: AutomowerCoordinator, device: AutomowerDevice) -> None:
+        """Initialize the schedule override entity."""
+        super().__init__(coordinator, device, "schedule_override")
+        self._last_set_value: float | None = None
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the last set override duration, or None if no override is active."""
+        device = self._device
+        if device is None:
+            return None
+        if device.planner.override.action == "FORCE_MOW":
+            return self._last_set_value
+        return None
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Start mowing for the given number of minutes (schedule override)."""
+        device = self._device
+        if device is None:
+            raise HomeAssistantError(
+                translation_domain="gardena_smart_system",
+                translation_key="device_unavailable",
+            )
+        self.coordinator.check_command_throttle()
+        try:
+            await self.coordinator.client.async_start(device.mower_id, duration=int(value))
+        except AutomowerAuthenticationError as err:
+            raise ConfigEntryAuthFailed(
+                translation_domain="gardena_smart_system",
+                translation_key="command_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        except AutomowerException as err:
+            raise HomeAssistantError(
+                translation_domain="gardena_smart_system",
+                translation_key="command_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        self._last_set_value = value
 
 
 class AutomowerWorkAreaHeightEntity(AutomowerEntity, NumberEntity):

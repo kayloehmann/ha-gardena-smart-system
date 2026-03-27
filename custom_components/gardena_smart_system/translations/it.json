@@ -197,6 +197,12 @@
       },
       "valve_last_error_code": {
         "name": "Codice errore valvola"
+      },
+      "automower_error_code": {
+        "name": "Codice errore"
+      },
+      "valve_remaining_duration": {
+        "name": "Tempo di irrigazione rimanente"
       }
     },
     "binary_sensor": {
@@ -252,6 +258,9 @@
       },
       "automower_work_area_cutting_height": {
         "name": "Altezza di taglio: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Sovrascrittura programmazione"
       }
     },
     "device_tracker": {
