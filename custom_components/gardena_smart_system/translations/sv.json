@@ -203,6 +203,12 @@
       },
       "valve_remaining_duration": {
         "name": "Återstående bevattningstid"
+      },
+      "hub_device_count": {
+        "name": "Antal enheter"
+      },
+      "hub_polling_interval": {
+        "name": "Pollningsintervall"
       }
     },
     "binary_sensor": {
@@ -223,6 +229,9 @@
       },
       "rf_link_online": {
         "name": "RF-lank"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket ansluten"
       }
     },
     "switch": {

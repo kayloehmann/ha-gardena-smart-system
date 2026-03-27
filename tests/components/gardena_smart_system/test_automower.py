@@ -3926,3 +3926,66 @@ class TestExtendedDiagnostics:
             assert "diagnostics_generated_at" in coordinator_data
             assert "stale_miss_counts" in coordinator_data
             assert "last_command_time_monotonic" in coordinator_data
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Feature Tests: Hub Dashboard Entities (Automower)
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerHubEntities:
+    """Test hub-level diagnostic entities for Automower."""
+
+    async def test_hub_device_count_sensor(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_reg = er.async_get(hass)
+            found = None
+            for entry in entity_reg.entities.values():
+                if "device_count" in (entry.unique_id or ""):
+                    found = entry
+                    break
+            assert found is not None
+            state = hass.states.get(found.entity_id)
+            assert state is not None
+            assert int(state.state) == 1
+
+    async def test_hub_polling_interval_sensor(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_reg = er.async_get(hass)
+            found = None
+            for entry in entity_reg.entities.values():
+                if "polling_interval" in (entry.unique_id or ""):
+                    found = entry
+                    break
+            assert found is not None
+            state = hass.states.get(found.entity_id)
+            assert state is not None
+            assert float(state.state) > 0
+
+    async def test_hub_websocket_binary_sensor(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_reg = er.async_get(hass)
+            found = None
+            for entry in entity_reg.entities.values():
+                if "websocket_connected" in (entry.unique_id or ""):
+                    found = entry
+                    break
+            assert found is not None
+            state = hass.states.get(found.entity_id)
+            assert state is not None
+            assert state.state == "on"

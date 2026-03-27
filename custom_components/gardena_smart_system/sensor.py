@@ -19,12 +19,14 @@ from homeassistant.const import (
     UnitOfTime,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from aiogardenasmart import Device
 
 from . import GardenaConfigEntry
-from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
+from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE, DOMAIN
 from .coordinator import GardenaCoordinator
 from .entity import GardenaEntity
 
@@ -156,6 +158,12 @@ async def async_setup_entry(
         from .automower_sensor import async_setup_entry as automower_setup
 
         await automower_setup(hass, entry, async_add_entities)
+        # Hub-level diagnostic sensors for Automower too
+        coordinator = entry.runtime_data
+        async_add_entities([
+            HubDeviceCountSensor(coordinator, entry),
+            HubPollingIntervalSensor(coordinator, entry),
+        ])
         return
 
     coordinator = entry.runtime_data
@@ -203,6 +211,12 @@ async def async_setup_entry(
 
     entry.async_on_unload(coordinator.async_add_listener(_async_add_new_entities))
     _async_add_new_entities()
+
+    # Hub-level diagnostic sensors (coordinator state)
+    async_add_entities([
+        HubDeviceCountSensor(coordinator, entry),
+        HubPollingIntervalSensor(coordinator, entry),
+    ])
 
 
 class GardenaSensorEntity(GardenaEntity, SensorEntity):
@@ -299,3 +313,69 @@ class GardenaValveErrorSensor(GardenaEntity, SensorEntity):
         if valve is None:
             return None
         return valve.last_error_code
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Hub-level diagnostic sensors (coordinator state, not device-bound)
+# ──────────────────────────────────────────────────────────────────────
+
+
+def _hub_device_info(entry: GardenaConfigEntry) -> DeviceInfo:
+    """Return device info for the virtual integration hub device."""
+    api_type = entry.data.get(CONF_API_TYPE, "gardena")
+    hub_name = (
+        f"Automower Hub ({entry.title})"
+        if api_type == API_TYPE_AUTOMOWER
+        else f"Gardena Hub ({entry.title})"
+    )
+    return DeviceInfo(
+        identifiers={(DOMAIN, f"hub_{entry.entry_id}")},
+        name=hub_name,
+        manufacturer="Husqvarna",
+        model="Integration Hub",
+        entry_type=DeviceEntryType.SERVICE,
+    )
+
+
+class HubDeviceCountSensor(CoordinatorEntity, SensorEntity):
+    """Number of devices currently managed by the coordinator."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "hub_device_count"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 0
+
+    def __init__(self, coordinator, entry: GardenaConfigEntry) -> None:
+        """Initialize the hub device count sensor."""
+        super().__init__(coordinator)
+        self._attr_unique_id = f"hub_{entry.entry_id}_device_count"
+        self._attr_device_info = _hub_device_info(entry)
+
+    @property
+    def native_value(self) -> int:
+        """Return the number of devices."""
+        return len(self.coordinator.data) if self.coordinator.data else 0
+
+
+class HubPollingIntervalSensor(CoordinatorEntity, SensorEntity):
+    """Current polling interval of the coordinator."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "hub_polling_interval"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_native_unit_of_measurement = UnitOfTime.SECONDS
+    _attr_suggested_display_precision = 0
+
+    def __init__(self, coordinator, entry: GardenaConfigEntry) -> None:
+        """Initialize the hub polling interval sensor."""
+        super().__init__(coordinator)
+        self._attr_unique_id = f"hub_{entry.entry_id}_polling_interval"
+        self._attr_device_info = _hub_device_info(entry)
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the current polling interval in seconds."""
+        if self.coordinator.update_interval is None:
+            return None
+        return self.coordinator.update_interval.total_seconds()

@@ -14,6 +14,7 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from aiogardenasmart import Device
 
@@ -93,6 +94,13 @@ async def async_setup_entry(
         from .automower_binary_sensor import async_setup_entry as automower_setup
 
         await automower_setup(hass, entry, async_add_entities)
+        # Hub-level WebSocket status for Automower too
+        from .sensor import _hub_device_info
+
+        coordinator = entry.runtime_data
+        async_add_entities([
+            HubWebSocketSensor(coordinator, entry, _hub_device_info)
+        ])
         return
 
     coordinator = entry.runtime_data
@@ -112,6 +120,11 @@ async def async_setup_entry(
 
     entry.async_on_unload(coordinator.async_add_listener(_async_add_new_entities))
     _async_add_new_entities()
+
+    # Hub-level WebSocket status binary sensor
+    from .sensor import _hub_device_info
+
+    async_add_entities([HubWebSocketSensor(coordinator, entry, _hub_device_info)])
 
 
 class GardenaBinarySensorEntity(GardenaEntity, BinarySensorEntity):
@@ -136,3 +149,23 @@ class GardenaBinarySensorEntity(GardenaEntity, BinarySensorEntity):
         if device is None:
             return None
         return self.entity_description.is_on_fn(device)
+
+
+class HubWebSocketSensor(CoordinatorEntity, BinarySensorEntity):
+    """WebSocket connection status for the integration hub."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "hub_websocket_connected"
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator, entry: GardenaConfigEntry, device_info_fn) -> None:
+        """Initialize the hub WebSocket sensor."""
+        super().__init__(coordinator)
+        self._attr_unique_id = f"hub_{entry.entry_id}_websocket_connected"
+        self._attr_device_info = device_info_fn(entry)
+
+    @property
+    def is_on(self) -> bool:
+        """Return True if the WebSocket is connected."""
+        return self.coordinator._ws_connected

@@ -808,3 +808,99 @@ class TestValveRemainingDurationSensor:
                 found = True
                 break
         assert not found
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Hub-level Diagnostic Sensor Tests
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestHubDeviceCountSensor:
+    """Test the hub device count sensor."""
+
+    async def test_device_count_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        entity_reg = er.async_get(hass)
+        found = None
+        for entry in entity_reg.entities.values():
+            if "device_count" in (entry.unique_id or ""):
+                found = entry
+                break
+        assert found is not None
+
+    async def test_device_count_value(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        entity_reg = er.async_get(hass)
+        for entry in entity_reg.entities.values():
+            if "device_count" in (entry.unique_id or ""):
+                state = hass.states.get(entry.entity_id)
+                assert state is not None
+                assert int(state.state) == 1
+                break
+
+
+class TestHubPollingIntervalSensor:
+    """Test the hub polling interval sensor."""
+
+    async def test_polling_interval_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        entity_reg = er.async_get(hass)
+        found = None
+        for entry in entity_reg.entities.values():
+            if "polling_interval" in (entry.unique_id or ""):
+                found = entry
+                break
+        assert found is not None
+
+    async def test_polling_interval_value(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        entity_reg = er.async_get(hass)
+        for entry in entity_reg.entities.values():
+            if "polling_interval" in (entry.unique_id or ""):
+                state = hass.states.get(entry.entity_id)
+                assert state is not None
+                assert float(state.state) > 0
+                break
+
+
+class TestHubWebSocketSensor:
+    """Test the hub WebSocket connected binary sensor."""
+
+    async def test_websocket_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        entity_reg = er.async_get(hass)
+        found = None
+        for entry in entity_reg.entities.values():
+            if "websocket_connected" in (entry.unique_id or ""):
+                found = entry
+                break
+        assert found is not None
+
+    async def test_websocket_initially_connected(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        entity_reg = er.async_get(hass)
+        for entry in entity_reg.entities.values():
+            if "websocket_connected" in (entry.unique_id or ""):
+                state = hass.states.get(entry.entity_id)
+                assert state is not None
+                # WS connects during setup
+                assert state.state == "on"
+                break

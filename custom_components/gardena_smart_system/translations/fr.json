@@ -203,6 +203,12 @@
       },
       "valve_remaining_duration": {
         "name": "Durée d'arrosage restante"
+      },
+      "hub_device_count": {
+        "name": "Nombre d'appareils"
+      },
+      "hub_polling_interval": {
+        "name": "Intervalle d'interrogation"
       }
     },
     "binary_sensor": {
@@ -223,6 +229,9 @@
       },
       "rf_link_online": {
         "name": "Liaison RF"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket connecté"
       }
     },
     "switch": {
