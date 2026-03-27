@@ -49,6 +49,7 @@ GARDENA_PLATFORMS: list[Platform] = [
     Platform.VALVE,
     Platform.SWITCH,
     Platform.LAWN_MOWER,
+    Platform.EVENT,
 ]
 
 AUTOMOWER_PLATFORMS: list[Platform] = [
@@ -60,6 +61,7 @@ AUTOMOWER_PLATFORMS: list[Platform] = [
     Platform.DEVICE_TRACKER,
     Platform.CALENDAR,
     Platform.EVENT,
+    Platform.BUTTON,
 ]
 
 # Keep PLATFORMS as the union for backward compat during migration

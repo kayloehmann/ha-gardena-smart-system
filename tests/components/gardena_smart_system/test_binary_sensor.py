@@ -234,6 +234,43 @@ class TestMowerErrorBinarySensor:
         assert entry.unique_id == "SN001_mower_error"
 
 
+class TestRfLinkOnlineBinarySensor:
+    """Test the rf_link_online binary sensor."""
+
+    async def test_rf_link_online_created_and_disabled_by_default(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device()
+        await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
+
+        entity_reg = er.async_get(hass)
+        entry = entity_reg.async_get("binary_sensor.my_sensor_rf_link")
+        assert entry is not None
+        assert entry.disabled_by is not None
+
+    async def test_rf_link_online_unique_id(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device()
+        await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
+
+        entity_reg = er.async_get(hass)
+        entry = entity_reg.async_get("binary_sensor.my_sensor_rf_link")
+        assert entry is not None
+        assert entry.unique_id == "SN001_rf_link_online"  # key is rf_link_online
+
+    async def test_rf_link_online_not_created_without_rf_link_state(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device()
+        device.common.rf_link_state = None
+        await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
+
+        entity_reg = er.async_get(hass)
+        entry = entity_reg.async_get("binary_sensor.my_sensor_rf_link")
+        assert entry is None
+
+
 class TestBinarySensorUnavailability:
     """Test binary sensors become unavailable when device goes offline."""
 

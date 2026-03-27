@@ -170,6 +170,33 @@
           "fatal_error": "Schwerer Fehler",
           "error_at_power_up": "Fehler beim Start"
         }
+      },
+      "automower_inactive_reason": {
+        "name": "Inaktivitätsgrund"
+      },
+      "automower_restricted_reason": {
+        "name": "Einschränkungsgrund",
+        "state": {
+          "none": "Keine",
+          "week_schedule": "Wochenplan",
+          "park_override": "Manuell geparkt",
+          "sensor": "Sensor",
+          "daily_limit": "Tageslimit",
+          "fota": "Firmware-Update",
+          "frost": "Frost",
+          "all_work_areas_completed": "Alle Arbeitsbereiche abgeschlossen",
+          "external": "Extern",
+          "not_applicable": "Nicht zutreffend"
+        }
+      },
+      "automower_error_code_timestamp": {
+        "name": "Letzter Fehlerzeitpunkt"
+      },
+      "power_socket_last_error_code": {
+        "name": "Letzter Fehlercode"
+      },
+      "valve_last_error_code": {
+        "name": "Ventil-Fehlercode"
       }
     },
     "binary_sensor": {
@@ -187,6 +214,9 @@
       },
       "automower_connected": {
         "name": "Verbunden"
+      },
+      "rf_link_online": {
+        "name": "Funkverbindung"
       }
     },
     "switch": {
@@ -198,6 +228,9 @@
       },
       "automower_stay_out_zone": {
         "name": "Sperrzone: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Arbeitsbereich: {work_area}"
       }
     },
     "valve": {
@@ -231,7 +264,56 @@
         "name": "Mähplan"
       }
     },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Fehler bestätigen"
+      }
+    },
     "event": {
+      "gardena_mower_event": {
+        "name": "Mäher-Ereignis",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "Mähen gestartet",
+              "stopped": "Gestoppt",
+              "leaving": "Verlässt Station",
+              "searching": "Sucht",
+              "charging": "Lädt",
+              "parked": "Geparkt",
+              "paused": "Pausiert",
+              "error": "Fehler",
+              "error_cleared": "Fehler behoben"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Ventil-Ereignis",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Bewässerung gestartet",
+              "stopped_watering": "Bewässerung gestoppt",
+              "error": "Fehler",
+              "error_cleared": "Fehler behoben"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Steckdosen-Ereignis",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Eingeschaltet",
+              "turned_off": "Ausgeschaltet",
+              "error": "Fehler",
+              "error_cleared": "Fehler behoben"
+            }
+          }
+        }
+      },
       "automower_event": {
         "name": "Mäher-Ereignis",
         "state_attributes": {

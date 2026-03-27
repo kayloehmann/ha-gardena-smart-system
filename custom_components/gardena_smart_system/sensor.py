@@ -106,6 +106,17 @@ SENSOR_SENSORS: tuple[GardenaSensorDescription, ...] = (
     ),
 )
 
+POWER_SOCKET_SENSORS: tuple[GardenaSensorDescription, ...] = (
+    GardenaSensorDescription(
+        key="power_socket_last_error_code",
+        translation_key="power_socket_last_error_code",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda d: d.power_socket.last_error_code if d.power_socket else None,
+        exists_fn=lambda d: d.power_socket is not None,
+    ),
+)
+
 MOWER_SENSORS: tuple[GardenaSensorDescription, ...] = (
     GardenaSensorDescription(
         key="mower_operating_hours",
@@ -154,11 +165,23 @@ async def async_setup_entry(
     def _async_add_new_entities() -> None:
         new_entities: list[GardenaSensorEntity] = []
         for device in coordinator.data.values():
-            for description in (*COMMON_SENSORS, *SENSOR_SENSORS, *MOWER_SENSORS):
+            for description in (
+                *COMMON_SENSORS,
+                *SENSOR_SENSORS,
+                *MOWER_SENSORS,
+                *POWER_SOCKET_SENSORS,
+            ):
                 key = (device.device_id, description.key)
                 if key not in known_keys and description.exists_fn(device):
                     known_keys.add(key)
                     new_entities.append(GardenaSensorEntity(coordinator, device, description))
+            # Per-valve error code sensors
+            for service_id in device.valves:
+                valve_suffix = service_id.split(":")[-1] if ":" in service_id else service_id
+                key = (device.device_id, f"valve_{valve_suffix}_last_error_code")
+                if key not in known_keys:
+                    known_keys.add(key)
+                    new_entities.append(GardenaValveErrorSensor(coordinator, device, service_id))
         if new_entities:
             async_add_entities(new_entities)
 
@@ -188,3 +211,37 @@ class GardenaSensorEntity(GardenaEntity, SensorEntity):
         if device is None:
             return None
         return self.entity_description.value_fn(device)
+
+
+class GardenaValveErrorSensor(GardenaEntity, SensorEntity):
+    """Last error code sensor for a specific Gardena valve."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
+    _attr_translation_key = "valve_last_error_code"
+
+    def __init__(
+        self,
+        coordinator: GardenaCoordinator,
+        device: Device,
+        service_id: str,
+    ) -> None:
+        """Initialize the valve error sensor."""
+        suffix = (
+            "valve_" + service_id.split(":")[-1] + "_last_error_code"
+            if ":" in service_id
+            else "valve_last_error_code"
+        )
+        super().__init__(coordinator, device, suffix)
+        self._service_id = service_id
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the valve's last error code."""
+        device = self._device
+        if device is None:
+            return None
+        valve = device.valves.get(self._service_id)
+        if valve is None:
+            return None
+        return valve.last_error_code

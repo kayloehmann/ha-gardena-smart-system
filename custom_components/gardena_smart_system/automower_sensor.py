@@ -6,7 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 
-from aioautomower.const import MowerActivity, MowerState
+from aioautomower.const import MowerActivity, MowerState, RestrictedReason
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -37,6 +37,21 @@ _KNOWN_ACTIVITIES = frozenset(
         MowerActivity.LEAVING,
         MowerActivity.PARKED_IN_CS,
         MowerActivity.STOPPED_IN_GARDEN,
+    )
+)
+_KNOWN_RESTRICTED_REASONS = frozenset(
+    r.lower()
+    for r in (
+        RestrictedReason.NONE,
+        RestrictedReason.WEEK_SCHEDULE,
+        RestrictedReason.PARK_OVERRIDE,
+        RestrictedReason.SENSOR,
+        RestrictedReason.DAILY_LIMIT,
+        RestrictedReason.FOTA,
+        RestrictedReason.FROST,
+        RestrictedReason.ALL_WORK_AREAS_COMPLETED,
+        RestrictedReason.EXTERNAL,
+        RestrictedReason.NOT_APPLICABLE,
     )
 )
 _KNOWN_STATES = frozenset(
@@ -184,6 +199,45 @@ SENSOR_DESCRIPTIONS: tuple[AutomowerSensorDescription, ...] = (
         value_fn=lambda d: (
             d.mower.state.lower() if d.mower.state.lower() in _KNOWN_STATES else None
         ),
+    ),
+    AutomowerSensorDescription(
+        key="inactive_reason",
+        translation_key="automower_inactive_reason",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda d: d.mower.inactive_reason,
+    ),
+    AutomowerSensorDescription(
+        key="restricted_reason",
+        translation_key="automower_restricted_reason",
+        device_class=SensorDeviceClass.ENUM,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        options=[
+            RestrictedReason.NONE.lower(),
+            RestrictedReason.WEEK_SCHEDULE.lower(),
+            RestrictedReason.PARK_OVERRIDE.lower(),
+            RestrictedReason.SENSOR.lower(),
+            RestrictedReason.DAILY_LIMIT.lower(),
+            RestrictedReason.FOTA.lower(),
+            RestrictedReason.FROST.lower(),
+            RestrictedReason.ALL_WORK_AREAS_COMPLETED.lower(),
+            RestrictedReason.EXTERNAL.lower(),
+            RestrictedReason.NOT_APPLICABLE.lower(),
+        ],
+        value_fn=lambda d: (
+            d.planner.restricted_reason.lower()
+            if d.planner.restricted_reason.lower() in _KNOWN_RESTRICTED_REASONS
+            else None
+        ),
+    ),
+    AutomowerSensorDescription(
+        key="error_code_timestamp",
+        translation_key="automower_error_code_timestamp",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda d: d.mower.error_code_timestamp,
     ),
 )
 

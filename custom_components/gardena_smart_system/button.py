@@ -1,4 +1,4 @@
-"""Event platform for the Gardena Smart System integration."""
+"""Button platform for the Gardena Smart System integration."""
 
 from __future__ import annotations
 
@@ -14,12 +14,8 @@ async def async_setup_entry(
     entry: GardenaConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up event entities from a config entry."""
+    """Set up button entities from a config entry."""
     if entry.data.get(CONF_API_TYPE) == API_TYPE_AUTOMOWER:
-        from .automower_event import async_setup_entry as automower_setup
+        from .automower_button import async_setup_entry as automower_setup
 
         await automower_setup(hass, entry, async_add_entities)
-    else:
-        from .gardena_event import async_setup_entry as gardena_setup
-
-        await gardena_setup(hass, entry, async_add_entities)

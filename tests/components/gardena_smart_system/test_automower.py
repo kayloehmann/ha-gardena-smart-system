@@ -105,6 +105,10 @@ def make_mock_automower_device(
     cutting_blade_usage_time: int = 18000,
     total_running_time: int = 72000,
     total_searching_time: int = 7200,
+    error_code_timestamp: datetime | None = None,
+    inactive_reason: str | None = None,
+    is_error_confirmable: bool = False,
+    can_confirm_error: bool = False,
 ) -> AutomowerDevice:
     """Build a real AutomowerDevice dataclass instance for testing."""
     if positions is None:
@@ -125,9 +129,9 @@ def make_mock_automower_device(
             activity=mower_activity,
             state=mower_state,
             error_code=error_code,
-            error_code_timestamp=None,
-            inactive_reason=None,
-            is_error_confirmable=False,
+            error_code_timestamp=error_code_timestamp,
+            inactive_reason=inactive_reason,
+            is_error_confirmable=is_error_confirmable,
         ),
         calendar=CalendarInfo(tasks=tasks),
         planner=PlannerInfo(
@@ -159,7 +163,7 @@ def make_mock_automower_device(
             work_areas=has_work_areas,
             stay_out_zones=has_stay_out_zones,
             position=has_position,
-            can_confirm_error=False,
+            can_confirm_error=can_confirm_error,
         ),
         work_areas=work_areas,
         stay_out_zones=stay_out_zones,
@@ -2763,6 +2767,7 @@ class TestAutomowerRoutingGuards:
             "custom_components.gardena_smart_system.automower_calendar",
             "custom_components.gardena_smart_system.automower_lawn_mower",
             "custom_components.gardena_smart_system.automower_event",
+            "custom_components.gardena_smart_system.automower_button",
         ],
     )
     async def test_routing_guard_returns_early_for_gardena_entry(
@@ -3399,3 +3404,327 @@ class TestAutomowerEventEntity:
             state = hass.states.get(EVENT_ENTITY_ID)
             assert state is not None
             assert state.attributes["event_type"] == "leaving"
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 22. Automower Diagnostic Sensors (Feature 1)
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerDiagnosticSensors:
+    """Test the new Automower diagnostic sensors (disabled by default)."""
+
+    async def test_inactive_reason_sensor(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Inactive reason sensor reports the value from the API after enabling."""
+        device = make_mock_automower_device(inactive_reason="PLANNING")
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "sensor", "inactive_reason")
+            # Entity exists in registry but is disabled by default
+            entity_reg = er.async_get(hass)
+            entry = entity_reg.async_get(entity_id)
+            assert entry is not None
+            assert entry.disabled_by is not None
+
+            # Enable it and reload
+            entity_reg.async_update_entity(entity_id, disabled_by=None)
+            await hass.config_entries.async_reload(automower_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == "PLANNING"
+
+    async def test_inactive_reason_none(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Inactive reason sensor shows unknown when None."""
+        device = make_mock_automower_device(inactive_reason=None)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "sensor", "inactive_reason")
+            entity_reg = er.async_get(hass)
+            entity_reg.async_update_entity(entity_id, disabled_by=None)
+            await hass.config_entries.async_reload(automower_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == "unknown"
+
+    async def test_restricted_reason_sensor(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Restricted reason sensor reports lowercased value."""
+        device = make_mock_automower_device(restricted_reason="WEEK_SCHEDULE")
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "sensor", "restricted_reason")
+            entity_reg = er.async_get(hass)
+            entity_reg.async_update_entity(entity_id, disabled_by=None)
+            await hass.config_entries.async_reload(automower_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == "week_schedule"
+
+    async def test_error_code_timestamp_sensor(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Error code timestamp sensor reports the datetime."""
+        ts = datetime(2026, 3, 20, 14, 30, 0, tzinfo=UTC)
+        device = make_mock_automower_device(error_code_timestamp=ts)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "sensor", "error_code_timestamp")
+            entity_reg = er.async_get(hass)
+            entity_reg.async_update_entity(entity_id, disabled_by=None)
+            await hass.config_entries.async_reload(automower_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state != "unknown"
+
+    async def test_error_code_timestamp_none(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Error code timestamp shows unknown when None."""
+        device = make_mock_automower_device(error_code_timestamp=None)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            entity_id = _find_entity_id(hass, "sensor", "error_code_timestamp")
+            entity_reg = er.async_get(hass)
+            entity_reg.async_update_entity(entity_id, disabled_by=None)
+            await hass.config_entries.async_reload(automower_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            state = hass.states.get(entity_id)
+            assert state is not None
+            assert state.state == "unknown"
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 23. Automower Work Area Switches (Feature 2)
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerWorkAreaSwitch:
+    """Test the work area enable/disable switches."""
+
+    async def test_work_area_switch_created(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Work area switch is created when work_areas capability is True."""
+        wa = WorkArea(work_area_id=1, name="Front yard", cutting_height=5, enabled=True)
+        device = make_mock_automower_device(has_work_areas=True, work_areas={1: wa})
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("switch.test_mower_work_area_front_yard")
+            assert state is not None
+            assert state.state == "on"
+
+    async def test_work_area_switch_off(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Work area switch reports off when disabled."""
+        wa = WorkArea(work_area_id=2, name="Back yard", cutting_height=3, enabled=False)
+        device = make_mock_automower_device(has_work_areas=True, work_areas={2: wa})
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("switch.test_mower_work_area_back_yard")
+            assert state is not None
+            assert state.state == "off"
+
+    async def test_work_area_switch_turn_on(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Turning on a work area calls the API."""
+        wa = WorkArea(work_area_id=1, name="Front", cutting_height=5, enabled=False)
+        device = make_mock_automower_device(has_work_areas=True, work_areas={1: wa})
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            await hass.services.async_call(
+                "switch",
+                "turn_on",
+                {"entity_id": "switch.test_mower_work_area_front"},
+                blocking=True,
+            )
+            mock_client.async_set_work_area_enabled.assert_called_once_with(
+                device.mower_id, 1, True
+            )
+
+    async def test_work_area_switch_turn_off(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Turning off a work area calls the API."""
+        wa = WorkArea(work_area_id=1, name="Front", cutting_height=5, enabled=True)
+        device = make_mock_automower_device(has_work_areas=True, work_areas={1: wa})
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            await hass.services.async_call(
+                "switch",
+                "turn_off",
+                {"entity_id": "switch.test_mower_work_area_front"},
+                blocking=True,
+            )
+            mock_client.async_set_work_area_enabled.assert_called_once_with(
+                device.mower_id, 1, False
+            )
+
+    async def test_work_area_switch_device_gone(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Work area switch returns None when device disappears."""
+        wa = WorkArea(work_area_id=1, name="Front", cutting_height=5, enabled=True)
+        device = make_mock_automower_device(has_work_areas=True, work_areas={1: wa})
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            state = hass.states.get("switch.test_mower_work_area_front")
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+    async def test_work_area_switch_auth_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Auth error on work area switch raises ConfigEntryAuthFailed."""
+        wa = WorkArea(work_area_id=1, name="Front", cutting_height=5, enabled=True)
+        device = make_mock_automower_device(has_work_areas=True, work_areas={1: wa})
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            mock_client.async_set_work_area_enabled.side_effect = AutomowerAuthenticationError(
+                "bad token"
+            )
+            with pytest.raises(Exception):
+                await hass.services.async_call(
+                    "switch",
+                    "turn_on",
+                    {"entity_id": "switch.test_mower_work_area_front"},
+                    blocking=True,
+                )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 24. Automower Confirm Error Button (Feature 4)
+# ──────────────────────────────────────────────────────────────────────
+
+BUTTON_ENTITY_ID = "button.test_mower_confirm_error"
+
+
+class TestAutomowerConfirmErrorButton:
+    """Test the Automower error confirmation button."""
+
+    async def test_button_created_when_capable(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Button entity is created when can_confirm_error is True."""
+        device = make_mock_automower_device(can_confirm_error=True, is_error_confirmable=True)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get(BUTTON_ENTITY_ID)
+            assert state is not None
+
+    async def test_button_not_created_when_incapable(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Button entity is NOT created when can_confirm_error is False."""
+        device = make_mock_automower_device(can_confirm_error=False)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get(BUTTON_ENTITY_ID)
+            assert state is None
+
+    async def test_button_unavailable_when_no_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Button is unavailable when is_error_confirmable is False."""
+        device = make_mock_automower_device(can_confirm_error=True, is_error_confirmable=False)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get(BUTTON_ENTITY_ID)
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+    async def test_button_press_calls_api(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Pressing the button calls async_confirm_error."""
+        device = make_mock_automower_device(
+            can_confirm_error=True,
+            is_error_confirmable=True,
+            mower_state=MowerState.ERROR,
+            error_code=5,
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            await hass.services.async_call(
+                "button",
+                "press",
+                {"entity_id": BUTTON_ENTITY_ID},
+                blocking=True,
+            )
+            mock_client.async_confirm_error.assert_called_once_with(device.mower_id)
+
+    async def test_button_press_auth_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Auth error on button press raises appropriately."""
+        device = make_mock_automower_device(
+            can_confirm_error=True,
+            is_error_confirmable=True,
+            mower_state=MowerState.ERROR,
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            mock_client.async_confirm_error.side_effect = AutomowerAuthenticationError("bad")
+            with pytest.raises(Exception):
+                await hass.services.async_call(
+                    "button",
+                    "press",
+                    {"entity_id": BUTTON_ENTITY_ID},
+                    blocking=True,
+                )
+
+    async def test_button_press_general_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """General API error on button press raises HomeAssistantError."""
+        device = make_mock_automower_device(
+            can_confirm_error=True,
+            is_error_confirmable=True,
+            mower_state=MowerState.ERROR,
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            mock_client.async_confirm_error.side_effect = AutomowerException("fail")
+            with pytest.raises(HomeAssistantError):
+                await hass.services.async_call(
+                    "button",
+                    "press",
+                    {"entity_id": BUTTON_ENTITY_ID},
+                    blocking=True,
+                )

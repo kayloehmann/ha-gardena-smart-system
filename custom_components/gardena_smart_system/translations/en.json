@@ -170,6 +170,33 @@
           "fatal_error": "Fatal error",
           "error_at_power_up": "Error at power up"
         }
+      },
+      "automower_inactive_reason": {
+        "name": "Inactive reason"
+      },
+      "automower_restricted_reason": {
+        "name": "Restricted reason",
+        "state": {
+          "none": "None",
+          "week_schedule": "Week schedule",
+          "park_override": "Park override",
+          "sensor": "Sensor",
+          "daily_limit": "Daily limit",
+          "fota": "Firmware update",
+          "frost": "Frost",
+          "all_work_areas_completed": "All work areas completed",
+          "external": "External",
+          "not_applicable": "Not applicable"
+        }
+      },
+      "automower_error_code_timestamp": {
+        "name": "Last error time"
+      },
+      "power_socket_last_error_code": {
+        "name": "Last error code"
+      },
+      "valve_last_error_code": {
+        "name": "Valve error code"
       }
     },
     "binary_sensor": {
@@ -187,6 +214,9 @@
       },
       "automower_connected": {
         "name": "Connected"
+      },
+      "rf_link_online": {
+        "name": "RF link"
       }
     },
     "switch": {
@@ -198,6 +228,9 @@
       },
       "automower_stay_out_zone": {
         "name": "Stay-out zone: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Work area: {work_area}"
       }
     },
     "valve": {
@@ -231,7 +264,56 @@
         "name": "Mowing schedule"
       }
     },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Confirm error"
+      }
+    },
     "event": {
+      "gardena_mower_event": {
+        "name": "Mower event",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "Started cutting",
+              "stopped": "Stopped",
+              "leaving": "Leaving",
+              "searching": "Searching",
+              "charging": "Charging",
+              "parked": "Parked",
+              "paused": "Paused",
+              "error": "Error",
+              "error_cleared": "Error cleared"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Valve event",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Started watering",
+              "stopped_watering": "Stopped watering",
+              "error": "Error",
+              "error_cleared": "Error cleared"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Power socket event",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Turned on",
+              "turned_off": "Turned off",
+              "error": "Error",
+              "error_cleared": "Error cleared"
+            }
+          }
+        }
+      },
       "automower_event": {
         "name": "Mower event",
         "state_attributes": {

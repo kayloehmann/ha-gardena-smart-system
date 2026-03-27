@@ -54,6 +54,16 @@ async def async_setup_entry(
                             AutomowerStayOutZoneSwitch(coordinator, device, zone.zone_id)
                         )
 
+            # Work area switches
+            if device.capabilities.work_areas:
+                for wa in device.work_areas.values():
+                    key = f"{device.mower_id}_wa_{wa.work_area_id}"
+                    if key not in known_ids:
+                        known_ids.add(key)
+                        new_entities.append(
+                            AutomowerWorkAreaSwitch(coordinator, device, wa.work_area_id)
+                        )
+
         if new_entities:
             async_add_entities(new_entities)
 
@@ -158,6 +168,69 @@ class AutomowerStayOutZoneSwitch(AutomowerEntity, SwitchEntity):
         try:
             await self.coordinator.client.async_set_stay_out_zone(
                 device.mower_id, self._zone_id, enabled
+            )
+        except AutomowerAuthenticationError as err:
+            raise ConfigEntryAuthFailed(
+                translation_domain="gardena_smart_system",
+                translation_key="command_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        except AutomowerException as err:
+            raise HomeAssistantError(
+                translation_domain="gardena_smart_system",
+                translation_key="command_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+
+
+class AutomowerWorkAreaSwitch(AutomowerEntity, SwitchEntity):
+    """Enable/disable a work area."""
+
+    _attr_translation_key = "automower_work_area"
+
+    def __init__(
+        self,
+        coordinator: AutomowerCoordinator,
+        device: AutomowerDevice,
+        work_area_id: int,
+    ) -> None:
+        """Initialize the work area switch."""
+        super().__init__(coordinator, device, f"wa_{work_area_id}")
+        self._work_area_id = work_area_id
+        wa = device.work_areas.get(work_area_id)
+        wa_name = wa.name if wa else str(work_area_id)
+        self._attr_translation_placeholders = {"work_area": wa_name}
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return True if the work area is enabled."""
+        device = self._device
+        if device is None:
+            return None
+        wa = device.work_areas.get(self._work_area_id)
+        if wa is None:
+            return None
+        return wa.enabled
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Enable the work area."""
+        await self._async_set_work_area(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Disable the work area."""
+        await self._async_set_work_area(False)
+
+    async def _async_set_work_area(self, enabled: bool) -> None:
+        device = self._device
+        if device is None:
+            raise HomeAssistantError(
+                translation_domain="gardena_smart_system",
+                translation_key="device_unavailable",
+            )
+        self.coordinator.check_command_throttle()
+        try:
+            await self.coordinator.client.async_set_work_area_enabled(
+                device.mower_id, self._work_area_id, enabled
             )
         except AutomowerAuthenticationError as err:
             raise ConfigEntryAuthFailed(

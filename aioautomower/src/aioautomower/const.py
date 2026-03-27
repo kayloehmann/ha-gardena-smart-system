@@ -83,6 +83,7 @@ class ActionType:
     PARK_UNTIL_NEXT_SCHEDULE = "ParkUntilNextSchedule"
     PARK_UNTIL_FURTHER_NOTICE = "ParkUntilFurtherNotice"
     RESUME_SCHEDULE = "ResumeSchedule"
+    CONFIRM_ERROR = "ConfirmError"
 
 
 class OverrideAction:

@@ -60,6 +60,17 @@ BINARY_SENSORS: tuple[GardenaBinarySensorDescription, ...] = (
         exists_fn=lambda d: bool(d.valves),
     ),
     GardenaBinarySensorDescription(
+        key="rf_link_online",
+        translation_key="rf_link_online",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        is_on_fn=lambda d: (
+            d.common.rf_link_state == "ONLINE" if d.common and d.common.rf_link_state else None
+        ),
+        exists_fn=lambda d: d.common is not None and d.common.rf_link_state is not None,
+    ),
+    GardenaBinarySensorDescription(
         key="mower_error",
         translation_key="mower_error",
         device_class=BinarySensorDeviceClass.PROBLEM,

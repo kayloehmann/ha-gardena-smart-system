@@ -146,6 +146,10 @@ class AutomowerClient:
         """Resume the mower's schedule."""
         await self.async_send_action(mower_id, ActionType.RESUME_SCHEDULE)
 
+    async def async_confirm_error(self, mower_id: str) -> None:
+        """Confirm a confirmable error on the mower."""
+        await self.async_send_action(mower_id, ActionType.CONFIRM_ERROR)
+
     # ── Settings ───────────────────────────────────────────────────
 
     async def async_set_cutting_height(self, mower_id: str, height: int) -> None:
@@ -191,6 +195,21 @@ class AutomowerClient:
                 "type": "workArea",
                 "id": str(work_area_id),
                 "attributes": {"cuttingHeight": cutting_height},
+            }
+        }
+        await self._async_request(
+            "PATCH", f"/mowers/{mower_id}/workAreas/{work_area_id}", json=payload
+        )
+
+    async def async_set_work_area_enabled(
+        self, mower_id: str, work_area_id: int, enabled: bool
+    ) -> None:
+        """Enable or disable a specific work area."""
+        payload: dict[str, Any] = {
+            "data": {
+                "type": "workArea",
+                "id": str(work_area_id),
+                "attributes": {"enabled": enabled},
             }
         }
         await self._async_request(
