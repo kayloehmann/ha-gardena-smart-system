@@ -170,6 +170,33 @@
           "fatal_error": "Erreur critique",
           "error_at_power_up": "Erreur au demarrage"
         }
+      },
+      "automower_inactive_reason": {
+        "name": "Raison d'inactivite"
+      },
+      "automower_restricted_reason": {
+        "name": "Raison de restriction",
+        "state": {
+          "none": "Aucune",
+          "week_schedule": "Programme hebdomadaire",
+          "park_override": "Stationnement force",
+          "sensor": "Capteur",
+          "daily_limit": "Limite journaliere",
+          "fota": "Mise a jour firmware",
+          "frost": "Gel",
+          "all_work_areas_completed": "Toutes les zones terminees",
+          "external": "Externe",
+          "not_applicable": "Non applicable"
+        }
+      },
+      "automower_error_code_timestamp": {
+        "name": "Heure de la derniere erreur"
+      },
+      "power_socket_last_error_code": {
+        "name": "Dernier code d'erreur"
+      },
+      "valve_last_error_code": {
+        "name": "Code d'erreur vanne"
       }
     },
     "binary_sensor": {
@@ -187,6 +214,9 @@
       },
       "automower_connected": {
         "name": "Connecte"
+      },
+      "rf_link_online": {
+        "name": "Liaison RF"
       }
     },
     "switch": {
@@ -198,6 +228,9 @@
       },
       "automower_stay_out_zone": {
         "name": "Zone interdite : {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Zone de travail : {work_area}"
       }
     },
     "valve": {
@@ -232,23 +265,72 @@
       }
     },
     "event": {
-      "automower_event": {
-        "name": "Mower event",
+      "gardena_mower_event": {
+        "name": "Evenement tondeuse",
         "state_attributes": {
           "event_type": {
             "state": {
-              "started_mowing": "Started mowing",
-              "stopped": "Stopped",
-              "going_home": "Going home",
-              "charging": "Charging",
-              "leaving": "Leaving station",
-              "parked": "Parked",
-              "paused": "Paused",
-              "error": "Error",
-              "error_cleared": "Error cleared"
+              "started_cutting": "Tonte demarree",
+              "stopped": "Arretee",
+              "leaving": "En depart",
+              "searching": "En recherche",
+              "charging": "En charge",
+              "parked": "Stationnee",
+              "paused": "En pause",
+              "error": "Erreur",
+              "error_cleared": "Erreur resolue"
             }
           }
         }
+      },
+      "gardena_valve_event": {
+        "name": "Evenement vanne",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Arrosage demarre",
+              "stopped_watering": "Arrosage arrete",
+              "error": "Erreur",
+              "error_cleared": "Erreur resolue"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Evenement prise",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Allumee",
+              "turned_off": "Eteinte",
+              "error": "Erreur",
+              "error_cleared": "Erreur resolue"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Evenement tondeuse",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Tonte demarree",
+              "stopped": "Arretee",
+              "going_home": "Retour a la station",
+              "charging": "En charge",
+              "leaving": "Quitte la station",
+              "parked": "Stationnee",
+              "paused": "En pause",
+              "error": "Erreur",
+              "error_cleared": "Erreur resolue"
+            }
+          }
+        }
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Confirmer l'erreur"
       }
     }
   },

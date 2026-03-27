@@ -170,6 +170,33 @@
           "fatal_error": "Błąd krytyczny",
           "error_at_power_up": "Błąd przy uruchomieniu"
         }
+      },
+      "automower_inactive_reason": {
+        "name": "Przyczyna nieaktywnosci"
+      },
+      "automower_restricted_reason": {
+        "name": "Przyczyna ograniczenia",
+        "state": {
+          "none": "Brak",
+          "week_schedule": "Harmonogram tygodniowy",
+          "park_override": "Wymuszone parkowanie",
+          "sensor": "Czujnik",
+          "daily_limit": "Limit dzienny",
+          "fota": "Aktualizacja oprogramowania",
+          "frost": "Mroz",
+          "all_work_areas_completed": "Wszystkie strefy ukonczone",
+          "external": "Zewnetrzny",
+          "not_applicable": "Nie dotyczy"
+        }
+      },
+      "automower_error_code_timestamp": {
+        "name": "Czas ostatniego bledu"
+      },
+      "power_socket_last_error_code": {
+        "name": "Ostatni kod bledu"
+      },
+      "valve_last_error_code": {
+        "name": "Kod bledu zaworu"
       }
     },
     "binary_sensor": {
@@ -187,6 +214,9 @@
       },
       "automower_connected": {
         "name": "Połączona"
+      },
+      "rf_link_online": {
+        "name": "Lacze RF"
       }
     },
     "switch": {
@@ -198,6 +228,9 @@
       },
       "automower_stay_out_zone": {
         "name": "Strefa zakazana: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Strefa robocza: {work_area}"
       }
     },
     "valve": {
@@ -232,23 +265,72 @@
       }
     },
     "event": {
-      "automower_event": {
-        "name": "Mower event",
+      "gardena_mower_event": {
+        "name": "Zdarzenie kosiarki",
         "state_attributes": {
           "event_type": {
             "state": {
-              "started_mowing": "Started mowing",
-              "stopped": "Stopped",
-              "going_home": "Going home",
-              "charging": "Charging",
-              "leaving": "Leaving station",
-              "parked": "Parked",
-              "paused": "Paused",
-              "error": "Error",
-              "error_cleared": "Error cleared"
+              "started_cutting": "Koszenie rozpoczete",
+              "stopped": "Zatrzymana",
+              "leaving": "Wyjedza",
+              "searching": "Szuka",
+              "charging": "Laduje",
+              "parked": "Zaparkowana",
+              "paused": "Wstrzymana",
+              "error": "Blad",
+              "error_cleared": "Blad usuniety"
             }
           }
         }
+      },
+      "gardena_valve_event": {
+        "name": "Zdarzenie zaworu",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Podlewanie rozpoczete",
+              "stopped_watering": "Podlewanie zatrzymane",
+              "error": "Blad",
+              "error_cleared": "Blad usuniety"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Zdarzenie gniazdka",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Wlaczone",
+              "turned_off": "Wylaczone",
+              "error": "Blad",
+              "error_cleared": "Blad usuniety"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Zdarzenie kosiarki",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Koszenie rozpoczete",
+              "stopped": "Zatrzymana",
+              "going_home": "Wraca do stacji",
+              "charging": "Laduje",
+              "leaving": "Opuszcza stacje",
+              "parked": "Zaparkowana",
+              "paused": "Wstrzymana",
+              "error": "Blad",
+              "error_cleared": "Blad usuniety"
+            }
+          }
+        }
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Potwierdz blad"
       }
     }
   },

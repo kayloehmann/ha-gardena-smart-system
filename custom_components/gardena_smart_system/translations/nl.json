@@ -170,6 +170,33 @@
           "fatal_error": "Ernstige fout",
           "error_at_power_up": "Fout bij opstarten"
         }
+      },
+      "automower_inactive_reason": {
+        "name": "Inactieve reden"
+      },
+      "automower_restricted_reason": {
+        "name": "Beperkingsreden",
+        "state": {
+          "none": "Geen",
+          "week_schedule": "Weekschema",
+          "park_override": "Geforceerd parkeren",
+          "sensor": "Sensor",
+          "daily_limit": "Dagelijkse limiet",
+          "fota": "Firmware-update",
+          "frost": "Vorst",
+          "all_work_areas_completed": "Alle werkgebieden voltooid",
+          "external": "Extern",
+          "not_applicable": "Niet van toepassing"
+        }
+      },
+      "automower_error_code_timestamp": {
+        "name": "Laatste fouttijdstip"
+      },
+      "power_socket_last_error_code": {
+        "name": "Laatste foutcode"
+      },
+      "valve_last_error_code": {
+        "name": "Klepfoutcode"
       }
     },
     "binary_sensor": {
@@ -187,6 +214,9 @@
       },
       "automower_connected": {
         "name": "Verbonden"
+      },
+      "rf_link_online": {
+        "name": "RF-verbinding"
       }
     },
     "switch": {
@@ -198,6 +228,9 @@
       },
       "automower_stay_out_zone": {
         "name": "Verbodszone: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Werkgebied: {work_area}"
       }
     },
     "valve": {
@@ -232,23 +265,72 @@
       }
     },
     "event": {
-      "automower_event": {
-        "name": "Mower event",
+      "gardena_mower_event": {
+        "name": "Maaiergebeurtenis",
         "state_attributes": {
           "event_type": {
             "state": {
-              "started_mowing": "Started mowing",
-              "stopped": "Stopped",
-              "going_home": "Going home",
-              "charging": "Charging",
-              "leaving": "Leaving station",
-              "parked": "Parked",
-              "paused": "Paused",
-              "error": "Error",
-              "error_cleared": "Error cleared"
+              "started_cutting": "Begonnen met maaien",
+              "stopped": "Gestopt",
+              "leaving": "Vertrokken",
+              "searching": "Aan het zoeken",
+              "charging": "Aan het laden",
+              "parked": "Geparkeerd",
+              "paused": "Gepauzeerd",
+              "error": "Fout",
+              "error_cleared": "Fout opgelost"
             }
           }
         }
+      },
+      "gardena_valve_event": {
+        "name": "Klepgebeurtenis",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Bewatering gestart",
+              "stopped_watering": "Bewatering gestopt",
+              "error": "Fout",
+              "error_cleared": "Fout opgelost"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Stopcontactgebeurtenis",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Ingeschakeld",
+              "turned_off": "Uitgeschakeld",
+              "error": "Fout",
+              "error_cleared": "Fout opgelost"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Maaiergebeurtenis",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Begonnen met maaien",
+              "stopped": "Gestopt",
+              "going_home": "Onderweg naar station",
+              "charging": "Aan het laden",
+              "leaving": "Verlaat station",
+              "parked": "Geparkeerd",
+              "paused": "Gepauzeerd",
+              "error": "Fout",
+              "error_cleared": "Fout opgelost"
+            }
+          }
+        }
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Fout bevestigen"
       }
     }
   },

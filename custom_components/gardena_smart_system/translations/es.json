@@ -170,6 +170,33 @@
           "fatal_error": "Error grave",
           "error_at_power_up": "Error al iniciar"
         }
+      },
+      "automower_inactive_reason": {
+        "name": "Razon de inactividad"
+      },
+      "automower_restricted_reason": {
+        "name": "Razon de restriccion",
+        "state": {
+          "none": "Ninguna",
+          "week_schedule": "Programa semanal",
+          "park_override": "Estacionamiento forzado",
+          "sensor": "Sensor",
+          "daily_limit": "Limite diario",
+          "fota": "Actualizacion de firmware",
+          "frost": "Helada",
+          "all_work_areas_completed": "Todas las zonas completadas",
+          "external": "Externo",
+          "not_applicable": "No aplicable"
+        }
+      },
+      "automower_error_code_timestamp": {
+        "name": "Hora del ultimo error"
+      },
+      "power_socket_last_error_code": {
+        "name": "Ultimo codigo de error"
+      },
+      "valve_last_error_code": {
+        "name": "Codigo de error de valvula"
       }
     },
     "binary_sensor": {
@@ -187,6 +214,9 @@
       },
       "automower_connected": {
         "name": "Conectado"
+      },
+      "rf_link_online": {
+        "name": "Enlace RF"
       }
     },
     "switch": {
@@ -198,6 +228,9 @@
       },
       "automower_stay_out_zone": {
         "name": "Zona restringida: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Zona de trabajo: {work_area}"
       }
     },
     "valve": {
@@ -232,23 +265,72 @@
       }
     },
     "event": {
-      "automower_event": {
-        "name": "Mower event",
+      "gardena_mower_event": {
+        "name": "Evento del cortacesped",
         "state_attributes": {
           "event_type": {
             "state": {
-              "started_mowing": "Started mowing",
-              "stopped": "Stopped",
-              "going_home": "Going home",
-              "charging": "Charging",
-              "leaving": "Leaving station",
-              "parked": "Parked",
-              "paused": "Paused",
+              "started_cutting": "Corte iniciado",
+              "stopped": "Detenido",
+              "leaving": "Saliendo",
+              "searching": "Buscando",
+              "charging": "Cargando",
+              "parked": "Estacionado",
+              "paused": "Pausado",
               "error": "Error",
-              "error_cleared": "Error cleared"
+              "error_cleared": "Error resuelto"
             }
           }
         }
+      },
+      "gardena_valve_event": {
+        "name": "Evento de valvula",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Riego iniciado",
+              "stopped_watering": "Riego detenido",
+              "error": "Error",
+              "error_cleared": "Error resuelto"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Evento de enchufe",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Encendido",
+              "turned_off": "Apagado",
+              "error": "Error",
+              "error_cleared": "Error resuelto"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Evento del cortacesped",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Corte iniciado",
+              "stopped": "Detenido",
+              "going_home": "Regresando a la estacion",
+              "charging": "Cargando",
+              "leaving": "Saliendo de la estacion",
+              "parked": "Estacionado",
+              "paused": "Pausado",
+              "error": "Error",
+              "error_cleared": "Error resuelto"
+            }
+          }
+        }
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Confirmar error"
       }
     }
   },
