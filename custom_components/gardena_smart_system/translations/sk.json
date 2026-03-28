@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Pripojenie k Husqvarna",
+        "description": "Zadajte prihlasovacie údaje z vašej aplikácie na portáli Husqvarna Developer Portal.",
+        "data": {
+          "client_id": "Kľúč aplikácie (Client ID)",
+          "client_secret": "Tajný kľúč aplikácie"
+        },
+        "data_description": {
+          "client_id": "Kľúč aplikácie z vášho vývojárskeho účtu Husqvarna.",
+          "client_secret": "Tajný kľúč aplikácie z vášho vývojárskeho účtu Husqvarna."
+        }
+      },
+      "api_type": {
+        "title": "Výber API",
+        "description": "Zvoľte, ku ktorému API Husqvarna sa chcete pripojiť. Obe môžete pridať opakovaným nastavením integrácie.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Vyberte svoju záhradu",
+        "description": "Na vašom účte bolo nájdených viac záhrad. Vyberte tú, ktorú chcete pridať.",
+        "data": {
+          "location_id": "Záhrada"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Opätovné overenie",
+        "description": "Vaše prihlasovacie údaje už nie sú platné. Zadajte prosím znova prihlasovacie údaje aplikácie.",
+        "data": {
+          "client_id": "Kľúč aplikácie (Client ID)",
+          "client_secret": "Tajný kľúč aplikácie"
+        }
+      },
+      "reconfigure": {
+        "title": "Prekonfigurovať",
+        "description": "Aktualizujte prihlasovacie údaje vašej aplikácie.",
+        "data": {
+          "client_id": "Kľúč aplikácie (Client ID)",
+          "client_secret": "Tajný kľúč aplikácie"
+        }
+      },
+      "reconfigure_location": {
+        "title": "Výber záhrady",
+        "description": "Bolo nájdených viac záhrad. Vyberte, ktorú záhradu má táto položka používať.",
+        "data": {
+          "location_id": "Záhrada"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Neplatné prihlasovacie údaje. Skontrolujte kľúč aplikácie a tajný kľúč na portáli Husqvarna Developer Portal.",
+      "forbidden": "Prístup k API zamietnutý. Uistite sa, že Gardena Smart System API je pripojené k vašej aplikácii na portáli Husqvarna Developer Portal.",
+      "automower_not_connected": "Automower Connect API nie je pripojené k vašej aplikácii. Povoľte ho na portáli Husqvarna Developer Portal v sekcii Connected APIs.",
+      "rate_limited": "Dosiahnutý limit API požiadaviek alebo dočasné zablokovanie. Počkajte niekoľko minút a skúste to znova, alebo vytvorte novú aplikáciu na portáli Husqvarna Developer Portal.",
+      "cannot_connect": "Nie je možné pripojiť sa k API. Skontrolujte sieťové pripojenie a skúste to znova.",
+      "unknown": "Vyskytla sa neočakávaná chyba."
+    },
+    "abort": {
+      "already_configured": "Táto konfigurácia už existuje.",
+      "reauth_successful": "Opätovné overenie bolo úspešné.",
+      "reconfigure_successful": "Prekonfigurovanie bolo úspešné."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Možnosti Gardena Smart System",
+        "data": {
+          "default_watering_minutes": "Predvolená doba zavlažovania",
+          "default_socket_minutes": "Predvolená doba zapnutia zásuvky",
+          "poll_interval_minutes": "Interval dopytovania"
+        },
+        "data_description": {
+          "default_watering_minutes": "Doba v minútach pri otvorení ventilu bez zadania doby (1–1440).",
+          "default_socket_minutes": "Doba v minútach pri zapnutí inteligentnej zásuvky (1–1440). Nastavte na 1440 (24 h) pre takmer nepretržitú prevádzku.",
+          "poll_interval_minutes": "Ako často sa dopytovať API na aktualizácie v minútach (5–1440). Nižšie hodnoty poskytujú čerstvejšie dáta, ale spotrebujú viac API kvóty. Predvolené: 30 (Gardena) / 15 (Automower)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Batéria"
+      },
+      "rf_link_level": {
+        "name": "Sila signálu"
+      },
+      "soil_humidity": {
+        "name": "Vlhkosť pôdy"
+      },
+      "soil_temperature": {
+        "name": "Teplota pôdy"
+      },
+      "ambient_temperature": {
+        "name": "Okolitá teplota"
+      },
+      "light_intensity": {
+        "name": "Intenzita svetla"
+      },
+      "mower_operating_hours": {
+        "name": "Prevádzkové hodiny"
+      },
+      "mower_activity": {
+        "name": "Činnosť kosačky"
+      },
+      "mower_last_error_code": {
+        "name": "Posledný chybový kód"
+      },
+      "automower_battery_level": {
+        "name": "Batéria"
+      },
+      "automower_cutting_height": {
+        "name": "Výška kosenia"
+      },
+      "automower_next_start": {
+        "name": "Ďalší štart"
+      },
+      "automower_total_cutting_time": {
+        "name": "Celková doba kosenia"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Nabíjacie cykly"
+      },
+      "automower_total_collisions": {
+        "name": "Kolízie"
+      },
+      "automower_total_drive_distance": {
+        "name": "Celková najazdená vzdialenosť"
+      },
+      "automower_blade_usage_time": {
+        "name": "Doba používania nožov"
+      },
+      "automower_total_running_time": {
+        "name": "Celková doba prevádzky"
+      },
+      "automower_total_searching_time": {
+        "name": "Celková doba hľadania"
+      },
+      "automower_activity": {
+        "name": "Činnosť",
+        "state": {
+          "unknown": "Neznáma",
+          "not_applicable": "Nepoužiteľné",
+          "mowing": "Kosenie",
+          "going_home": "Návrat domov",
+          "charging": "Nabíjanie",
+          "leaving": "Odchod",
+          "parked_in_cs": "Zaparkované",
+          "stopped_in_garden": "Zastavené na záhrade"
+        }
+      },
+      "automower_state": {
+        "name": "Stav",
+        "state": {
+          "unknown": "Neznámy",
+          "not_applicable": "Nepoužiteľné",
+          "paused": "Pozastavené",
+          "in_operation": "V prevádzke",
+          "wait_updating": "Aktualizácia",
+          "wait_power_up": "Zapínanie",
+          "restricted": "Obmedzené",
+          "off": "Vypnuté",
+          "stopped": "Zastavené",
+          "error": "Chyba",
+          "fatal_error": "Kritická chyba",
+          "error_at_power_up": "Chyba pri zapnutí"
+        }
+      },
+      "automower_inactive_reason": {
+        "name": "Dôvod nečinnosti"
+      },
+      "automower_restricted_reason": {
+        "name": "Dôvod obmedzenia",
+        "state": {
+          "none": "Žiadny",
+          "week_schedule": "Týždenný rozvrh",
+          "park_override": "Nútené parkovanie",
+          "sensor": "Senzor",
+          "daily_limit": "Denný limit",
+          "fota": "Aktualizácia firmvéru",
+          "frost": "Mráz",
+          "all_work_areas_completed": "Všetky pracovné plochy dokončené",
+          "external": "Externé",
+          "not_applicable": "Nepoužiteľné"
+        }
+      },
+      "automower_error_code": {
+        "name": "Chybový kód"
+      },
+      "automower_error_code_timestamp": {
+        "name": "Čas poslednej chyby"
+      },
+      "automower_total_charging_time": {
+        "name": "Celková doba nabíjania"
+      },
+      "automower_planner_override": {
+        "name": "Prepis rozvrhu",
+        "state": {
+          "not_active": "Neaktívne",
+          "force_park": "Nútené parkovanie",
+          "force_mow": "Nútené kosenie"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Naposledy videné"
+      },
+      "battery_state": {
+        "name": "Stav batérie",
+        "state": {
+          "ok": "OK",
+          "low": "Nízky",
+          "replace_now": "Vymeňte teraz",
+          "out_of_operation": "Mimo prevádzky",
+          "charging": "Nabíjanie",
+          "no_battery": "Bez batérie",
+          "unknown": "Neznámy"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Zostávajúca doba zapnutia"
+      },
+      "power_socket_last_error_code": {
+        "name": "Posledný chybový kód"
+      },
+      "valve_last_error_code": {
+        "name": "Chybový kód ventilu"
+      },
+      "valve_remaining_duration": {
+        "name": "Zostávajúca doba zavlažovania"
+      },
+      "hub_device_count": {
+        "name": "Počet zariadení"
+      },
+      "hub_polling_interval": {
+        "name": "Interval dopytovania"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Slabá batéria"
+      },
+      "valve_error": {
+        "name": "Chyba ventilu"
+      },
+      "mower_error": {
+        "name": "Chyba kosačky"
+      },
+      "automower_error": {
+        "name": "Chyba"
+      },
+      "automower_connected": {
+        "name": "Pripojené"
+      },
+      "rf_link_online": {
+        "name": "RF spojenie"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket pripojené"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Napájanie"
+      },
+      "automower_headlight": {
+        "name": "Predné svetlo"
+      },
+      "automower_stay_out_zone": {
+        "name": "Zakázaná zóna: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Pracovná plocha: {work_area}"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Režim predného svetla",
+        "state": {
+          "always_on": "Vždy zapnuté",
+          "always_off": "Vždy vypnuté",
+          "evening_only": "Iba večer",
+          "evening_and_night": "Večer a v noci"
+        }
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Ventil"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Kosačka"
+      },
+      "automower": {
+        "name": "Kosačka"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Výška kosenia"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Výška kosenia: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Prepis rozvrhu"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Poloha"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Rozvrh kosenia"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Potvrdiť chybu"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "Udalosť kosačky",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "Začalo kosenie",
+              "stopped": "Zastavené",
+              "leaving": "Odchod",
+              "searching": "Hľadanie",
+              "charging": "Nabíjanie",
+              "parked": "Zaparkované",
+              "paused": "Pozastavené",
+              "error": "Chyba",
+              "error_cleared": "Chyba vyriešená"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Udalosť ventilu",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Začalo zavlažovanie",
+              "stopped_watering": "Zavlažovanie zastavené",
+              "error": "Chyba",
+              "error_cleared": "Chyba vyriešená"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Udalosť zásuvky",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Zapnuté",
+              "turned_off": "Vypnuté",
+              "error": "Chyba",
+              "error_cleared": "Chyba vyriešená"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Udalosť kosačky",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Začalo kosenie",
+              "stopped": "Zastavené",
+              "going_home": "Návrat domov",
+              "charging": "Nabíjanie",
+              "leaving": "Odchod zo stanice",
+              "parked": "Zaparkované",
+              "paused": "Pozastavené",
+              "error": "Chyba",
+              "error_cleared": "Chyba vyriešená"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Spustiť zavlažovanie",
+      "description": "Spustiť zavlažovanie ventilu na určitú dobu s prepisom rozvrhu.",
+      "fields": {
+        "duration": {
+          "name": "Doba",
+          "description": "Doba v minútach (1–1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Zapnúť na dobu",
+      "description": "Zapnúť inteligentnú zásuvku na určitú dobu.",
+      "fields": {
+        "duration": {
+          "name": "Doba",
+          "description": "Doba v minútach (1–1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Prepísať rozvrh",
+      "description": "Prinútiť kosačku kosiť po určitú dobu bez ohľadu na rozvrh.",
+      "fields": {
+        "duration": {
+          "name": "Doba",
+          "description": "Doba v minútach (1–480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Zaparkovať do odvolania",
+      "description": "Zaparkovať kosačku na neurčito. Zostane v nabíjacej stanici, kým nebude ručne obnovená."
+    },
+    "resume_schedule": {
+      "name": "Obnoviť rozvrh",
+      "description": "Obnoviť automatický rozvrh kosenia."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Odoslanie príkazu do zariadenia zlyhalo: {error}"
+    },
+    "device_unavailable": {
+      "message": "Zariadenie je momentálne nedostupné."
+    },
+    "command_throttled": {
+      "message": "Príkazy sú odosielané príliš rýchlo. Počkajte prosím niekoľko sekúnd medzi príkazmi, aby ste neprekročili limit API."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "Spojenie WebSocket stratené",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Znovu pripojiť WebSocket",
+            "description": "Spojenie v reálnom čase s cloudom Husqvarna bolo prerušené. Integrácia momentálne používa dopytovanie ako záložné riešenie. Potvrďte pre pokus o opätovné pripojenie."
+          }
+        }
+      }
+    }
+  }
+}

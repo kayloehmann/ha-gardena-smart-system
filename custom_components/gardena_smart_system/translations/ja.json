@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Husqvarnaに接続",
+        "description": "Husqvarna開発者ポータルのアプリケーション認証情報を入力してください。",
+        "data": {
+          "client_id": "アプリケーションキー (Client ID)",
+          "client_secret": "アプリケーションシークレット"
+        },
+        "data_description": {
+          "client_id": "Husqvarna開発者アカウントのアプリケーションキー。",
+          "client_secret": "Husqvarna開発者アカウントのアプリケーションシークレット。"
+        }
+      },
+      "api_type": {
+        "title": "APIを選択",
+        "description": "接続するHusqvarna APIを選択してください。統合を2回設定することで両方を追加できます。",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "庭を選択",
+        "description": "アカウントに複数の庭が見つかりました。追加したい庭を選択してください。",
+        "data": {
+          "location_id": "庭"
+        }
+      },
+      "reauth_confirm": {
+        "title": "再認証",
+        "description": "認証情報が無効になりました。アプリケーション認証情報を再入力してください。",
+        "data": {
+          "client_id": "アプリケーションキー (Client ID)",
+          "client_secret": "アプリケーションシークレット"
+        }
+      },
+      "reconfigure": {
+        "title": "再設定",
+        "description": "アプリケーション認証情報を更新してください。",
+        "data": {
+          "client_id": "アプリケーションキー (Client ID)",
+          "client_secret": "アプリケーションシークレット"
+        }
+      },
+      "reconfigure_location": {
+        "title": "庭を選択",
+        "description": "複数の庭が見つかりました。このエントリが使用する庭を選択してください。",
+        "data": {
+          "location_id": "庭"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "認証情報が無効です。Husqvarna開発者ポータルでアプリケーションキーとシークレットを確認してください。",
+      "forbidden": "APIアクセスが拒否されました。Husqvarna開発者ポータルでGardena Smart System APIがアプリケーションに接続されていることを確認してください。",
+      "automower_not_connected": "Automower Connect APIがアプリケーションに接続されていません。Husqvarna開発者ポータルの接続済みAPIで有効にしてください。",
+      "rate_limited": "APIレート制限に達したか、一時的にブロックされています。数分待ってから再試行するか、Husqvarna開発者ポータルで新しいアプリケーションを作成してください。",
+      "cannot_connect": "APIに接続できません。ネットワーク接続を確認して再試行してください。",
+      "unknown": "予期しないエラーが発生しました。"
+    },
+    "abort": {
+      "already_configured": "この設定は既に存在します。",
+      "reauth_successful": "再認証が成功しました。",
+      "reconfigure_successful": "再設定が成功しました。"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Gardena Smart Systemオプション",
+        "data": {
+          "default_watering_minutes": "デフォルト散水時間",
+          "default_socket_minutes": "デフォルトソケット時間",
+          "poll_interval_minutes": "ポーリング間隔"
+        },
+        "data_description": {
+          "default_watering_minutes": "時間を指定せずにバルブを開く場合の分単位の時間（1-1440）。",
+          "default_socket_minutes": "ソケットをオンにする場合の分単位の時間（1-1440）。ほぼ無期限の動作には1440（24時間）に設定してください。",
+          "poll_interval_minutes": "更新のためにAPIをポーリングする頻度（分単位、5-1440）。低い値はより新しいデータを提供しますが、APIクォータをより多く消費します。デフォルト: 30（Gardena）/ 15（Automower）。"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "バッテリー"
+      },
+      "rf_link_level": {
+        "name": "信号強度"
+      },
+      "soil_humidity": {
+        "name": "土壌湿度"
+      },
+      "soil_temperature": {
+        "name": "土壌温度"
+      },
+      "ambient_temperature": {
+        "name": "周囲温度"
+      },
+      "light_intensity": {
+        "name": "光強度"
+      },
+      "mower_operating_hours": {
+        "name": "稼働時間"
+      },
+      "mower_activity": {
+        "name": "芝刈り機の活動"
+      },
+      "mower_last_error_code": {
+        "name": "最後のエラーコード"
+      },
+      "automower_battery_level": {
+        "name": "バッテリー"
+      },
+      "automower_cutting_height": {
+        "name": "刈り高さ"
+      },
+      "automower_next_start": {
+        "name": "次回開始"
+      },
+      "automower_total_cutting_time": {
+        "name": "合計刈り取り時間"
+      },
+      "automower_total_charging_cycles": {
+        "name": "充電サイクル"
+      },
+      "automower_total_collisions": {
+        "name": "衝突回数"
+      },
+      "automower_total_drive_distance": {
+        "name": "合計走行距離"
+      },
+      "automower_blade_usage_time": {
+        "name": "ブレード使用時間"
+      },
+      "automower_total_running_time": {
+        "name": "合計稼働時間"
+      },
+      "automower_total_searching_time": {
+        "name": "合計探索時間"
+      },
+      "automower_activity": {
+        "name": "活動",
+        "state": {
+          "unknown": "不明",
+          "not_applicable": "該当なし",
+          "mowing": "刈り取り中",
+          "going_home": "帰還中",
+          "charging": "充電中",
+          "leaving": "出発中",
+          "parked_in_cs": "駐車中",
+          "stopped_in_garden": "庭で停止"
+        }
+      },
+      "automower_state": {
+        "name": "状態",
+        "state": {
+          "unknown": "不明",
+          "not_applicable": "該当なし",
+          "paused": "一時停止",
+          "in_operation": "稼働中",
+          "wait_updating": "更新中",
+          "wait_power_up": "起動中",
+          "restricted": "制限中",
+          "off": "オフ",
+          "stopped": "停止",
+          "error": "エラー",
+          "fatal_error": "致命的エラー",
+          "error_at_power_up": "起動時エラー"
+        }
+      },
+      "automower_inactive_reason": {
+        "name": "非稼働理由"
+      },
+      "automower_restricted_reason": {
+        "name": "制限理由",
+        "state": {
+          "none": "なし",
+          "week_schedule": "週間スケジュール",
+          "park_override": "強制駐車",
+          "sensor": "センサー",
+          "daily_limit": "日次上限",
+          "fota": "ファームウェア更新",
+          "frost": "霜",
+          "all_work_areas_completed": "全エリア完了",
+          "external": "外部",
+          "not_applicable": "該当なし"
+        }
+      },
+      "automower_error_code": {
+        "name": "エラーコード"
+      },
+      "automower_error_code_timestamp": {
+        "name": "最後のエラー時刻"
+      },
+      "automower_total_charging_time": {
+        "name": "合計充電時間"
+      },
+      "automower_planner_override": {
+        "name": "スケジュール上書き",
+        "state": {
+          "not_active": "非アクティブ",
+          "force_park": "強制駐車",
+          "force_mow": "強制刈り取り"
+        }
+      },
+      "automower_last_seen": {
+        "name": "最終確認"
+      },
+      "battery_state": {
+        "name": "バッテリー状態",
+        "state": {
+          "ok": "OK",
+          "low": "低",
+          "replace_now": "今すぐ交換",
+          "out_of_operation": "動作不能",
+          "charging": "充電中",
+          "no_battery": "バッテリーなし",
+          "unknown": "不明"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "残り稼働時間"
+      },
+      "power_socket_last_error_code": {
+        "name": "最後のエラーコード"
+      },
+      "valve_last_error_code": {
+        "name": "バルブエラーコード"
+      },
+      "valve_remaining_duration": {
+        "name": "残り散水時間"
+      },
+      "hub_device_count": {
+        "name": "デバイス数"
+      },
+      "hub_polling_interval": {
+        "name": "ポーリング間隔"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "バッテリー低下"
+      },
+      "valve_error": {
+        "name": "バルブエラー"
+      },
+      "mower_error": {
+        "name": "芝刈り機エラー"
+      },
+      "automower_error": {
+        "name": "エラー"
+      },
+      "automower_connected": {
+        "name": "接続済み"
+      },
+      "rf_link_online": {
+        "name": "RF リンク"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket接続済み"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "電源"
+      },
+      "automower_headlight": {
+        "name": "ヘッドライト"
+      },
+      "automower_stay_out_zone": {
+        "name": "立入禁止区域: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "作業エリア: {work_area}"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "ヘッドライトモード",
+        "state": {
+          "always_on": "常時点灯",
+          "always_off": "常時消灯",
+          "evening_only": "夕方のみ",
+          "evening_and_night": "夕方と夜間"
+        }
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "バルブ"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "芝刈り機"
+      },
+      "automower": {
+        "name": "芝刈り機"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "刈り高さ"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "刈り高さ: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "スケジュール上書き"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "位置"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "刈り取りスケジュール"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "エラー確認"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "芝刈り機イベント",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "刈り取り開始",
+              "stopped": "停止",
+              "leaving": "出発",
+              "searching": "探索中",
+              "charging": "充電中",
+              "parked": "駐車中",
+              "paused": "一時停止",
+              "error": "エラー",
+              "error_cleared": "エラー解消"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "バルブイベント",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "散水開始",
+              "stopped_watering": "散水停止",
+              "error": "エラー",
+              "error_cleared": "エラー解消"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "ソケットイベント",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "オン",
+              "turned_off": "オフ",
+              "error": "エラー",
+              "error_cleared": "エラー解消"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "芝刈り機イベント",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "刈り取り開始",
+              "stopped": "停止",
+              "going_home": "帰還中",
+              "charging": "充電中",
+              "leaving": "ステーション出発",
+              "parked": "駐車中",
+              "paused": "一時停止",
+              "error": "エラー",
+              "error_cleared": "エラー解消"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "散水開始",
+      "description": "スケジュールを上書きして、指定した時間バルブの散水を開始します。",
+      "fields": {
+        "duration": {
+          "name": "時間",
+          "description": "分単位の時間（1–1440）。"
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "指定時間オン",
+      "description": "スマートソケットを指定した時間オンにします。",
+      "fields": {
+        "duration": {
+          "name": "時間",
+          "description": "分単位の時間（1–1440）。"
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "スケジュール上書き",
+      "description": "スケジュールを無視して、指定した時間強制的に刈り取りを行います。",
+      "fields": {
+        "duration": {
+          "name": "時間",
+          "description": "分単位の時間（1–480）。"
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "追って通知があるまで駐車",
+      "description": "芝刈り機を無期限に駐車します。手動で再開するまで充電ステーションに留まります。"
+    },
+    "resume_schedule": {
+      "name": "スケジュール再開",
+      "description": "芝刈り機の自動刈り取りスケジュールを再開します。"
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "デバイスへのコマンド送信に失敗しました: {error}"
+    },
+    "device_unavailable": {
+      "message": "デバイスは現在利用できません。"
+    },
+    "command_throttled": {
+      "message": "コマンドの送信が速すぎます。APIレート制限を超えないよう、コマンド間に数秒の間隔を空けてください。"
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "WebSocket接続が切断されました",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "WebSocket再接続",
+            "description": "Husqvarnaクラウドとのリアルタイム接続が中断されました。統合は現在ポーリングをフォールバックとして使用しています。再接続を試みるには確認してください。"
+          }
+        }
+      }
+    }
+  }
+}

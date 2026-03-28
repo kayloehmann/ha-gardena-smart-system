@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Povežite se s Husqvarno",
+        "description": "Vnesite poverilnice iz vaše aplikacije na portalu za razvijalce Husqvarna.",
+        "data": {
+          "client_id": "Ključ aplikacije (Client ID)",
+          "client_secret": "Skrivnost aplikacije"
+        },
+        "data_description": {
+          "client_id": "Ključ aplikacije iz vašega razvojnega računa Husqvarna.",
+          "client_secret": "Skrivnost aplikacije iz vašega razvojnega računa Husqvarna."
+        }
+      },
+      "api_type": {
+        "title": "Izberite API",
+        "description": "Izberite, s katerim API-jem Husqvarna se želite povezati. Oba lahko dodate z dvakratno nastavitvijo integracije.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Izberite svoj vrt",
+        "description": "V vašem računu je bilo najdenih več vrtov. Izberite tistega, ki ga želite dodati.",
+        "data": {
+          "location_id": "Vrt"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Ponovna overitev",
+        "description": "Vaše poverilnice niso več veljavne. Prosimo, znova vnesite poverilnice aplikacije.",
+        "data": {
+          "client_id": "Ključ aplikacije (Client ID)",
+          "client_secret": "Skrivnost aplikacije"
+        }
+      },
+      "reconfigure": {
+        "title": "Ponovna konfiguracija",
+        "description": "Posodobite poverilnice aplikacije.",
+        "data": {
+          "client_id": "Ključ aplikacije (Client ID)",
+          "client_secret": "Skrivnost aplikacije"
+        }
+      },
+      "reconfigure_location": {
+        "title": "Izberite vrt",
+        "description": "Najdenih je bilo več vrtov. Izberite, kateri vrt naj ta vnos uporablja.",
+        "data": {
+          "location_id": "Vrt"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Neveljavne poverilnice. Preverite ključ in skrivnost aplikacije na portalu za razvijalce Husqvarna.",
+      "forbidden": "Dostop do API-ja zavrnjen. Prepričajte se, da je API Gardena Smart System povezan z vašo aplikacijo na portalu za razvijalce Husqvarna.",
+      "automower_not_connected": "API Automower Connect ni povezan z vašo aplikacijo. Omogočite ga na portalu za razvijalce Husqvarna pod Povezani API-ji.",
+      "rate_limited": "Dosežena omejitev API zahtevkov ali začasna blokada. Počakajte nekaj minut in poskusite znova ali ustvarite novo aplikacijo na portalu za razvijalce Husqvarna.",
+      "cannot_connect": "Ni mogoče vzpostaviti povezave z API-jem. Preverite omrežno povezavo in poskusite znova.",
+      "unknown": "Prišlo je do nepričakovane napake."
+    },
+    "abort": {
+      "already_configured": "Ta konfiguracija že obstaja.",
+      "reauth_successful": "Ponovna overitev je bila uspešna.",
+      "reconfigure_successful": "Ponovna konfiguracija je bila uspešna."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Nastavitve Gardena Smart System",
+        "data": {
+          "default_watering_minutes": "Privzeto trajanje zalivanja",
+          "default_socket_minutes": "Privzeto trajanje vtičnice",
+          "poll_interval_minutes": "Interval poizvedovanja"
+        },
+        "data_description": {
+          "default_watering_minutes": "Trajanje v minutah pri odpiranju ventila brez navedbe trajanja (1-1440).",
+          "default_socket_minutes": "Trajanje v minutah pri vklopu vtičnice (1-1440). Nastavite na 1440 (24 ur) za skoraj neskončno delovanje.",
+          "poll_interval_minutes": "Kako pogosto poizvedovati API za posodobitve v minutah (5-1440). Nižje vrednosti zagotavljajo svežejše podatke, vendar porabijo več API kvote. Privzeto: 30 (Gardena) / 15 (Automower)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Baterija"
+      },
+      "rf_link_level": {
+        "name": "Moč signala"
+      },
+      "soil_humidity": {
+        "name": "Vlažnost tal"
+      },
+      "soil_temperature": {
+        "name": "Temperatura tal"
+      },
+      "ambient_temperature": {
+        "name": "Temperatura okolice"
+      },
+      "light_intensity": {
+        "name": "Intenzivnost svetlobe"
+      },
+      "mower_operating_hours": {
+        "name": "Obratovalne ure"
+      },
+      "mower_activity": {
+        "name": "Aktivnost kosilnice"
+      },
+      "mower_last_error_code": {
+        "name": "Zadnja koda napake"
+      },
+      "automower_battery_level": {
+        "name": "Baterija"
+      },
+      "automower_cutting_height": {
+        "name": "Višina košnje"
+      },
+      "automower_next_start": {
+        "name": "Naslednji zagon"
+      },
+      "automower_total_cutting_time": {
+        "name": "Skupni čas košnje"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Cikli polnjenja"
+      },
+      "automower_total_collisions": {
+        "name": "Trki"
+      },
+      "automower_total_drive_distance": {
+        "name": "Skupna prevožena razdalja"
+      },
+      "automower_blade_usage_time": {
+        "name": "Čas uporabe rezila"
+      },
+      "automower_total_running_time": {
+        "name": "Skupni čas delovanja"
+      },
+      "automower_total_searching_time": {
+        "name": "Skupni čas iskanja"
+      },
+      "automower_activity": {
+        "name": "Aktivnost",
+        "state": {
+          "unknown": "Neznano",
+          "not_applicable": "Ni relevantno",
+          "mowing": "Košnja",
+          "going_home": "Vračanje",
+          "charging": "Polnjenje",
+          "leaving": "Odhajanje",
+          "parked_in_cs": "Parkirana",
+          "stopped_in_garden": "Ustavljena v vrtu"
+        }
+      },
+      "automower_state": {
+        "name": "Stanje",
+        "state": {
+          "unknown": "Neznano",
+          "not_applicable": "Ni relevantno",
+          "paused": "Začasno ustavljena",
+          "in_operation": "V delovanju",
+          "wait_updating": "Posodabljanje",
+          "wait_power_up": "Zagon",
+          "restricted": "Omejeno",
+          "off": "Izklopljeno",
+          "stopped": "Ustavljeno",
+          "error": "Napaka",
+          "fatal_error": "Usodna napaka",
+          "error_at_power_up": "Napaka pri zagonu"
+        }
+      },
+      "automower_inactive_reason": {
+        "name": "Razlog neaktivnosti"
+      },
+      "automower_restricted_reason": {
+        "name": "Razlog omejitve",
+        "state": {
+          "none": "Brez",
+          "week_schedule": "Tedenski urnik",
+          "park_override": "Prisilno parkiranje",
+          "sensor": "Senzor",
+          "daily_limit": "Dnevna omejitev",
+          "fota": "Posodobitev vdelane programske opreme",
+          "frost": "Zmrzal",
+          "all_work_areas_completed": "Vsa območja končana",
+          "external": "Zunanji",
+          "not_applicable": "Ni relevantno"
+        }
+      },
+      "automower_error_code": {
+        "name": "Koda napake"
+      },
+      "automower_error_code_timestamp": {
+        "name": "Čas zadnje napake"
+      },
+      "automower_total_charging_time": {
+        "name": "Skupni čas polnjenja"
+      },
+      "automower_planner_override": {
+        "name": "Preglasitev urnika",
+        "state": {
+          "not_active": "Ni aktivno",
+          "force_park": "Prisilno parkiranje",
+          "force_mow": "Prisilna košnja"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Zadnjič videna"
+      },
+      "battery_state": {
+        "name": "Stanje baterije",
+        "state": {
+          "ok": "OK",
+          "low": "Nizko",
+          "replace_now": "Zamenjajte zdaj",
+          "out_of_operation": "Izven obratovanja",
+          "charging": "Polnjenje",
+          "no_battery": "Ni baterije",
+          "unknown": "Neznano"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Preostali čas delovanja"
+      },
+      "power_socket_last_error_code": {
+        "name": "Zadnja koda napake"
+      },
+      "valve_last_error_code": {
+        "name": "Koda napake ventila"
+      },
+      "valve_remaining_duration": {
+        "name": "Preostali čas zalivanja"
+      },
+      "hub_device_count": {
+        "name": "Število naprav"
+      },
+      "hub_polling_interval": {
+        "name": "Interval poizvedovanja"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Nizka baterija"
+      },
+      "valve_error": {
+        "name": "Napaka ventila"
+      },
+      "mower_error": {
+        "name": "Napaka kosilnice"
+      },
+      "automower_error": {
+        "name": "Napaka"
+      },
+      "automower_connected": {
+        "name": "Povezano"
+      },
+      "rf_link_online": {
+        "name": "RF povezava"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket povezan"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Napajanje"
+      },
+      "automower_headlight": {
+        "name": "Žaromet"
+      },
+      "automower_stay_out_zone": {
+        "name": "Prepovedano območje: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Delovno območje: {work_area}"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Način žarometov",
+        "state": {
+          "always_on": "Vedno vklopljeni",
+          "always_off": "Vedno izklopljeni",
+          "evening_only": "Samo zvečer",
+          "evening_and_night": "Zvečer in ponoči"
+        }
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Ventil"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Kosilnica"
+      },
+      "automower": {
+        "name": "Kosilnica"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Višina košnje"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Višina košnje: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Preglasitev urnika"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Položaj"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Urnik košnje"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Potrdi napako"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "Dogodek kosilnice",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "Košnja začeta",
+              "stopped": "Ustavljeno",
+              "leaving": "Odhajanje",
+              "searching": "Iskanje",
+              "charging": "Polnjenje",
+              "parked": "Parkirana",
+              "paused": "Začasno ustavljena",
+              "error": "Napaka",
+              "error_cleared": "Napaka odpravljena"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Dogodek ventila",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Zalivanje začeto",
+              "stopped_watering": "Zalivanje ustavljeno",
+              "error": "Napaka",
+              "error_cleared": "Napaka odpravljena"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Dogodek vtičnice",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Vklopljeno",
+              "turned_off": "Izklopljeno",
+              "error": "Napaka",
+              "error_cleared": "Napaka odpravljena"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Dogodek kosilnice",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Košnja začeta",
+              "stopped": "Ustavljeno",
+              "going_home": "Vračanje",
+              "charging": "Polnjenje",
+              "leaving": "Zapuščanje postaje",
+              "parked": "Parkirana",
+              "paused": "Začasno ustavljena",
+              "error": "Napaka",
+              "error_cleared": "Napaka odpravljena"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Začni zalivanje",
+      "description": "Začnite zalivanje ventila za določeno trajanje, s preglasitvijo urnika.",
+      "fields": {
+        "duration": {
+          "name": "Trajanje",
+          "description": "Trajanje v minutah (1–1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Vklopi za",
+      "description": "Vklopite pametno vtičnico za določeno trajanje.",
+      "fields": {
+        "duration": {
+          "name": "Trajanje",
+          "description": "Trajanje v minutah (1–1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Preglasi urnik",
+      "description": "Prisilno zaženite košnjo za določeno trajanje, brez upoštevanja urnika.",
+      "fields": {
+        "duration": {
+          "name": "Trajanje",
+          "description": "Trajanje v minutah (1–480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Parkiraj do nadaljnjega",
+      "description": "Parkirajte kosilnico za nedoločen čas. Ostala bo v polnilni postaji, dokler je ročno ne zaženete."
+    },
+    "resume_schedule": {
+      "name": "Nadaljuj urnik",
+      "description": "Nadaljujte samodejni urnik košnje."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Ukaza ni bilo mogoče poslati napravi: {error}"
+    },
+    "device_unavailable": {
+      "message": "Naprava trenutno ni na voljo."
+    },
+    "command_throttled": {
+      "message": "Ukazi se pošiljajo prehitro. Prosimo, počakajte nekaj sekund med ukazi, da se izognete preseganju omejitve API."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "WebSocket povezava izgubljena",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Ponovna vzpostavitev WebSocket povezave",
+            "description": "Povezava v realnem času z oblakom Husqvarna je bila prekinjena. Integracija trenutno kot nadomestilo uporablja poizvedovanje. Potrdite za poskus ponovne vzpostavitve."
+          }
+        }
+      }
+    }
+  }
+}

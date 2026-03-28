@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Povežite se s Husqvarnom",
+        "description": "Unesite vjerodajnice iz vaše aplikacije na Husqvarna razvojnom portalu.",
+        "data": {
+          "client_id": "Ključ aplikacije (Client ID)",
+          "client_secret": "Tajna aplikacije"
+        },
+        "data_description": {
+          "client_id": "Ključ aplikacije iz vašeg Husqvarna razvojnog računa.",
+          "client_secret": "Tajna aplikacije iz vašeg Husqvarna razvojnog računa."
+        }
+      },
+      "api_type": {
+        "title": "Odaberite API",
+        "description": "Odaberite na koji se Husqvarna API želite povezati. Možete dodati oba postavljanjem integracije dva puta.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Odaberite svoj vrt",
+        "description": "Na vašem računu pronađeno je više vrtova. Odaberite onaj koji želite dodati.",
+        "data": {
+          "location_id": "Vrt"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Ponovna autentifikacija",
+        "description": "Vaše vjerodajnice više nisu važeće. Molimo unesite vjerodajnice aplikacije ponovo.",
+        "data": {
+          "client_id": "Ključ aplikacije (Client ID)",
+          "client_secret": "Tajna aplikacije"
+        }
+      },
+      "reconfigure": {
+        "title": "Ponovno konfiguriranje",
+        "description": "Ažurirajte vjerodajnice aplikacije.",
+        "data": {
+          "client_id": "Ključ aplikacije (Client ID)",
+          "client_secret": "Tajna aplikacije"
+        }
+      },
+      "reconfigure_location": {
+        "title": "Odaberite vrt",
+        "description": "Pronađeno je više vrtova. Odaberite koji vrt ovaj unos treba koristiti.",
+        "data": {
+          "location_id": "Vrt"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Nevažeće vjerodajnice. Provjerite ključ i tajnu aplikacije na Husqvarna razvojnom portalu.",
+      "forbidden": "API pristup odbijen. Provjerite je li Gardena Smart System API povezan s vašom aplikacijom na Husqvarna razvojnom portalu.",
+      "automower_not_connected": "Automower Connect API nije povezan s vašom aplikacijom. Omogućite ga na Husqvarna razvojnom portalu pod Povezani API-ji.",
+      "rate_limited": "Dosegnuto ograničenje API zahtjeva ili privremena blokada. Pričekajte nekoliko minuta i pokušajte ponovo ili stvorite novu aplikaciju na Husqvarna razvojnom portalu.",
+      "cannot_connect": "Nije moguće povezati se s API-jem. Provjerite mrežnu vezu i pokušajte ponovo.",
+      "unknown": "Došlo je do neočekivane pogreške."
+    },
+    "abort": {
+      "already_configured": "Ova konfiguracija već postoji.",
+      "reauth_successful": "Ponovna autentifikacija uspješna.",
+      "reconfigure_successful": "Ponovno konfiguriranje uspješno."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Postavke Gardena Smart System",
+        "data": {
+          "default_watering_minutes": "Zadano trajanje zalijevanja",
+          "default_socket_minutes": "Zadano trajanje utičnice",
+          "poll_interval_minutes": "Interval prozivanja"
+        },
+        "data_description": {
+          "default_watering_minutes": "Trajanje u minutama pri otvaranju ventila bez navođenja trajanja (1-1440).",
+          "default_socket_minutes": "Trajanje u minutama pri uključivanju utičnice (1-1440). Postavite na 1440 (24 h) za gotovo neograničen rad.",
+          "poll_interval_minutes": "Koliko često prozivati API za ažuriranja u minutama (5-1440). Niže vrijednosti daju svježije podatke, ali troše više API kvote. Zadano: 30 (Gardena) / 15 (Automower)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Baterija"
+      },
+      "rf_link_level": {
+        "name": "Jačina signala"
+      },
+      "soil_humidity": {
+        "name": "Vlažnost tla"
+      },
+      "soil_temperature": {
+        "name": "Temperatura tla"
+      },
+      "ambient_temperature": {
+        "name": "Temperatura okoline"
+      },
+      "light_intensity": {
+        "name": "Intenzitet svjetla"
+      },
+      "mower_operating_hours": {
+        "name": "Radni sati"
+      },
+      "mower_activity": {
+        "name": "Aktivnost kosilice"
+      },
+      "mower_last_error_code": {
+        "name": "Posljednji kod pogreške"
+      },
+      "automower_battery_level": {
+        "name": "Baterija"
+      },
+      "automower_cutting_height": {
+        "name": "Visina košnje"
+      },
+      "automower_next_start": {
+        "name": "Sljedeći start"
+      },
+      "automower_total_cutting_time": {
+        "name": "Ukupno vrijeme košnje"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Ciklusi punjenja"
+      },
+      "automower_total_collisions": {
+        "name": "Sudari"
+      },
+      "automower_total_drive_distance": {
+        "name": "Ukupna prijeđena udaljenost"
+      },
+      "automower_blade_usage_time": {
+        "name": "Vrijeme korištenja noža"
+      },
+      "automower_total_running_time": {
+        "name": "Ukupno vrijeme rada"
+      },
+      "automower_total_searching_time": {
+        "name": "Ukupno vrijeme traženja"
+      },
+      "automower_activity": {
+        "name": "Aktivnost",
+        "state": {
+          "unknown": "Nepoznato",
+          "not_applicable": "Nije primjenjivo",
+          "mowing": "Košnja",
+          "going_home": "Vraćanje",
+          "charging": "Punjenje",
+          "leaving": "Odlazak",
+          "parked_in_cs": "Parkirana",
+          "stopped_in_garden": "Zaustavljena u vrtu"
+        }
+      },
+      "automower_state": {
+        "name": "Stanje",
+        "state": {
+          "unknown": "Nepoznato",
+          "not_applicable": "Nije primjenjivo",
+          "paused": "Pauzirana",
+          "in_operation": "U radu",
+          "wait_updating": "Ažuriranje",
+          "wait_power_up": "Pokretanje",
+          "restricted": "Ograničeno",
+          "off": "Isključeno",
+          "stopped": "Zaustavljeno",
+          "error": "Pogreška",
+          "fatal_error": "Fatalna pogreška",
+          "error_at_power_up": "Pogreška pri pokretanju"
+        }
+      },
+      "automower_inactive_reason": {
+        "name": "Razlog neaktivnosti"
+      },
+      "automower_restricted_reason": {
+        "name": "Razlog ograničenja",
+        "state": {
+          "none": "Nema",
+          "week_schedule": "Tjedni raspored",
+          "park_override": "Prisilno parkiranje",
+          "sensor": "Senzor",
+          "daily_limit": "Dnevni limit",
+          "fota": "Ažuriranje firmvera",
+          "frost": "Mraz",
+          "all_work_areas_completed": "Sve zone završene",
+          "external": "Vanjsko",
+          "not_applicable": "Nije primjenjivo"
+        }
+      },
+      "automower_error_code": {
+        "name": "Kod pogreške"
+      },
+      "automower_error_code_timestamp": {
+        "name": "Vrijeme posljednje pogreške"
+      },
+      "automower_total_charging_time": {
+        "name": "Ukupno vrijeme punjenja"
+      },
+      "automower_planner_override": {
+        "name": "Premošćivanje rasporeda",
+        "state": {
+          "not_active": "Nije aktivno",
+          "force_park": "Prisilno parkiranje",
+          "force_mow": "Prisilna košnja"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Zadnje viđena"
+      },
+      "battery_state": {
+        "name": "Stanje baterije",
+        "state": {
+          "ok": "OK",
+          "low": "Nisko",
+          "replace_now": "Zamijenite odmah",
+          "out_of_operation": "Izvan pogona",
+          "charging": "Punjenje",
+          "no_battery": "Nema baterije",
+          "unknown": "Nepoznato"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Preostalo vrijeme rada"
+      },
+      "power_socket_last_error_code": {
+        "name": "Posljednji kod pogreške"
+      },
+      "valve_last_error_code": {
+        "name": "Kod pogreške ventila"
+      },
+      "valve_remaining_duration": {
+        "name": "Preostalo vrijeme zalijevanja"
+      },
+      "hub_device_count": {
+        "name": "Broj uređaja"
+      },
+      "hub_polling_interval": {
+        "name": "Interval prozivanja"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Niska baterija"
+      },
+      "valve_error": {
+        "name": "Pogreška ventila"
+      },
+      "mower_error": {
+        "name": "Pogreška kosilice"
+      },
+      "automower_error": {
+        "name": "Pogreška"
+      },
+      "automower_connected": {
+        "name": "Povezano"
+      },
+      "rf_link_online": {
+        "name": "RF veza"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket povezan"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Napajanje"
+      },
+      "automower_headlight": {
+        "name": "Far"
+      },
+      "automower_stay_out_zone": {
+        "name": "Zabranjena zona: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Radna zona: {work_area}"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Način rada farova",
+        "state": {
+          "always_on": "Uvijek uključeni",
+          "always_off": "Uvijek isključeni",
+          "evening_only": "Samo navečer",
+          "evening_and_night": "Navečer i noću"
+        }
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Ventil"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Kosilica"
+      },
+      "automower": {
+        "name": "Kosilica"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Visina košnje"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Visina košnje: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Premošćivanje rasporeda"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Pozicija"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Raspored košnje"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Potvrdi pogrešku"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "Događaj kosilice",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "Započeta košnja",
+              "stopped": "Zaustavljeno",
+              "leaving": "Odlazak",
+              "searching": "Traženje",
+              "charging": "Punjenje",
+              "parked": "Parkirana",
+              "paused": "Pauzirana",
+              "error": "Pogreška",
+              "error_cleared": "Pogreška uklonjena"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Događaj ventila",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Započeto zalijevanje",
+              "stopped_watering": "Zalijevanje zaustavljeno",
+              "error": "Pogreška",
+              "error_cleared": "Pogreška uklonjena"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Događaj utičnice",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Uključeno",
+              "turned_off": "Isključeno",
+              "error": "Pogreška",
+              "error_cleared": "Pogreška uklonjena"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Događaj kosilice",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Započeta košnja",
+              "stopped": "Zaustavljeno",
+              "going_home": "Vraćanje",
+              "charging": "Punjenje",
+              "leaving": "Napuštanje stanice",
+              "parked": "Parkirana",
+              "paused": "Pauzirana",
+              "error": "Pogreška",
+              "error_cleared": "Pogreška uklonjena"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Započni zalijevanje",
+      "description": "Započnite zalijevanje ventila na određeno trajanje, premošćujući raspored.",
+      "fields": {
+        "duration": {
+          "name": "Trajanje",
+          "description": "Trajanje u minutama (1–1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Uključi na",
+      "description": "Uključite pametnu utičnicu na određeno trajanje.",
+      "fields": {
+        "duration": {
+          "name": "Trajanje",
+          "description": "Trajanje u minutama (1–1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Premosti raspored",
+      "description": "Prisilno pokrenite košnju na određeno trajanje, ignorirajući raspored.",
+      "fields": {
+        "duration": {
+          "name": "Trajanje",
+          "description": "Trajanje u minutama (1–480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Parkiraj do daljnjeg",
+      "description": "Parkirajte kosilicu na neodređeno vrijeme. Ostat će u stanici za punjenje dok se ručno ne pokrene."
+    },
+    "resume_schedule": {
+      "name": "Nastavi raspored",
+      "description": "Nastavite automatski raspored košnje."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Nije uspjelo slanje naredbe uređaju: {error}"
+    },
+    "device_unavailable": {
+      "message": "Uređaj trenutno nije dostupan."
+    },
+    "command_throttled": {
+      "message": "Naredbe se šalju prebrzo. Molimo pričekajte nekoliko sekundi između naredbi kako biste izbjegli prekoračenje API ograničenja."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "WebSocket veza izgubljena",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Ponovno povezivanje WebSocketa",
+            "description": "Veza u stvarnom vremenu s oblakom Husqvarna prekinuta je. Integracija trenutno koristi prozivanje kao zamjenu. Potvrdite za pokušaj ponovnog povezivanja."
+          }
+        }
+      }
+    }
+  }
+}

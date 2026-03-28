@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Ühenda Husqvarna-ga",
+        "description": "Sisesta oma rakenduse mandaadid Husqvarna arendajaportaalist.",
+        "data": {
+          "client_id": "Rakenduse võti (Client ID)",
+          "client_secret": "Rakenduse saladus"
+        },
+        "data_description": {
+          "client_id": "Rakenduse võti sinu Husqvarna arendajakontolt.",
+          "client_secret": "Rakenduse saladus sinu Husqvarna arendajakontolt."
+        }
+      },
+      "api_type": {
+        "title": "Vali API",
+        "description": "Vali, millise Husqvarna API-ga ühenduda. Mõlemad saad lisada, seadistades integratsiooni kaks korda.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Vali oma aed",
+        "description": "Sinu kontol leiti mitu aeda. Vali see, mille soovid lisada.",
+        "data": {
+          "location_id": "Aed"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Taasautentimine",
+        "description": "Sinu mandaadid ei kehti enam. Palun sisesta oma rakenduse mandaadid uuesti.",
+        "data": {
+          "client_id": "Rakenduse võti (Client ID)",
+          "client_secret": "Rakenduse saladus"
+        }
+      },
+      "reconfigure": {
+        "title": "Seadista ümber",
+        "description": "Uuenda oma rakenduse mandaate.",
+        "data": {
+          "client_id": "Rakenduse võti (Client ID)",
+          "client_secret": "Rakenduse saladus"
+        }
+      },
+      "reconfigure_location": {
+        "title": "Vali aed",
+        "description": "Leiti mitu aeda. Vali, millist aeda see kirje peaks kasutama.",
+        "data": {
+          "location_id": "Aed"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Vigased mandaadid. Kontrolli oma rakenduse võtit ja saladust Husqvarna arendajaportaalis.",
+      "forbidden": "API juurdepääs keelatud. Veendu, et Gardena Smart System API on ühendatud sinu rakendusega Husqvarna arendajaportaalis.",
+      "automower_not_connected": "Automower Connect API ei ole sinu rakendusega ühendatud. Luba see Husqvarna arendajaportaalis jaotises Ühendatud API-d.",
+      "rate_limited": "API päringulimiit on saavutatud või ajutiselt blokeeritud. Oota mõni minut ja proovi uuesti või loo uus rakendus Husqvarna arendajaportaalis.",
+      "cannot_connect": "API-ga ei saa ühendust. Kontrolli oma võrguühendust ja proovi uuesti.",
+      "unknown": "Ilmnes ootamatu viga."
+    },
+    "abort": {
+      "already_configured": "See seadistus on juba olemas.",
+      "reauth_successful": "Taasautentimine õnnestus.",
+      "reconfigure_successful": "Ümberseadistamine õnnestus."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Gardena Smart System valikud",
+        "data": {
+          "default_watering_minutes": "Vaikimisi kastmiskestus",
+          "default_socket_minutes": "Vaikimisi pistikupesa kestus",
+          "poll_interval_minutes": "Küsitlusintervall"
+        },
+        "data_description": {
+          "default_watering_minutes": "Kestus minutites klapi avamisel ilma kestust määramata (1–1440).",
+          "default_socket_minutes": "Kestus minutites pistikupesa sisselülitamisel (1–1440). Määra 1440 (24h) peaaegu pidevaks tööks.",
+          "poll_interval_minutes": "Kui tihti küsitakse API-lt uuendusi minutites (5–1440). Väiksemad väärtused annavad värskemat teavet, kuid tarbivad rohkem API kvooti. Vaikimisi: 30 (Gardena) / 15 (Automower)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Aku"
+      },
+      "rf_link_level": {
+        "name": "Signaali tugevus"
+      },
+      "soil_humidity": {
+        "name": "Mullaniiskus"
+      },
+      "soil_temperature": {
+        "name": "Mulla temperatuur"
+      },
+      "ambient_temperature": {
+        "name": "Ümbritsev temperatuur"
+      },
+      "light_intensity": {
+        "name": "Valguse intensiivsus"
+      },
+      "mower_operating_hours": {
+        "name": "Töötunnid"
+      },
+      "mower_activity": {
+        "name": "Muruniiduki tegevus"
+      },
+      "mower_last_error_code": {
+        "name": "Viimane veakood"
+      },
+      "automower_battery_level": {
+        "name": "Aku"
+      },
+      "automower_cutting_height": {
+        "name": "Niitmiskõrgus"
+      },
+      "automower_next_start": {
+        "name": "Järgmine käivitus"
+      },
+      "automower_total_cutting_time": {
+        "name": "Niitmise koguaeg"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Laadimistsüklid"
+      },
+      "automower_total_collisions": {
+        "name": "Kokkupõrked"
+      },
+      "automower_total_drive_distance": {
+        "name": "Sõidu koguteekond"
+      },
+      "automower_blade_usage_time": {
+        "name": "Terade kasutusaeg"
+      },
+      "automower_total_running_time": {
+        "name": "Töö koguaeg"
+      },
+      "automower_total_searching_time": {
+        "name": "Otsimise koguaeg"
+      },
+      "automower_activity": {
+        "name": "Tegevus",
+        "state": {
+          "unknown": "Teadmata",
+          "not_applicable": "Ei kohaldu",
+          "mowing": "Niidab",
+          "going_home": "Läheb koju",
+          "charging": "Laeb",
+          "leaving": "Lahkub",
+          "parked_in_cs": "Pargitud",
+          "stopped_in_garden": "Peatunud aias"
+        }
+      },
+      "automower_state": {
+        "name": "Olek",
+        "state": {
+          "unknown": "Teadmata",
+          "not_applicable": "Ei kohaldu",
+          "paused": "Peatatud",
+          "in_operation": "Töötab",
+          "wait_updating": "Uuendamine",
+          "wait_power_up": "Käivitumine",
+          "restricted": "Piiratud",
+          "off": "Väljas",
+          "stopped": "Peatatud",
+          "error": "Viga",
+          "fatal_error": "Kriitiline viga",
+          "error_at_power_up": "Viga käivitumisel"
+        }
+      },
+      "automower_inactive_reason": {
+        "name": "Passiivsuse põhjus"
+      },
+      "automower_restricted_reason": {
+        "name": "Piirangu põhjus",
+        "state": {
+          "none": "Puudub",
+          "week_schedule": "Nädala ajakava",
+          "park_override": "Parkimise tühistamine",
+          "sensor": "Andur",
+          "daily_limit": "Päevalimiit",
+          "fota": "Tarkvara uuendus",
+          "frost": "Külm",
+          "all_work_areas_completed": "Kõik tööalad lõpetatud",
+          "external": "Väline",
+          "not_applicable": "Ei kohaldu"
+        }
+      },
+      "automower_error_code": {
+        "name": "Veakood"
+      },
+      "automower_error_code_timestamp": {
+        "name": "Viimase vea aeg"
+      },
+      "automower_total_charging_time": {
+        "name": "Laadimise koguaeg"
+      },
+      "automower_planner_override": {
+        "name": "Ajakava tühistamine",
+        "state": {
+          "not_active": "Pole aktiivne",
+          "force_park": "Sundpargi",
+          "force_mow": "Sundniida"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Viimati nähtud"
+      },
+      "battery_state": {
+        "name": "Aku olek",
+        "state": {
+          "ok": "OK",
+          "low": "Madal",
+          "replace_now": "Vaheta kohe",
+          "out_of_operation": "Kasutusest väljas",
+          "charging": "Laeb",
+          "no_battery": "Aku puudub",
+          "unknown": "Teadmata"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Järelejäänud tööaeg"
+      },
+      "power_socket_last_error_code": {
+        "name": "Viimane veakood"
+      },
+      "valve_last_error_code": {
+        "name": "Klapi veakood"
+      },
+      "valve_remaining_duration": {
+        "name": "Järelejäänud kastmisaeg"
+      },
+      "hub_device_count": {
+        "name": "Seadmete arv"
+      },
+      "hub_polling_interval": {
+        "name": "Küsitlusintervall"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Aku tühi"
+      },
+      "valve_error": {
+        "name": "Klapi viga"
+      },
+      "mower_error": {
+        "name": "Muruniiduki viga"
+      },
+      "automower_error": {
+        "name": "Viga"
+      },
+      "automower_connected": {
+        "name": "Ühendatud"
+      },
+      "rf_link_online": {
+        "name": "RF ühendus"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket ühendatud"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Toide"
+      },
+      "automower_headlight": {
+        "name": "Esituli"
+      },
+      "automower_stay_out_zone": {
+        "name": "Keelutsoon: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Tööala: {work_area}"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Esitule režiim",
+        "state": {
+          "always_on": "Alati sees",
+          "always_off": "Alati väljas",
+          "evening_only": "Ainult õhtul",
+          "evening_and_night": "Õhtul ja öösel"
+        }
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Klapp"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Muruniiduk"
+      },
+      "automower": {
+        "name": "Muruniiduk"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Niitmiskõrgus"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Niitmiskõrgus: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Ajakava tühistamine"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Asukoht"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Niitmiskava"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Kinnita viga"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "Muruniiduki sündmus",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "Alustas niitmist",
+              "stopped": "Peatatud",
+              "leaving": "Lahkub",
+              "searching": "Otsib",
+              "charging": "Laeb",
+              "parked": "Pargitud",
+              "paused": "Peatatud",
+              "error": "Viga",
+              "error_cleared": "Viga kustutatud"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Klapi sündmus",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Alustas kastmist",
+              "stopped_watering": "Lõpetas kastmise",
+              "error": "Viga",
+              "error_cleared": "Viga kustutatud"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Pistikupesa sündmus",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Sisse lülitatud",
+              "turned_off": "Välja lülitatud",
+              "error": "Viga",
+              "error_cleared": "Viga kustutatud"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Muruniiduki sündmus",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Alustas niitmist",
+              "stopped": "Peatatud",
+              "going_home": "Läheb koju",
+              "charging": "Laeb",
+              "leaving": "Lahkub jaamast",
+              "parked": "Pargitud",
+              "paused": "Peatatud",
+              "error": "Viga",
+              "error_cleared": "Viga kustutatud"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Alusta kastmist",
+      "description": "Alusta klapi kastmist kindla kestusega, tühistades ajakava.",
+      "fields": {
+        "duration": {
+          "name": "Kestus",
+          "description": "Kestus minutites (1–1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Lülita sisse ajaks",
+      "description": "Lülita nutikas pistikupesa sisse kindlaks ajaks.",
+      "fields": {
+        "duration": {
+          "name": "Kestus",
+          "description": "Kestus minutites (1–1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Tühista ajakava",
+      "description": "Sunni muruniidukut niitma kindla kestuse jooksul, eirates ajakava.",
+      "fields": {
+        "duration": {
+          "name": "Kestus",
+          "description": "Kestus minutites (1–480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Pargi kuni uue korralduseni",
+      "description": "Pargi muruniiduk määramata ajaks. See jääb laadimisjaama, kuni käsitsi jätkatakse."
+    },
+    "resume_schedule": {
+      "name": "Jätka ajakava",
+      "description": "Jätka muruniiduki automaatset niitmiskava."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Käsu saatmine seadmele ebaõnnestus: {error}"
+    },
+    "device_unavailable": {
+      "message": "Seade pole praegu saadaval."
+    },
+    "command_throttled": {
+      "message": "Käske saadetakse liiga kiiresti. Palun oota mõni sekund käskude vahel, et vältida API päringulimiidi ületamist."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "WebSocket ühendus katkes",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Ühenda WebSocket uuesti",
+            "description": "Reaalajas ühendus Husqvarna pilvega katkes. Integratsioon kasutab praegu varulahendusena küsitlust. Kinnita ühenduse taastamise katseks."
+          }
+        }
+      }
+    }
+  }
+}

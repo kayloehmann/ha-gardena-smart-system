@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Husqvarna'ya Bağlan",
+        "description": "Husqvarna Geliştirici Portalı'ndaki uygulamanızın kimlik bilgilerini girin.",
+        "data": {
+          "client_id": "Uygulama Anahtarı (Client ID)",
+          "client_secret": "Uygulama Gizli Anahtarı"
+        },
+        "data_description": {
+          "client_id": "Husqvarna geliştirici hesabınızdaki uygulama anahtarı.",
+          "client_secret": "Husqvarna geliştirici hesabınızdaki uygulama gizli anahtarı."
+        }
+      },
+      "api_type": {
+        "title": "API Seçin",
+        "description": "Hangi Husqvarna API'sine bağlanacağınızı seçin. Entegrasyonu iki kez kurarak her ikisini de ekleyebilirsiniz.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Bahçenizi seçin",
+        "description": "Hesabınızda birden fazla bahçe bulundu. Eklemek istediğinizi seçin.",
+        "data": {
+          "location_id": "Bahçe"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Yeniden Kimlik Doğrulama",
+        "description": "Kimlik bilgileriniz artık geçerli değil. Lütfen uygulama kimlik bilgilerinizi tekrar girin.",
+        "data": {
+          "client_id": "Uygulama Anahtarı (Client ID)",
+          "client_secret": "Uygulama Gizli Anahtarı"
+        }
+      },
+      "reconfigure": {
+        "title": "Yeniden Yapılandır",
+        "description": "Uygulama kimlik bilgilerinizi güncelleyin.",
+        "data": {
+          "client_id": "Uygulama Anahtarı (Client ID)",
+          "client_secret": "Uygulama Gizli Anahtarı"
+        }
+      },
+      "reconfigure_location": {
+        "title": "Bahçe seçin",
+        "description": "Birden fazla bahçe bulundu. Bu girdinin hangi bahçeyi kullanacağını seçin.",
+        "data": {
+          "location_id": "Bahçe"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Geçersiz kimlik bilgileri. Husqvarna Geliştirici Portalı'ndaki uygulama anahtarınızı ve gizli anahtarınızı kontrol edin.",
+      "forbidden": "API erişimi reddedildi. Husqvarna Geliştirici Portalı'nda Gardena Smart System API'sinin uygulamanıza bağlı olduğundan emin olun.",
+      "automower_not_connected": "Automower Connect API uygulamanıza bağlı değil. Husqvarna Geliştirici Portalı'nda Bağlı API'ler altından etkinleştirin.",
+      "rate_limited": "API hız sınırına ulaşıldı veya geçici olarak engellendi. Birkaç dakika bekleyip tekrar deneyin ya da Husqvarna Geliştirici Portalı'nda yeni bir uygulama oluşturun.",
+      "cannot_connect": "API'ye bağlanılamıyor. Ağ bağlantınızı kontrol edip tekrar deneyin.",
+      "unknown": "Beklenmeyen bir hata oluştu."
+    },
+    "abort": {
+      "already_configured": "Bu yapılandırma zaten mevcut.",
+      "reauth_successful": "Yeniden kimlik doğrulama başarılı oldu.",
+      "reconfigure_successful": "Yeniden yapılandırma başarılı oldu."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Gardena Smart System Seçenekleri",
+        "data": {
+          "default_watering_minutes": "Varsayılan sulama süresi",
+          "default_socket_minutes": "Varsayılan akıllı priz süresi",
+          "poll_interval_minutes": "Sorgulama aralığı"
+        },
+        "data_description": {
+          "default_watering_minutes": "Süre belirtilmeden vana açıldığında dakika cinsinden süre (1-1440).",
+          "default_socket_minutes": "Akıllı priz açıldığında dakika cinsinden süre (1-1440). Neredeyse süresiz çalışma için 1440 (24 saat) olarak ayarlayın.",
+          "poll_interval_minutes": "API'den güncellemeleri sorgulamak için dakika cinsinden aralık (5-1440). Düşük değerler daha güncel veri sağlar ancak daha fazla API kotası tüketir. Varsayılan: 30 (Gardena) / 15 (Automower)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Pil"
+      },
+      "rf_link_level": {
+        "name": "Sinyal gücü"
+      },
+      "soil_humidity": {
+        "name": "Toprak nemi"
+      },
+      "soil_temperature": {
+        "name": "Toprak sıcaklığı"
+      },
+      "ambient_temperature": {
+        "name": "Ortam sıcaklığı"
+      },
+      "light_intensity": {
+        "name": "Işık yoğunluğu"
+      },
+      "mower_operating_hours": {
+        "name": "Çalışma saatleri"
+      },
+      "mower_activity": {
+        "name": "Biçici etkinliği"
+      },
+      "mower_last_error_code": {
+        "name": "Son hata kodu"
+      },
+      "automower_battery_level": {
+        "name": "Pil"
+      },
+      "automower_cutting_height": {
+        "name": "Kesim yüksekliği"
+      },
+      "automower_next_start": {
+        "name": "Sonraki başlangıç"
+      },
+      "automower_total_cutting_time": {
+        "name": "Toplam kesim süresi"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Şarj döngüleri"
+      },
+      "automower_total_collisions": {
+        "name": "Çarpışmalar"
+      },
+      "automower_total_drive_distance": {
+        "name": "Toplam sürüş mesafesi"
+      },
+      "automower_blade_usage_time": {
+        "name": "Bıçak kullanım süresi"
+      },
+      "automower_total_running_time": {
+        "name": "Toplam çalışma süresi"
+      },
+      "automower_total_searching_time": {
+        "name": "Toplam arama süresi"
+      },
+      "automower_activity": {
+        "name": "Etkinlik",
+        "state": {
+          "unknown": "Bilinmiyor",
+          "not_applicable": "Uygulanamaz",
+          "mowing": "Biçiyor",
+          "going_home": "Eve dönüyor",
+          "charging": "Şarj oluyor",
+          "leaving": "Ayrılıyor",
+          "parked_in_cs": "Park halinde",
+          "stopped_in_garden": "Bahçede durdu"
+        }
+      },
+      "automower_state": {
+        "name": "Durum",
+        "state": {
+          "unknown": "Bilinmiyor",
+          "not_applicable": "Uygulanamaz",
+          "paused": "Duraklatıldı",
+          "in_operation": "Çalışıyor",
+          "wait_updating": "Güncelleniyor",
+          "wait_power_up": "Başlatılıyor",
+          "restricted": "Kısıtlı",
+          "off": "Kapalı",
+          "stopped": "Durduruldu",
+          "error": "Hata",
+          "fatal_error": "Kritik hata",
+          "error_at_power_up": "Başlatmada hata"
+        }
+      },
+      "automower_inactive_reason": {
+        "name": "Etkisizlik nedeni"
+      },
+      "automower_restricted_reason": {
+        "name": "Kısıtlama nedeni",
+        "state": {
+          "none": "Yok",
+          "week_schedule": "Haftalık program",
+          "park_override": "Park geçersiz kılma",
+          "sensor": "Sensör",
+          "daily_limit": "Günlük sınır",
+          "fota": "Yazılım güncellemesi",
+          "frost": "Don",
+          "all_work_areas_completed": "Tüm çalışma alanları tamamlandı",
+          "external": "Harici",
+          "not_applicable": "Uygulanamaz"
+        }
+      },
+      "automower_error_code": {
+        "name": "Hata kodu"
+      },
+      "automower_error_code_timestamp": {
+        "name": "Son hata zamanı"
+      },
+      "automower_total_charging_time": {
+        "name": "Toplam şarj süresi"
+      },
+      "automower_planner_override": {
+        "name": "Program geçersiz kılma",
+        "state": {
+          "not_active": "Etkin değil",
+          "force_park": "Zorla park et",
+          "force_mow": "Zorla biç"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Son görülme"
+      },
+      "battery_state": {
+        "name": "Pil durumu",
+        "state": {
+          "ok": "İyi",
+          "low": "Düşük",
+          "replace_now": "Hemen değiştirin",
+          "out_of_operation": "Çalışma dışı",
+          "charging": "Şarj oluyor",
+          "no_battery": "Pil yok",
+          "unknown": "Bilinmiyor"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Kalan güç süresi"
+      },
+      "power_socket_last_error_code": {
+        "name": "Son hata kodu"
+      },
+      "valve_last_error_code": {
+        "name": "Vana hata kodu"
+      },
+      "valve_remaining_duration": {
+        "name": "Kalan sulama süresi"
+      },
+      "hub_device_count": {
+        "name": "Cihaz sayısı"
+      },
+      "hub_polling_interval": {
+        "name": "Sorgulama aralığı"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Pil düşük"
+      },
+      "valve_error": {
+        "name": "Vana hatası"
+      },
+      "mower_error": {
+        "name": "Biçici hatası"
+      },
+      "automower_error": {
+        "name": "Hata"
+      },
+      "automower_connected": {
+        "name": "Bağlı"
+      },
+      "rf_link_online": {
+        "name": "RF bağlantısı"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket bağlı"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Güç"
+      },
+      "automower_headlight": {
+        "name": "Far"
+      },
+      "automower_stay_out_zone": {
+        "name": "Girilmez bölge: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Çalışma alanı: {work_area}"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Far modu",
+        "state": {
+          "always_on": "Her zaman açık",
+          "always_off": "Her zaman kapalı",
+          "evening_only": "Yalnızca akşam",
+          "evening_and_night": "Akşam ve gece"
+        }
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Vana"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Çim biçici"
+      },
+      "automower": {
+        "name": "Çim biçici"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Kesim yüksekliği"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Kesim yüksekliği: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Program geçersiz kılma"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Konum"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Biçim programı"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Hatayı onayla"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "Biçici olayı",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "Kesim başladı",
+              "stopped": "Durduruldu",
+              "leaving": "Ayrılıyor",
+              "searching": "Arıyor",
+              "charging": "Şarj oluyor",
+              "parked": "Park halinde",
+              "paused": "Duraklatıldı",
+              "error": "Hata",
+              "error_cleared": "Hata temizlendi"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Vana olayı",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Sulama başladı",
+              "stopped_watering": "Sulama durduruldu",
+              "error": "Hata",
+              "error_cleared": "Hata temizlendi"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Akıllı priz olayı",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Açıldı",
+              "turned_off": "Kapatıldı",
+              "error": "Hata",
+              "error_cleared": "Hata temizlendi"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Biçici olayı",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Biçim başladı",
+              "stopped": "Durduruldu",
+              "going_home": "Eve dönüyor",
+              "charging": "Şarj oluyor",
+              "leaving": "İstasyondan ayrılıyor",
+              "parked": "Park halinde",
+              "paused": "Duraklatıldı",
+              "error": "Hata",
+              "error_cleared": "Hata temizlendi"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Sulamayı başlat",
+      "description": "Programı geçersiz kılarak belirli bir süre boyunca vanayı çalıştır.",
+      "fields": {
+        "duration": {
+          "name": "Süre",
+          "description": "Dakika cinsinden süre (1–1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Belirli süre aç",
+      "description": "Akıllı prizi belirli bir süre boyunca açar.",
+      "fields": {
+        "duration": {
+          "name": "Süre",
+          "description": "Dakika cinsinden süre (1–1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Programı geçersiz kıl",
+      "description": "Biçicinin programını yoksayarak belirli bir süre biçim yapmasını sağlar.",
+      "fields": {
+        "duration": {
+          "name": "Süre",
+          "description": "Dakika cinsinden süre (1–480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Süresiz park et",
+      "description": "Biçiciyi süresiz olarak park eder. Elle devam ettirilene kadar şarj istasyonunda kalır."
+    },
+    "resume_schedule": {
+      "name": "Programı devam ettir",
+      "description": "Biçicinin otomatik biçim programını devam ettirir."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Cihaza komut gönderilemedi: {error}"
+    },
+    "device_unavailable": {
+      "message": "Cihaz şu anda kullanılamıyor."
+    },
+    "command_throttled": {
+      "message": "Komutlar çok hızlı gönderiliyor. API hız sınırını aşmamak için lütfen komutlar arasında birkaç saniye bekleyin."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "WebSocket bağlantısı kesildi",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "WebSocket'i Yeniden Bağla",
+            "description": "Husqvarna bulutuna olan gerçek zamanlı bağlantı kesildi. Entegrasyon şu anda yedek olarak sorgulama yöntemini kullanıyor. Yeniden bağlantı denemek için onaylayın."
+          }
+        }
+      }
+    }
+  }
+}

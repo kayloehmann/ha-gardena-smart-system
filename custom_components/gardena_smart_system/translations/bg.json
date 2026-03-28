@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Свързване с Husqvarna",
+        "description": "Въведете данните от вашето приложение в портала за разработчици на Husqvarna.",
+        "data": {
+          "client_id": "Ключ на приложението (Client ID)",
+          "client_secret": "Секрет на приложението"
+        },
+        "data_description": {
+          "client_id": "Ключът на приложението от вашия акаунт на разработчик в Husqvarna.",
+          "client_secret": "Секретът на приложението от вашия акаунт на разработчик в Husqvarna."
+        }
+      },
+      "api_type": {
+        "title": "Изберете API",
+        "description": "Изберете към кой API на Husqvarna да се свържете. Можете да добавите и двата, като настроите интеграцията два пъти.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Изберете вашата градина",
+        "description": "Намерени са няколко градини във вашия акаунт. Изберете тази, която искате да добавите.",
+        "data": {
+          "location_id": "Градина"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Повторна автентикация",
+        "description": "Вашите данни вече не са валидни. Моля, въведете данните на приложението отново.",
+        "data": {
+          "client_id": "Ключ на приложението (Client ID)",
+          "client_secret": "Секрет на приложението"
+        }
+      },
+      "reconfigure": {
+        "title": "Преконфигуриране",
+        "description": "Актуализирайте данните на приложението.",
+        "data": {
+          "client_id": "Ключ на приложението (Client ID)",
+          "client_secret": "Секрет на приложението"
+        }
+      },
+      "reconfigure_location": {
+        "title": "Изберете градина",
+        "description": "Намерени са няколко градини. Изберете коя градина да използва този запис.",
+        "data": {
+          "location_id": "Градина"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Невалидни данни. Проверете ключа и секрета на приложението в портала за разработчици на Husqvarna.",
+      "forbidden": "Достъпът до API е отказан. Уверете се, че API на Gardena Smart System е свързан с вашето приложение в портала за разработчици на Husqvarna.",
+      "automower_not_connected": "API на Automower Connect не е свързан с вашето приложение. Активирайте го в портала за разработчици на Husqvarna в раздел Свързани API-та.",
+      "rate_limited": "Достигнат е лимитът на API заявките или временно блокиране. Изчакайте няколко минути и опитайте отново, или създайте ново приложение в портала за разработчици на Husqvarna.",
+      "cannot_connect": "Неуспешно свързване с API. Проверете мрежовата връзка и опитайте отново.",
+      "unknown": "Възникна неочаквана грешка."
+    },
+    "abort": {
+      "already_configured": "Тази конфигурация вече съществува.",
+      "reauth_successful": "Повторната автентикация беше успешна.",
+      "reconfigure_successful": "Преконфигурирането беше успешно."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Настройки на Gardena Smart System",
+        "data": {
+          "default_watering_minutes": "Продължителност на поливане по подразбиране",
+          "default_socket_minutes": "Продължителност на контакта по подразбиране",
+          "poll_interval_minutes": "Интервал на запитване"
+        },
+        "data_description": {
+          "default_watering_minutes": "Продължителност в минути при отваряне на клапан без указване на продължителност (1-1440).",
+          "default_socket_minutes": "Продължителност в минути при включване на контакт (1-1440). Задайте 1440 (24 ч) за почти безкрайна работа.",
+          "poll_interval_minutes": "Колко често да се запитва API за обновления в минути (5-1440). По-ниските стойности осигуряват по-свежи данни, но изразходват повече API квота. По подразбиране: 30 (Gardena) / 15 (Automower)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Батерия"
+      },
+      "rf_link_level": {
+        "name": "Сила на сигнала"
+      },
+      "soil_humidity": {
+        "name": "Влажност на почвата"
+      },
+      "soil_temperature": {
+        "name": "Температура на почвата"
+      },
+      "ambient_temperature": {
+        "name": "Околна температура"
+      },
+      "light_intensity": {
+        "name": "Интензивност на светлината"
+      },
+      "mower_operating_hours": {
+        "name": "Работни часове"
+      },
+      "mower_activity": {
+        "name": "Дейност на косачката"
+      },
+      "mower_last_error_code": {
+        "name": "Последен код на грешка"
+      },
+      "automower_battery_level": {
+        "name": "Батерия"
+      },
+      "automower_cutting_height": {
+        "name": "Височина на рязане"
+      },
+      "automower_next_start": {
+        "name": "Следващо стартиране"
+      },
+      "automower_total_cutting_time": {
+        "name": "Общо време на рязане"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Цикли на зареждане"
+      },
+      "automower_total_collisions": {
+        "name": "Сблъсъци"
+      },
+      "automower_total_drive_distance": {
+        "name": "Общо изминато разстояние"
+      },
+      "automower_blade_usage_time": {
+        "name": "Време на използване на ножа"
+      },
+      "automower_total_running_time": {
+        "name": "Общо време на работа"
+      },
+      "automower_total_searching_time": {
+        "name": "Общо време на търсене"
+      },
+      "automower_activity": {
+        "name": "Дейност",
+        "state": {
+          "unknown": "Неизвестно",
+          "not_applicable": "Неприложимо",
+          "mowing": "Косене",
+          "going_home": "Връщане",
+          "charging": "Зареждане",
+          "leaving": "Тръгване",
+          "parked_in_cs": "Паркирана",
+          "stopped_in_garden": "Спряна в градината"
+        }
+      },
+      "automower_state": {
+        "name": "Състояние",
+        "state": {
+          "unknown": "Неизвестно",
+          "not_applicable": "Неприложимо",
+          "paused": "На пауза",
+          "in_operation": "В работа",
+          "wait_updating": "Актуализиране",
+          "wait_power_up": "Стартиране",
+          "restricted": "Ограничено",
+          "off": "Изключено",
+          "stopped": "Спряно",
+          "error": "Грешка",
+          "fatal_error": "Фатална грешка",
+          "error_at_power_up": "Грешка при стартиране"
+        }
+      },
+      "automower_inactive_reason": {
+        "name": "Причина за неактивност"
+      },
+      "automower_restricted_reason": {
+        "name": "Причина за ограничение",
+        "state": {
+          "none": "Няма",
+          "week_schedule": "Седмичен график",
+          "park_override": "Принудително паркиране",
+          "sensor": "Сензор",
+          "daily_limit": "Дневен лимит",
+          "fota": "Актуализация на фърмуер",
+          "frost": "Замръзване",
+          "all_work_areas_completed": "Всички зони завършени",
+          "external": "Външно",
+          "not_applicable": "Неприложимо"
+        }
+      },
+      "automower_error_code": {
+        "name": "Код на грешка"
+      },
+      "automower_error_code_timestamp": {
+        "name": "Време на последна грешка"
+      },
+      "automower_total_charging_time": {
+        "name": "Общо време на зареждане"
+      },
+      "automower_planner_override": {
+        "name": "Отмяна на графика",
+        "state": {
+          "not_active": "Не е активно",
+          "force_park": "Принудително паркиране",
+          "force_mow": "Принудително косене"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Последно видяна"
+      },
+      "battery_state": {
+        "name": "Състояние на батерията",
+        "state": {
+          "ok": "OK",
+          "low": "Ниско",
+          "replace_now": "Сменете сега",
+          "out_of_operation": "Извън експлоатация",
+          "charging": "Зареждане",
+          "no_battery": "Няма батерия",
+          "unknown": "Неизвестно"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Оставащо време на работа"
+      },
+      "power_socket_last_error_code": {
+        "name": "Последен код на грешка"
+      },
+      "valve_last_error_code": {
+        "name": "Код на грешка на клапан"
+      },
+      "valve_remaining_duration": {
+        "name": "Оставащо време на поливане"
+      },
+      "hub_device_count": {
+        "name": "Брой устройства"
+      },
+      "hub_polling_interval": {
+        "name": "Интервал на запитване"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Ниска батерия"
+      },
+      "valve_error": {
+        "name": "Грешка на клапан"
+      },
+      "mower_error": {
+        "name": "Грешка на косачка"
+      },
+      "automower_error": {
+        "name": "Грешка"
+      },
+      "automower_connected": {
+        "name": "Свързано"
+      },
+      "rf_link_online": {
+        "name": "RF връзка"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket свързан"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Захранване"
+      },
+      "automower_headlight": {
+        "name": "Фар"
+      },
+      "automower_stay_out_zone": {
+        "name": "Забранена зона: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Работна зона: {work_area}"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Режим на фаровете",
+        "state": {
+          "always_on": "Винаги включени",
+          "always_off": "Винаги изключени",
+          "evening_only": "Само вечер",
+          "evening_and_night": "Вечер и нощ"
+        }
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Клапан"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Косачка"
+      },
+      "automower": {
+        "name": "Косачка"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Височина на рязане"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Височина на рязане: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Отмяна на графика"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Позиция"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "График на косене"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Потвърждаване на грешка"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "Събитие на косачка",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "Започнато рязане",
+              "stopped": "Спряно",
+              "leaving": "Тръгване",
+              "searching": "Търсене",
+              "charging": "Зареждане",
+              "parked": "Паркирана",
+              "paused": "На пауза",
+              "error": "Грешка",
+              "error_cleared": "Грешката е изчистена"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Събитие на клапан",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Започнато поливане",
+              "stopped_watering": "Поливането спряно",
+              "error": "Грешка",
+              "error_cleared": "Грешката е изчистена"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Събитие на контакт",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Включено",
+              "turned_off": "Изключено",
+              "error": "Грешка",
+              "error_cleared": "Грешката е изчистена"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Събитие на косачка",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Започнато косене",
+              "stopped": "Спряно",
+              "going_home": "Връщане",
+              "charging": "Зареждане",
+              "leaving": "Напускане на станцията",
+              "parked": "Паркирана",
+              "paused": "На пауза",
+              "error": "Грешка",
+              "error_cleared": "Грешката е изчистена"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Започни поливане",
+      "description": "Започнете поливане на клапан за определена продължителност, отменяйки графика.",
+      "fields": {
+        "duration": {
+          "name": "Продължителност",
+          "description": "Продължителност в минути (1–1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Включи за",
+      "description": "Включете умен контакт за определена продължителност.",
+      "fields": {
+        "duration": {
+          "name": "Продължителност",
+          "description": "Продължителност в минути (1–1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Отмяна на графика",
+      "description": "Принудително косене за определена продължителност, игнорирайки графика.",
+      "fields": {
+        "duration": {
+          "name": "Продължителност",
+          "description": "Продължителност в минути (1–480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Паркирай до следващо известие",
+      "description": "Паркирайте косачката за неопределено време. Ще остане в зарядната станция, докато не бъде подновена ръчно."
+    },
+    "resume_schedule": {
+      "name": "Възобнови графика",
+      "description": "Възобновете автоматичния график за косене."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Неуспешно изпращане на команда към устройството: {error}"
+    },
+    "device_unavailable": {
+      "message": "Устройството е временно недостъпно."
+    },
+    "command_throttled": {
+      "message": "Командите се изпращат твърде бързо. Моля, изчакайте няколко секунди между командите, за да избегнете превишаване на лимита на API."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "WebSocket връзката е загубена",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Повторно свързване на WebSocket",
+            "description": "Връзката в реално време с облака на Husqvarna беше прекъсната. Интеграцията в момента използва запитване като резервен вариант. Потвърдете за опит за повторно свързване."
+          }
+        }
+      }
+    }
+  }
+}

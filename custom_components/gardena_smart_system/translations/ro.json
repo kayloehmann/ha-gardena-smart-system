@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Conectare la Husqvarna",
+        "description": "Introduceți datele de autentificare din aplicația dumneavoastră de pe Portalul pentru Dezvoltatori Husqvarna.",
+        "data": {
+          "client_id": "Cheie aplicație (Client ID)",
+          "client_secret": "Secret aplicație"
+        },
+        "data_description": {
+          "client_id": "Cheia aplicației din contul dumneavoastră de dezvoltator Husqvarna.",
+          "client_secret": "Secretul aplicației din contul dumneavoastră de dezvoltator Husqvarna."
+        }
+      },
+      "api_type": {
+        "title": "Selectare API",
+        "description": "Alegeți la care API Husqvarna să vă conectați. Puteți adăuga ambele configurând integrarea de două ori.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Selectați grădina",
+        "description": "Au fost găsite mai multe grădini în contul dumneavoastră. Selectați-o pe cea pe care doriți să o adăugați.",
+        "data": {
+          "location_id": "Grădină"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reautentificare",
+        "description": "Datele dumneavoastră de autentificare nu mai sunt valide. Vă rugăm să introduceți din nou datele aplicației.",
+        "data": {
+          "client_id": "Cheie aplicație (Client ID)",
+          "client_secret": "Secret aplicație"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigurare",
+        "description": "Actualizați datele de autentificare ale aplicației.",
+        "data": {
+          "client_id": "Cheie aplicație (Client ID)",
+          "client_secret": "Secret aplicație"
+        }
+      },
+      "reconfigure_location": {
+        "title": "Selectare grădină",
+        "description": "Au fost găsite mai multe grădini. Selectați care grădină să fie utilizată de această intrare.",
+        "data": {
+          "location_id": "Grădină"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Date de autentificare invalide. Verificați cheia și secretul aplicației pe Portalul pentru Dezvoltatori Husqvarna.",
+      "forbidden": "Acces API refuzat. Asigurați-vă că API-ul Gardena Smart System este conectat la aplicația dumneavoastră în Portalul pentru Dezvoltatori Husqvarna.",
+      "automower_not_connected": "API-ul Automower Connect nu este conectat la aplicația dumneavoastră. Activați-l în Portalul pentru Dezvoltatori Husqvarna la secțiunea API-uri conectate.",
+      "rate_limited": "Limita de rată API a fost atinsă sau sunteți temporar blocat. Așteptați câteva minute și încercați din nou, sau creați o aplicație nouă în Portalul pentru Dezvoltatori Husqvarna.",
+      "cannot_connect": "Nu s-a putut conecta la API. Verificați conexiunea la rețea și încercați din nou.",
+      "unknown": "A apărut o eroare neașteptată."
+    },
+    "abort": {
+      "already_configured": "Această configurație există deja.",
+      "reauth_successful": "Reautentificarea a fost realizată cu succes.",
+      "reconfigure_successful": "Reconfigurarea a fost realizată cu succes."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opțiuni Gardena Smart System",
+        "data": {
+          "default_watering_minutes": "Durata implicită de udare",
+          "default_socket_minutes": "Durata implicită priză inteligentă",
+          "poll_interval_minutes": "Interval de interogare"
+        },
+        "data_description": {
+          "default_watering_minutes": "Durata în minute la deschiderea unei valve fără a specifica o durată (1-1440).",
+          "default_socket_minutes": "Durata în minute la pornirea unei prize inteligente (1-1440). Setați la 1440 (24h) pentru funcționare aproape nedeterminată.",
+          "poll_interval_minutes": "Cât de des să se interogheze API-ul pentru actualizări, în minute (5-1440). Valorile mai mici oferă date mai recente, dar consumă mai multă cotă API. Implicit: 30 (Gardena) / 15 (Automower)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Baterie"
+      },
+      "rf_link_level": {
+        "name": "Puterea semnalului"
+      },
+      "soil_humidity": {
+        "name": "Umiditatea solului"
+      },
+      "soil_temperature": {
+        "name": "Temperatura solului"
+      },
+      "ambient_temperature": {
+        "name": "Temperatura ambientală"
+      },
+      "light_intensity": {
+        "name": "Intensitatea luminii"
+      },
+      "mower_operating_hours": {
+        "name": "Ore de funcționare"
+      },
+      "mower_activity": {
+        "name": "Activitate mașină de tuns"
+      },
+      "mower_last_error_code": {
+        "name": "Ultimul cod de eroare"
+      },
+      "automower_battery_level": {
+        "name": "Baterie"
+      },
+      "automower_cutting_height": {
+        "name": "Înălțime de tăiere"
+      },
+      "automower_next_start": {
+        "name": "Următoarea pornire"
+      },
+      "automower_total_cutting_time": {
+        "name": "Timp total de tăiere"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Cicluri de încărcare"
+      },
+      "automower_total_collisions": {
+        "name": "Coliziuni"
+      },
+      "automower_total_drive_distance": {
+        "name": "Distanță totală parcursă"
+      },
+      "automower_blade_usage_time": {
+        "name": "Timp de utilizare lame"
+      },
+      "automower_total_running_time": {
+        "name": "Timp total de funcționare"
+      },
+      "automower_total_searching_time": {
+        "name": "Timp total de căutare"
+      },
+      "automower_activity": {
+        "name": "Activitate",
+        "state": {
+          "unknown": "Necunoscut",
+          "not_applicable": "Nu se aplică",
+          "mowing": "Tunde",
+          "going_home": "Se întoarce acasă",
+          "charging": "Se încarcă",
+          "leaving": "Pleacă",
+          "parked_in_cs": "Parcată",
+          "stopped_in_garden": "Oprită în grădină"
+        }
+      },
+      "automower_state": {
+        "name": "Stare",
+        "state": {
+          "unknown": "Necunoscut",
+          "not_applicable": "Nu se aplică",
+          "paused": "În pauză",
+          "in_operation": "În funcțiune",
+          "wait_updating": "Se actualizează",
+          "wait_power_up": "Pornire",
+          "restricted": "Restricționat",
+          "off": "Oprit",
+          "stopped": "Oprit",
+          "error": "Eroare",
+          "fatal_error": "Eroare fatală",
+          "error_at_power_up": "Eroare la pornire"
+        }
+      },
+      "automower_inactive_reason": {
+        "name": "Motiv inactivitate"
+      },
+      "automower_restricted_reason": {
+        "name": "Motiv restricție",
+        "state": {
+          "none": "Niciunul",
+          "week_schedule": "Program săptămânal",
+          "park_override": "Parcare forțată",
+          "sensor": "Senzor",
+          "daily_limit": "Limită zilnică",
+          "fota": "Actualizare firmware",
+          "frost": "Îngheț",
+          "all_work_areas_completed": "Toate zonele de lucru finalizate",
+          "external": "Extern",
+          "not_applicable": "Nu se aplică"
+        }
+      },
+      "automower_error_code": {
+        "name": "Cod eroare"
+      },
+      "automower_error_code_timestamp": {
+        "name": "Momentul ultimei erori"
+      },
+      "automower_total_charging_time": {
+        "name": "Timp total de încărcare"
+      },
+      "automower_planner_override": {
+        "name": "Suprascriere program",
+        "state": {
+          "not_active": "Inactiv",
+          "force_park": "Parcare forțată",
+          "force_mow": "Tundere forțată"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Ultima activitate"
+      },
+      "battery_state": {
+        "name": "Stare baterie",
+        "state": {
+          "ok": "OK",
+          "low": "Scăzut",
+          "replace_now": "Înlocuiți acum",
+          "out_of_operation": "Scoasă din funcțiune",
+          "charging": "Se încarcă",
+          "no_battery": "Fără baterie",
+          "unknown": "Necunoscut"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Timp rămas de alimentare"
+      },
+      "power_socket_last_error_code": {
+        "name": "Ultimul cod de eroare"
+      },
+      "valve_last_error_code": {
+        "name": "Cod eroare supapă"
+      },
+      "valve_remaining_duration": {
+        "name": "Timp rămas de udare"
+      },
+      "hub_device_count": {
+        "name": "Număr dispozitive"
+      },
+      "hub_polling_interval": {
+        "name": "Interval de interogare"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Baterie scăzută"
+      },
+      "valve_error": {
+        "name": "Eroare supapă"
+      },
+      "mower_error": {
+        "name": "Eroare mașină de tuns"
+      },
+      "automower_error": {
+        "name": "Eroare"
+      },
+      "automower_connected": {
+        "name": "Conectat"
+      },
+      "rf_link_online": {
+        "name": "Legătură RF"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket conectat"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Alimentare"
+      },
+      "automower_headlight": {
+        "name": "Far"
+      },
+      "automower_stay_out_zone": {
+        "name": "Zonă interzisă: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Zonă de lucru: {work_area}"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Mod faruri",
+        "state": {
+          "always_on": "Întotdeauna pornit",
+          "always_off": "Întotdeauna oprit",
+          "evening_only": "Doar seara",
+          "evening_and_night": "Seara și noaptea"
+        }
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Supapă"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Mașină de tuns"
+      },
+      "automower": {
+        "name": "Mașină de tuns"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Înălțime de tăiere"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Înălțime de tăiere: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Suprascriere program"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Poziție"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Program de tundere"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Confirmare eroare"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "Eveniment mașină de tuns",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "A început tăierea",
+              "stopped": "Oprit",
+              "leaving": "Pleacă",
+              "searching": "Caută",
+              "charging": "Se încarcă",
+              "parked": "Parcată",
+              "paused": "În pauză",
+              "error": "Eroare",
+              "error_cleared": "Eroare rezolvată"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Eveniment supapă",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Udarea a început",
+              "stopped_watering": "Udarea s-a oprit",
+              "error": "Eroare",
+              "error_cleared": "Eroare rezolvată"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Eveniment priză inteligentă",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Pornit",
+              "turned_off": "Oprit",
+              "error": "Eroare",
+              "error_cleared": "Eroare rezolvată"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Eveniment mașină de tuns",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "A început tunderea",
+              "stopped": "Oprit",
+              "going_home": "Se întoarce acasă",
+              "charging": "Se încarcă",
+              "leaving": "Pleacă din stație",
+              "parked": "Parcată",
+              "paused": "În pauză",
+              "error": "Eroare",
+              "error_cleared": "Eroare rezolvată"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Pornire udare",
+      "description": "Pornește udarea unei supape pentru o durată specificată, ignorând programul.",
+      "fields": {
+        "duration": {
+          "name": "Durată",
+          "description": "Durată în minute (1-1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Pornire pentru",
+      "description": "Pornește o priză inteligentă pentru o durată specificată.",
+      "fields": {
+        "duration": {
+          "name": "Durată",
+          "description": "Durată în minute (1-1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Suprascriere program",
+      "description": "Forțează mașina de tuns să tundă pentru o durată specificată, ignorând programul.",
+      "fields": {
+        "duration": {
+          "name": "Durată",
+          "description": "Durată în minute (1-480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Parcare până la noi instrucțiuni",
+      "description": "Parchează mașina de tuns pe termen nedeterminat. Va rămâne în stația de încărcare până la reluarea manuală."
+    },
+    "resume_schedule": {
+      "name": "Reluare program",
+      "description": "Reia programul automat de tundere al mașinii de tuns."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Trimiterea comenzii către dispozitiv a eșuat: {error}"
+    },
+    "device_unavailable": {
+      "message": "Dispozitivul este momentan indisponibil."
+    },
+    "command_throttled": {
+      "message": "Comenzile sunt trimise prea rapid. Vă rugăm să așteptați câteva secunde între comenzi pentru a evita depășirea limitei de rată API."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "Conexiunea WebSocket a fost pierdută",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Reconectare WebSocket",
+            "description": "Conexiunea în timp real cu cloud-ul Husqvarna a fost întreruptă. Integrarea utilizează în prezent interogarea ca alternativă. Confirmați pentru a încerca reconectarea."
+          }
+        }
+      }
+    }
+  }
+}

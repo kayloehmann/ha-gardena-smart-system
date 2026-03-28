@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Подключение к Husqvarna",
+        "description": "Введите учётные данные приложения с портала разработчиков Husqvarna.",
+        "data": {
+          "client_id": "Ключ приложения (Client ID)",
+          "client_secret": "Секрет приложения"
+        },
+        "data_description": {
+          "client_id": "Ключ приложения из вашей учётной записи разработчика Husqvarna.",
+          "client_secret": "Секрет приложения из вашей учётной записи разработчика Husqvarna."
+        }
+      },
+      "api_type": {
+        "title": "Выбрать API",
+        "description": "Выберите API Husqvarna. Можно добавить оба, настроив интеграцию дважды.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Выберите ваш сад",
+        "description": "Найдено несколько садов. Выберите нужный.",
+        "data": {
+          "location_id": "Сад"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Повторная аутентификация",
+        "description": "Ваши учётные данные недействительны. Введите их заново.",
+        "data": {
+          "client_id": "Ключ приложения (Client ID)",
+          "client_secret": "Секрет приложения"
+        }
+      },
+      "reconfigure": {
+        "title": "Перенастройка",
+        "description": "Обновите учётные данные приложения.",
+        "data": {
+          "client_id": "Ключ приложения (Client ID)",
+          "client_secret": "Секрет приложения"
+        }
+      },
+      "reconfigure_location": {
+        "title": "Выбрать сад",
+        "description": "Найдено несколько садов. Выберите сад для этой записи.",
+        "data": {
+          "location_id": "Сад"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Неверные учётные данные.",
+      "forbidden": "Доступ к API запрещён.",
+      "automower_not_connected": "API Automower Connect не подключён к вашему приложению.",
+      "rate_limited": "Превышен лимит запросов API.",
+      "cannot_connect": "Не удалось подключиться к API.",
+      "unknown": "Произошла непредвиденная ошибка."
+    },
+    "abort": {
+      "already_configured": "Эта конфигурация уже существует.",
+      "reauth_successful": "Повторная аутентификация прошла успешно.",
+      "reconfigure_successful": "Перенастройка прошла успешно."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Настройки Gardena Smart System",
+        "data": {
+          "default_watering_minutes": "Длительность полива по умолчанию",
+          "default_socket_minutes": "Длительность розетки по умолчанию",
+          "poll_interval_minutes": "Интервал опроса"
+        },
+        "data_description": {
+          "default_watering_minutes": "Длительность в минутах при открытии клапана (1-1440).",
+          "default_socket_minutes": "Длительность в минутах при включении розетки (1-1440).",
+          "poll_interval_minutes": "Частота опроса API в минутах (5-1440)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Батарея"
+      },
+      "rf_link_level": {
+        "name": "Уровень сигнала"
+      },
+      "soil_humidity": {
+        "name": "Влажность почвы"
+      },
+      "soil_temperature": {
+        "name": "Температура почвы"
+      },
+      "ambient_temperature": {
+        "name": "Температура воздуха"
+      },
+      "light_intensity": {
+        "name": "Освещённость"
+      },
+      "mower_operating_hours": {
+        "name": "Часы работы"
+      },
+      "mower_activity": {
+        "name": "Активность косилки"
+      },
+      "mower_last_error_code": {
+        "name": "Последний код ошибки"
+      },
+      "automower_battery_level": {
+        "name": "Батарея"
+      },
+      "automower_cutting_height": {
+        "name": "Высота стрижки"
+      },
+      "automower_next_start": {
+        "name": "Следующий запуск"
+      },
+      "automower_total_cutting_time": {
+        "name": "Общее время стрижки"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Циклы зарядки"
+      },
+      "automower_total_collisions": {
+        "name": "Столкновения"
+      },
+      "automower_total_drive_distance": {
+        "name": "Общий пробег"
+      },
+      "automower_blade_usage_time": {
+        "name": "Время использования ножей"
+      },
+      "automower_total_running_time": {
+        "name": "Общее время работы"
+      },
+      "automower_total_searching_time": {
+        "name": "Общее время поиска"
+      },
+      "automower_activity": {
+        "name": "Активность",
+        "state": {
+          "unknown": "Неизвестно",
+          "not_applicable": "Не применимо",
+          "mowing": "Стрижка",
+          "going_home": "Возвращается",
+          "charging": "Зарядка",
+          "leaving": "Выезжает",
+          "parked_in_cs": "На станции",
+          "stopped_in_garden": "Остановлен в саду"
+        }
+      },
+      "automower_state": {
+        "name": "Состояние",
+        "state": {
+          "unknown": "Неизвестно",
+          "not_applicable": "Не применимо",
+          "paused": "Пауза",
+          "in_operation": "В работе",
+          "wait_updating": "Обновление",
+          "wait_power_up": "Запуск",
+          "restricted": "Ограничено",
+          "off": "Выключено",
+          "stopped": "Остановлено",
+          "error": "Ошибка",
+          "fatal_error": "Критическая ошибка",
+          "error_at_power_up": "Ошибка при запуске"
+        }
+      },
+      "automower_inactive_reason": {
+        "name": "Причина неактивности"
+      },
+      "automower_restricted_reason": {
+        "name": "Причина ограничения",
+        "state": {
+          "none": "Нет",
+          "week_schedule": "Недельное расписание",
+          "park_override": "Принудительная парковка",
+          "sensor": "Датчик",
+          "daily_limit": "Дневной лимит",
+          "fota": "Обновление прошивки",
+          "frost": "Мороз",
+          "all_work_areas_completed": "Все зоны завершены",
+          "external": "Внешнее",
+          "not_applicable": "Не применимо"
+        }
+      },
+      "automower_error_code": {
+        "name": "Код ошибки"
+      },
+      "automower_error_code_timestamp": {
+        "name": "Время последней ошибки"
+      },
+      "automower_total_charging_time": {
+        "name": "Общее время зарядки"
+      },
+      "automower_planner_override": {
+        "name": "Переопределение расписания",
+        "state": {
+          "not_active": "Не активно",
+          "force_park": "Принудительная парковка",
+          "force_mow": "Принудительная стрижка"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Последнее подключение"
+      },
+      "battery_state": {
+        "name": "Состояние батареи",
+        "state": {
+          "ok": "OK",
+          "low": "Низкий",
+          "replace_now": "Заменить сейчас",
+          "out_of_operation": "Не работает",
+          "charging": "Зарядка",
+          "no_battery": "Нет батареи",
+          "unknown": "Неизвестно"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Оставшееся время питания"
+      },
+      "power_socket_last_error_code": {
+        "name": "Последний код ошибки"
+      },
+      "valve_last_error_code": {
+        "name": "Код ошибки клапана"
+      },
+      "valve_remaining_duration": {
+        "name": "Оставшееся время полива"
+      },
+      "hub_device_count": {
+        "name": "Количество устройств"
+      },
+      "hub_polling_interval": {
+        "name": "Интервал опроса"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Батарея разряжена"
+      },
+      "valve_error": {
+        "name": "Ошибка клапана"
+      },
+      "mower_error": {
+        "name": "Ошибка косилки"
+      },
+      "automower_error": {
+        "name": "Ошибка"
+      },
+      "automower_connected": {
+        "name": "Подключено"
+      },
+      "rf_link_online": {
+        "name": "RF-связь"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket подключён"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Питание"
+      },
+      "automower_headlight": {
+        "name": "Фара"
+      },
+      "automower_stay_out_zone": {
+        "name": "Запретная зона: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Рабочая зона: {work_area}"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Режим фар",
+        "state": {
+          "always_on": "Всегда включены",
+          "always_off": "Всегда выключены",
+          "evening_only": "Только вечером",
+          "evening_and_night": "Вечером и ночью"
+        }
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Клапан"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Косилка"
+      },
+      "automower": {
+        "name": "Косилка"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Высота стрижки"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Высота стрижки: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Переопределение расписания"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Позиция"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Расписание стрижки"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Подтвердить ошибку"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "Событие косилки",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "Начата стрижка",
+              "stopped": "Остановлено",
+              "leaving": "Выезжает",
+              "searching": "Ищет",
+              "charging": "Зарядка",
+              "parked": "Припаркована",
+              "paused": "Пауза",
+              "error": "Ошибка",
+              "error_cleared": "Ошибка устранена"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Событие клапана",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Начат полив",
+              "stopped_watering": "Полив остановлен",
+              "error": "Ошибка",
+              "error_cleared": "Ошибка устранена"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Событие розетки",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Включена",
+              "turned_off": "Выключена",
+              "error": "Ошибка",
+              "error_cleared": "Ошибка устранена"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Событие косилки",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Начата стрижка",
+              "stopped": "Остановлено",
+              "going_home": "Возвращается",
+              "charging": "Зарядка",
+              "leaving": "Выезжает со станции",
+              "parked": "Припаркована",
+              "paused": "Пауза",
+              "error": "Ошибка",
+              "error_cleared": "Ошибка устранена"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Начать полив",
+      "description": "Начать полив клапана на указанное время.",
+      "fields": {
+        "duration": {
+          "name": "Длительность",
+          "description": "Длительность в минутах (1-1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Включить на время",
+      "description": "Включить умную розетку на указанное время.",
+      "fields": {
+        "duration": {
+          "name": "Длительность",
+          "description": "Длительность в минутах (1-1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Переопределить расписание",
+      "description": "Заставить косилку работать указанное время.",
+      "fields": {
+        "duration": {
+          "name": "Длительность",
+          "description": "Длительность в минутах (1-480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Парковать бессрочно",
+      "description": "Парковать косилку бессрочно."
+    },
+    "resume_schedule": {
+      "name": "Возобновить расписание",
+      "description": "Возобновить автоматическое расписание косилки."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Не удалось отправить команду: {error}"
+    },
+    "device_unavailable": {
+      "message": "Устройство недоступно."
+    },
+    "command_throttled": {
+      "message": "Команды отправляются слишком быстро. Подождите несколько секунд."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "Соединение WebSocket потеряно",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Переподключить WebSocket",
+            "description": "Соединение в реальном времени прервано. Подтвердите для переподключения."
+          }
+        }
+      }
+    }
+  }
+}

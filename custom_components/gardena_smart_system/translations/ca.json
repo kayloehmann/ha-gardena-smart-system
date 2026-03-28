@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connecta amb Husqvarna",
+        "description": "Introduïu les credencials de la vostra aplicació al Portal de Desenvolupadors de Husqvarna.",
+        "data": {
+          "client_id": "Clau de l'aplicació (Client ID)",
+          "client_secret": "Secret de l'aplicació"
+        },
+        "data_description": {
+          "client_id": "La clau de l'aplicació del vostre compte de desenvolupador de Husqvarna.",
+          "client_secret": "El secret de l'aplicació del vostre compte de desenvolupador de Husqvarna."
+        }
+      },
+      "api_type": {
+        "title": "Seleccioneu l'API",
+        "description": "Trieu a quina API de Husqvarna us voleu connectar. Podeu afegir ambdues configurant la integració dues vegades.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Seleccioneu el vostre jardí",
+        "description": "S'han trobat diversos jardins al vostre compte. Seleccioneu el que voleu afegir.",
+        "data": {
+          "location_id": "Jardí"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reautenticació",
+        "description": "Les vostres credencials ja no són vàlides. Si us plau, introduïu les credencials de l'aplicació de nou.",
+        "data": {
+          "client_id": "Clau de l'aplicació (Client ID)",
+          "client_secret": "Secret de l'aplicació"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigurar",
+        "description": "Actualitzeu les credencials de la vostra aplicació.",
+        "data": {
+          "client_id": "Clau de l'aplicació (Client ID)",
+          "client_secret": "Secret de l'aplicació"
+        }
+      },
+      "reconfigure_location": {
+        "title": "Seleccioneu el jardí",
+        "description": "S'han trobat diversos jardins. Seleccioneu quin jardí ha d'utilitzar aquesta entrada.",
+        "data": {
+          "location_id": "Jardí"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Credencials no vàlides. Comproveu la clau de l'aplicació i el secret al Portal de Desenvolupadors de Husqvarna.",
+      "forbidden": "Accés a l'API denegat. Assegureu-vos que l'API de Gardena Smart System estigui connectada a la vostra aplicació al Portal de Desenvolupadors de Husqvarna.",
+      "automower_not_connected": "L'API d'Automower Connect no està connectada a la vostra aplicació. Activeu-la al Portal de Desenvolupadors de Husqvarna a la secció d'API connectades.",
+      "rate_limited": "S'ha assolit el límit de peticions de l'API o s'ha bloquejat temporalment. Espereu uns minuts i torneu-ho a provar, o creeu una nova aplicació al Portal de Desenvolupadors de Husqvarna.",
+      "cannot_connect": "No s'ha pogut connectar amb l'API. Comproveu la connexió de xarxa i torneu-ho a provar.",
+      "unknown": "S'ha produït un error inesperat."
+    },
+    "abort": {
+      "already_configured": "Aquesta configuració ja existeix.",
+      "reauth_successful": "La reautenticació ha estat correcta.",
+      "reconfigure_successful": "La reconfiguració ha estat correcta."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opcions de Gardena Smart System",
+        "data": {
+          "default_watering_minutes": "Durada de reg predeterminada",
+          "default_socket_minutes": "Durada d'endoll intel·ligent predeterminada",
+          "poll_interval_minutes": "Interval de consulta"
+        },
+        "data_description": {
+          "default_watering_minutes": "Durada en minuts quan s'obre una vàlvula sense especificar una durada (1-1440).",
+          "default_socket_minutes": "Durada en minuts quan s'encén un endoll intel·ligent (1-1440). Establiu-lo a 1440 (24h) per a un funcionament gairebé indefinit.",
+          "poll_interval_minutes": "Amb quina freqüència consultar l'API per obtenir actualitzacions, en minuts (5-1440). Valors més baixos proporcionen dades més recents però consumeixen més quota d'API. Predeterminat: 30 (Gardena) / 15 (Automower)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Bateria"
+      },
+      "rf_link_level": {
+        "name": "Intensitat del senyal"
+      },
+      "soil_humidity": {
+        "name": "Humitat del sòl"
+      },
+      "soil_temperature": {
+        "name": "Temperatura del sòl"
+      },
+      "ambient_temperature": {
+        "name": "Temperatura ambient"
+      },
+      "light_intensity": {
+        "name": "Intensitat de la llum"
+      },
+      "mower_operating_hours": {
+        "name": "Hores de funcionament"
+      },
+      "mower_activity": {
+        "name": "Activitat de la segadora"
+      },
+      "mower_last_error_code": {
+        "name": "Últim codi d'error"
+      },
+      "automower_battery_level": {
+        "name": "Bateria"
+      },
+      "automower_cutting_height": {
+        "name": "Alçada de tall"
+      },
+      "automower_next_start": {
+        "name": "Propera arrencada"
+      },
+      "automower_total_cutting_time": {
+        "name": "Temps total de tall"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Cicles de càrrega"
+      },
+      "automower_total_collisions": {
+        "name": "Col·lisions"
+      },
+      "automower_total_drive_distance": {
+        "name": "Distància total recorreguda"
+      },
+      "automower_blade_usage_time": {
+        "name": "Temps d'ús de les fulles"
+      },
+      "automower_total_running_time": {
+        "name": "Temps total de funcionament"
+      },
+      "automower_total_searching_time": {
+        "name": "Temps total de cerca"
+      },
+      "automower_activity": {
+        "name": "Activitat",
+        "state": {
+          "unknown": "Desconegut",
+          "not_applicable": "No aplicable",
+          "mowing": "Segant",
+          "going_home": "Tornant a casa",
+          "charging": "Carregant",
+          "leaving": "Sortint",
+          "parked_in_cs": "Estacionat",
+          "stopped_in_garden": "Aturat al jardí"
+        }
+      },
+      "automower_state": {
+        "name": "Estat",
+        "state": {
+          "unknown": "Desconegut",
+          "not_applicable": "No aplicable",
+          "paused": "En pausa",
+          "in_operation": "En funcionament",
+          "wait_updating": "Actualitzant",
+          "wait_power_up": "Engegant",
+          "restricted": "Restringit",
+          "off": "Apagat",
+          "stopped": "Aturat",
+          "error": "Error",
+          "fatal_error": "Error crític",
+          "error_at_power_up": "Error en engegar"
+        }
+      },
+      "automower_inactive_reason": {
+        "name": "Motiu d'inactivitat"
+      },
+      "automower_restricted_reason": {
+        "name": "Motiu de restricció",
+        "state": {
+          "none": "Cap",
+          "week_schedule": "Programació setmanal",
+          "park_override": "Estacionament forçat",
+          "sensor": "Sensor",
+          "daily_limit": "Límit diari",
+          "fota": "Actualització de programari",
+          "frost": "Gelada",
+          "all_work_areas_completed": "Totes les àrees de treball completades",
+          "external": "Extern",
+          "not_applicable": "No aplicable"
+        }
+      },
+      "automower_error_code": {
+        "name": "Codi d'error"
+      },
+      "automower_error_code_timestamp": {
+        "name": "Hora de l'últim error"
+      },
+      "automower_total_charging_time": {
+        "name": "Temps total de càrrega"
+      },
+      "automower_planner_override": {
+        "name": "Anul·lació de la programació",
+        "state": {
+          "not_active": "No actiu",
+          "force_park": "Forçar estacionament",
+          "force_mow": "Forçar tall"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Vist per últim cop"
+      },
+      "battery_state": {
+        "name": "Estat de la bateria",
+        "state": {
+          "ok": "Correcte",
+          "low": "Baixa",
+          "replace_now": "Substituïu ara",
+          "out_of_operation": "Fora de servei",
+          "charging": "Carregant",
+          "no_battery": "Sense bateria",
+          "unknown": "Desconegut"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Temps d'alimentació restant"
+      },
+      "power_socket_last_error_code": {
+        "name": "Últim codi d'error"
+      },
+      "valve_last_error_code": {
+        "name": "Codi d'error de la vàlvula"
+      },
+      "valve_remaining_duration": {
+        "name": "Temps de reg restant"
+      },
+      "hub_device_count": {
+        "name": "Nombre de dispositius"
+      },
+      "hub_polling_interval": {
+        "name": "Interval de consulta"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Bateria baixa"
+      },
+      "valve_error": {
+        "name": "Error de vàlvula"
+      },
+      "mower_error": {
+        "name": "Error de la segadora"
+      },
+      "automower_error": {
+        "name": "Error"
+      },
+      "automower_connected": {
+        "name": "Connectat"
+      },
+      "rf_link_online": {
+        "name": "Enllaç RF"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket connectat"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Alimentació"
+      },
+      "automower_headlight": {
+        "name": "Far"
+      },
+      "automower_stay_out_zone": {
+        "name": "Zona prohibida: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Àrea de treball: {work_area}"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Mode del far",
+        "state": {
+          "always_on": "Sempre encès",
+          "always_off": "Sempre apagat",
+          "evening_only": "Només al vespre",
+          "evening_and_night": "Vespre i nit"
+        }
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Vàlvula"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Segadora"
+      },
+      "automower": {
+        "name": "Segadora"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Alçada de tall"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Alçada de tall: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Anul·lació de la programació"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Posició"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Programació de tall"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Confirmar error"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "Esdeveniment de la segadora",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "Ha començat a tallar",
+              "stopped": "Aturada",
+              "leaving": "Sortint",
+              "searching": "Cercant",
+              "charging": "Carregant",
+              "parked": "Estacionada",
+              "paused": "En pausa",
+              "error": "Error",
+              "error_cleared": "Error resolt"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Esdeveniment de la vàlvula",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Ha començat a regar",
+              "stopped_watering": "Ha parat de regar",
+              "error": "Error",
+              "error_cleared": "Error resolt"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Esdeveniment de l'endoll intel·ligent",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Encès",
+              "turned_off": "Apagat",
+              "error": "Error",
+              "error_cleared": "Error resolt"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Esdeveniment de la segadora",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Ha començat a segar",
+              "stopped": "Aturada",
+              "going_home": "Tornant a casa",
+              "charging": "Carregant",
+              "leaving": "Sortint de l'estació",
+              "parked": "Estacionada",
+              "paused": "En pausa",
+              "error": "Error",
+              "error_cleared": "Error resolt"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Iniciar el reg",
+      "description": "Inicia el reg d'una vàlvula durant un temps determinat, anul·lant la programació.",
+      "fields": {
+        "duration": {
+          "name": "Durada",
+          "description": "Durada en minuts (1–1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Encendre durant",
+      "description": "Encén un endoll intel·ligent durant un temps determinat.",
+      "fields": {
+        "duration": {
+          "name": "Durada",
+          "description": "Durada en minuts (1–1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Anul·lar la programació",
+      "description": "Força la segadora a tallar durant un temps determinat, ignorant la seva programació.",
+      "fields": {
+        "duration": {
+          "name": "Durada",
+          "description": "Durada en minuts (1–480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Estacionar indefinidament",
+      "description": "Estaciona la segadora indefinidament. Romandrà a l'estació de càrrega fins que es reprengui manualment."
+    },
+    "resume_schedule": {
+      "name": "Reprendre la programació",
+      "description": "Reprèn la programació automàtica de tall de la segadora."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "No s'ha pogut enviar l'ordre al dispositiu: {error}"
+    },
+    "device_unavailable": {
+      "message": "El dispositiu no està disponible actualment."
+    },
+    "command_throttled": {
+      "message": "Les ordres s'estan enviant massa ràpid. Si us plau, espereu uns segons entre ordres per evitar superar el límit de peticions de l'API."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "Connexió WebSocket perduda",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Reconnectar WebSocket",
+            "description": "La connexió en temps real amb el núvol de Husqvarna s'ha interromput. La integració està utilitzant la consulta periòdica com a alternativa. Confirmeu per intentar la reconnexió."
+          }
+        }
+      }
+    }
+  }
+}

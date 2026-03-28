@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Σύνδεση στη Husqvarna",
+        "description": "Εισαγάγετε τα διαπιστευτήρια από την εφαρμογή σας στην Πύλη Προγραμματιστών Husqvarna.",
+        "data": {
+          "client_id": "Κλειδί εφαρμογής (Client ID)",
+          "client_secret": "Μυστικό εφαρμογής"
+        },
+        "data_description": {
+          "client_id": "Το κλειδί εφαρμογής από τον λογαριασμό προγραμματιστή Husqvarna.",
+          "client_secret": "Το μυστικό εφαρμογής από τον λογαριασμό προγραμματιστή Husqvarna."
+        }
+      },
+      "api_type": {
+        "title": "Επιλογή API",
+        "description": "Επιλέξτε σε ποιο API Husqvarna θέλετε να συνδεθείτε. Μπορείτε να προσθέσετε και τα δύο ρυθμίζοντας την ενσωμάτωση δύο φορές.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Επιλέξτε τον κήπο σας",
+        "description": "Βρέθηκαν πολλαπλοί κήποι στον λογαριασμό σας. Επιλέξτε αυτόν που θέλετε να προσθέσετε.",
+        "data": {
+          "location_id": "Κήπος"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Επαναπιστοποίηση",
+        "description": "Τα διαπιστευτήριά σας δεν είναι πλέον έγκυρα. Παρακαλώ εισαγάγετε ξανά τα διαπιστευτήρια της εφαρμογής σας.",
+        "data": {
+          "client_id": "Κλειδί εφαρμογής (Client ID)",
+          "client_secret": "Μυστικό εφαρμογής"
+        }
+      },
+      "reconfigure": {
+        "title": "Επαναρύθμιση",
+        "description": "Ενημερώστε τα διαπιστευτήρια της εφαρμογής σας.",
+        "data": {
+          "client_id": "Κλειδί εφαρμογής (Client ID)",
+          "client_secret": "Μυστικό εφαρμογής"
+        }
+      },
+      "reconfigure_location": {
+        "title": "Επιλογή κήπου",
+        "description": "Βρέθηκαν πολλαπλοί κήποι. Επιλέξτε ποιον κήπο θα χρησιμοποιεί αυτή η καταχώρηση.",
+        "data": {
+          "location_id": "Κήπος"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Μη έγκυρα διαπιστευτήρια. Ελέγξτε το κλειδί και το μυστικό της εφαρμογής σας στην Πύλη Προγραμματιστών Husqvarna.",
+      "forbidden": "Η πρόσβαση στο API απορρίφθηκε. Βεβαιωθείτε ότι το API Gardena Smart System είναι συνδεδεμένο στην εφαρμογή σας στην Πύλη Προγραμματιστών Husqvarna.",
+      "automower_not_connected": "Το API Automower Connect δεν είναι συνδεδεμένο στην εφαρμογή σας. Ενεργοποιήστε το στην Πύλη Προγραμματιστών Husqvarna στην ενότητα Συνδεδεμένα API.",
+      "rate_limited": "Συμπληρώθηκε το όριο κλήσεων API ή είστε προσωρινά αποκλεισμένοι. Περιμένετε μερικά λεπτά και δοκιμάστε ξανά, ή δημιουργήστε μια νέα εφαρμογή στην Πύλη Προγραμματιστών Husqvarna.",
+      "cannot_connect": "Αδυναμία σύνδεσης στο API. Ελέγξτε τη σύνδεση δικτύου σας και δοκιμάστε ξανά.",
+      "unknown": "Παρουσιάστηκε μη αναμενόμενο σφάλμα."
+    },
+    "abort": {
+      "already_configured": "Αυτή η ρύθμιση υπάρχει ήδη.",
+      "reauth_successful": "Η επαναπιστοποίηση ήταν επιτυχής.",
+      "reconfigure_successful": "Η επαναρύθμιση ήταν επιτυχής."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Επιλογές Gardena Smart System",
+        "data": {
+          "default_watering_minutes": "Προεπιλεγμένη διάρκεια ποτίσματος",
+          "default_socket_minutes": "Προεπιλεγμένη διάρκεια πρίζας",
+          "poll_interval_minutes": "Διάστημα ανανέωσης"
+        },
+        "data_description": {
+          "default_watering_minutes": "Διάρκεια σε λεπτά κατά το άνοιγμα βαλβίδας χωρίς καθορισμένη διάρκεια (1-1440).",
+          "default_socket_minutes": "Διάρκεια σε λεπτά κατά την ενεργοποίηση έξυπνης πρίζας (1-1440). Ορίστε σε 1440 (24ώ) για σχεδόν αόριστη λειτουργία.",
+          "poll_interval_minutes": "Πόσο συχνά να ερωτάται το API για ενημερώσεις σε λεπτά (5-1440). Χαμηλότερες τιμές παρέχουν πιο πρόσφατα δεδομένα αλλά καταναλώνουν περισσότερο όριο API. Προεπιλογή: 30 (Gardena) / 15 (Automower)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Μπαταρία"
+      },
+      "rf_link_level": {
+        "name": "Ισχύς σήματος"
+      },
+      "soil_humidity": {
+        "name": "Υγρασία εδάφους"
+      },
+      "soil_temperature": {
+        "name": "Θερμοκρασία εδάφους"
+      },
+      "ambient_temperature": {
+        "name": "Θερμοκρασία περιβάλλοντος"
+      },
+      "light_intensity": {
+        "name": "Ένταση φωτός"
+      },
+      "mower_operating_hours": {
+        "name": "Ώρες λειτουργίας"
+      },
+      "mower_activity": {
+        "name": "Δραστηριότητα χλοοκοπτικού"
+      },
+      "mower_last_error_code": {
+        "name": "Τελευταίος κωδικός σφάλματος"
+      },
+      "automower_battery_level": {
+        "name": "Μπαταρία"
+      },
+      "automower_cutting_height": {
+        "name": "Ύψος κοπής"
+      },
+      "automower_next_start": {
+        "name": "Επόμενη εκκίνηση"
+      },
+      "automower_total_cutting_time": {
+        "name": "Συνολικός χρόνος κοπής"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Κύκλοι φόρτισης"
+      },
+      "automower_total_collisions": {
+        "name": "Συγκρούσεις"
+      },
+      "automower_total_drive_distance": {
+        "name": "Συνολική απόσταση οδήγησης"
+      },
+      "automower_blade_usage_time": {
+        "name": "Χρόνος χρήσης λεπίδων"
+      },
+      "automower_total_running_time": {
+        "name": "Συνολικός χρόνος λειτουργίας"
+      },
+      "automower_total_searching_time": {
+        "name": "Συνολικός χρόνος αναζήτησης"
+      },
+      "automower_activity": {
+        "name": "Δραστηριότητα",
+        "state": {
+          "unknown": "Άγνωστο",
+          "not_applicable": "Δεν ισχύει",
+          "mowing": "Κόβει γκαζόν",
+          "going_home": "Επιστρέφει",
+          "charging": "Φορτίζει",
+          "leaving": "Αναχωρεί",
+          "parked_in_cs": "Σταθμευμένο",
+          "stopped_in_garden": "Σταματημένο στον κήπο"
+        }
+      },
+      "automower_state": {
+        "name": "Κατάσταση",
+        "state": {
+          "unknown": "Άγνωστο",
+          "not_applicable": "Δεν ισχύει",
+          "paused": "Σε παύση",
+          "in_operation": "Σε λειτουργία",
+          "wait_updating": "Ενημέρωση",
+          "wait_power_up": "Εκκίνηση",
+          "restricted": "Περιορισμένο",
+          "off": "Απενεργοποιημένο",
+          "stopped": "Σταματημένο",
+          "error": "Σφάλμα",
+          "fatal_error": "Κρίσιμο σφάλμα",
+          "error_at_power_up": "Σφάλμα κατά την εκκίνηση"
+        }
+      },
+      "automower_inactive_reason": {
+        "name": "Λόγος αδράνειας"
+      },
+      "automower_restricted_reason": {
+        "name": "Λόγος περιορισμού",
+        "state": {
+          "none": "Κανένας",
+          "week_schedule": "Εβδομαδιαίο πρόγραμμα",
+          "park_override": "Αναγκαστική στάθμευση",
+          "sensor": "Αισθητήρας",
+          "daily_limit": "Ημερήσιο όριο",
+          "fota": "Ενημέρωση firmware",
+          "frost": "Παγετός",
+          "all_work_areas_completed": "Όλες οι ζώνες εργασίας ολοκληρώθηκαν",
+          "external": "Εξωτερικός",
+          "not_applicable": "Δεν ισχύει"
+        }
+      },
+      "automower_error_code": {
+        "name": "Κωδικός σφάλματος"
+      },
+      "automower_error_code_timestamp": {
+        "name": "Χρόνος τελευταίου σφάλματος"
+      },
+      "automower_total_charging_time": {
+        "name": "Συνολικός χρόνος φόρτισης"
+      },
+      "automower_planner_override": {
+        "name": "Παράκαμψη προγράμματος",
+        "state": {
+          "not_active": "Ανενεργό",
+          "force_park": "Αναγκαστική στάθμευση",
+          "force_mow": "Αναγκαστική κοπή"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Τελευταία εμφάνιση"
+      },
+      "battery_state": {
+        "name": "Κατάσταση μπαταρίας",
+        "state": {
+          "ok": "OK",
+          "low": "Χαμηλή",
+          "replace_now": "Αντικαταστήστε τώρα",
+          "out_of_operation": "Εκτός λειτουργίας",
+          "charging": "Φορτίζει",
+          "no_battery": "Χωρίς μπαταρία",
+          "unknown": "Άγνωστο"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Υπολειπόμενος χρόνος τροφοδοσίας"
+      },
+      "power_socket_last_error_code": {
+        "name": "Τελευταίος κωδικός σφάλματος"
+      },
+      "valve_last_error_code": {
+        "name": "Κωδικός σφάλματος βαλβίδας"
+      },
+      "valve_remaining_duration": {
+        "name": "Υπολειπόμενος χρόνος ποτίσματος"
+      },
+      "hub_device_count": {
+        "name": "Αριθμός συσκευών"
+      },
+      "hub_polling_interval": {
+        "name": "Διάστημα ανανέωσης"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Χαμηλή μπαταρία"
+      },
+      "valve_error": {
+        "name": "Σφάλμα βαλβίδας"
+      },
+      "mower_error": {
+        "name": "Σφάλμα χλοοκοπτικού"
+      },
+      "automower_error": {
+        "name": "Σφάλμα"
+      },
+      "automower_connected": {
+        "name": "Συνδεδεμένο"
+      },
+      "rf_link_online": {
+        "name": "Σύνδεση RF"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket συνδεδεμένο"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Τροφοδοσία"
+      },
+      "automower_headlight": {
+        "name": "Προβολέας"
+      },
+      "automower_stay_out_zone": {
+        "name": "Ζώνη αποκλεισμού: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Ζώνη εργασίας: {work_area}"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Λειτουργία προβολέα",
+        "state": {
+          "always_on": "Πάντα ενεργοποιημένος",
+          "always_off": "Πάντα απενεργοποιημένος",
+          "evening_only": "Μόνο το βράδυ",
+          "evening_and_night": "Βράδυ και νύχτα"
+        }
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Βαλβίδα"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Χλοοκοπτικό"
+      },
+      "automower": {
+        "name": "Χλοοκοπτικό"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Ύψος κοπής"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Ύψος κοπής: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Παράκαμψη προγράμματος"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Θέση"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Πρόγραμμα κοπής"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Επιβεβαίωση σφάλματος"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "Συμβάν χλοοκοπτικού",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "Ξεκίνησε η κοπή",
+              "stopped": "Σταμάτησε",
+              "leaving": "Αναχωρεί",
+              "searching": "Αναζητά",
+              "charging": "Φορτίζει",
+              "parked": "Σταθμευμένο",
+              "paused": "Σε παύση",
+              "error": "Σφάλμα",
+              "error_cleared": "Σφάλμα αποκαταστάθηκε"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Συμβάν βαλβίδας",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Ξεκίνησε το πότισμα",
+              "stopped_watering": "Σταμάτησε το πότισμα",
+              "error": "Σφάλμα",
+              "error_cleared": "Σφάλμα αποκαταστάθηκε"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Συμβάν έξυπνης πρίζας",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Ενεργοποιήθηκε",
+              "turned_off": "Απενεργοποιήθηκε",
+              "error": "Σφάλμα",
+              "error_cleared": "Σφάλμα αποκαταστάθηκε"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Συμβάν χλοοκοπτικού",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Ξεκίνησε η κοπή",
+              "stopped": "Σταμάτησε",
+              "going_home": "Επιστρέφει",
+              "charging": "Φορτίζει",
+              "leaving": "Αναχωρεί από σταθμό",
+              "parked": "Σταθμευμένο",
+              "paused": "Σε παύση",
+              "error": "Σφάλμα",
+              "error_cleared": "Σφάλμα αποκαταστάθηκε"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Έναρξη ποτίσματος",
+      "description": "Ξεκινά το πότισμα μιας βαλβίδας για συγκεκριμένη διάρκεια, παρακάμπτοντας το πρόγραμμα.",
+      "fields": {
+        "duration": {
+          "name": "Διάρκεια",
+          "description": "Διάρκεια σε λεπτά (1-1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Ενεργοποίηση για",
+      "description": "Ενεργοποιεί μια έξυπνη πρίζα για συγκεκριμένη διάρκεια.",
+      "fields": {
+        "duration": {
+          "name": "Διάρκεια",
+          "description": "Διάρκεια σε λεπτά (1-1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Παράκαμψη προγράμματος",
+      "description": "Αναγκάζει το χλοοκοπτικό να κόψει γκαζόν για συγκεκριμένη διάρκεια, αγνοώντας το πρόγραμμα.",
+      "fields": {
+        "duration": {
+          "name": "Διάρκεια",
+          "description": "Διάρκεια σε λεπτά (1-480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Στάθμευση μέχρι νεοτέρας",
+      "description": "Σταθμεύει το χλοοκοπτικό επ' αόριστον. Θα παραμείνει στον σταθμό φόρτισης μέχρι να συνεχιστεί χειροκίνητα."
+    },
+    "resume_schedule": {
+      "name": "Συνέχιση προγράμματος",
+      "description": "Συνεχίζει το αυτόματο πρόγραμμα κοπής γκαζόν του χλοοκοπτικού."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Αποτυχία αποστολής εντολής στη συσκευή: {error}"
+    },
+    "device_unavailable": {
+      "message": "Η συσκευή δεν είναι διαθέσιμη αυτή τη στιγμή."
+    },
+    "command_throttled": {
+      "message": "Οι εντολές αποστέλλονται πολύ γρήγορα. Παρακαλώ περιμένετε μερικά δευτερόλεπτα μεταξύ εντολών για να αποφύγετε την υπέρβαση του ορίου κλήσεων API."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "Η σύνδεση WebSocket χάθηκε",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Επανασύνδεση WebSocket",
+            "description": "Η σύνδεση σε πραγματικό χρόνο με το cloud Husqvarna διακόπηκε. Η ενσωμάτωση χρησιμοποιεί προς το παρόν ανανέωση ως εναλλακτική. Επιβεβαιώστε για να γίνει απόπειρα επανασύνδεσης."
+          }
+        }
+      }
+    }
+  }
+}

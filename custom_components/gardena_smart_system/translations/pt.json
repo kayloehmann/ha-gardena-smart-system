@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Ligar à Husqvarna",
+        "description": "Introduza as credenciais da sua aplicação no Portal de Desenvolvimento Husqvarna.",
+        "data": {
+          "client_id": "Chave da Aplicação (Client ID)",
+          "client_secret": "Segredo da Aplicação"
+        },
+        "data_description": {
+          "client_id": "A chave da aplicação da sua conta de desenvolvedor Husqvarna.",
+          "client_secret": "O segredo da aplicação da sua conta de desenvolvedor Husqvarna."
+        }
+      },
+      "api_type": {
+        "title": "Selecionar API",
+        "description": "Escolha a que API Husqvarna ligar. Pode adicionar ambas configurando a integração duas vezes.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Selecione o seu jardim",
+        "description": "Foram encontrados vários jardins na sua conta. Selecione o que pretende adicionar.",
+        "data": {
+          "location_id": "Jardim"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reautenticar",
+        "description": "As suas credenciais já não são válidas. Introduza novamente as credenciais.",
+        "data": {
+          "client_id": "Chave da Aplicação (Client ID)",
+          "client_secret": "Segredo da Aplicação"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigurar",
+        "description": "Atualize as credenciais da aplicação.",
+        "data": {
+          "client_id": "Chave da Aplicação (Client ID)",
+          "client_secret": "Segredo da Aplicação"
+        }
+      },
+      "reconfigure_location": {
+        "title": "Selecionar jardim",
+        "description": "Foram encontrados vários jardins. Selecione qual jardim esta entrada deve usar.",
+        "data": {
+          "location_id": "Jardim"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Credenciais inválidas.",
+      "forbidden": "Acesso à API negado.",
+      "automower_not_connected": "A API Automower Connect não está ligada à sua aplicação.",
+      "rate_limited": "Limite de taxa da API atingido.",
+      "cannot_connect": "Não foi possível ligar à API.",
+      "unknown": "Ocorreu um erro inesperado."
+    },
+    "abort": {
+      "already_configured": "Esta configuração já existe.",
+      "reauth_successful": "Reautenticação bem-sucedida.",
+      "reconfigure_successful": "Reconfiguração bem-sucedida."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opções Gardena Smart System",
+        "data": {
+          "default_watering_minutes": "Duração de rega predefinida",
+          "default_socket_minutes": "Duração da tomada predefinida",
+          "poll_interval_minutes": "Intervalo de consulta"
+        },
+        "data_description": {
+          "default_watering_minutes": "Duração em minutos ao abrir uma válvula (1-1440).",
+          "default_socket_minutes": "Duração em minutos ao ligar uma tomada (1-1440).",
+          "poll_interval_minutes": "Frequência de consulta da API em minutos (5-1440)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Bateria"
+      },
+      "battery_state": {
+        "name": "Estado da bateria",
+        "state": {
+          "ok": "OK",
+          "low": "Baixa",
+          "replace_now": "Substituir agora",
+          "out_of_operation": "Fora de serviço",
+          "charging": "A carregar",
+          "no_battery": "Sem bateria",
+          "unknown": "Desconhecido"
+        }
+      },
+      "rf_link_level": {
+        "name": "Intensidade do sinal"
+      },
+      "soil_humidity": {
+        "name": "Humidade do solo"
+      },
+      "soil_temperature": {
+        "name": "Temperatura do solo"
+      },
+      "ambient_temperature": {
+        "name": "Temperatura ambiente"
+      },
+      "light_intensity": {
+        "name": "Intensidade luminosa"
+      },
+      "mower_operating_hours": {
+        "name": "Horas de operação"
+      },
+      "mower_activity": {
+        "name": "Atividade do cortador"
+      },
+      "mower_last_error_code": {
+        "name": "Último código de erro"
+      },
+      "automower_battery_level": {
+        "name": "Bateria"
+      },
+      "automower_cutting_height": {
+        "name": "Altura de corte"
+      },
+      "automower_next_start": {
+        "name": "Próximo início"
+      },
+      "automower_total_cutting_time": {
+        "name": "Tempo total de corte"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Ciclos de carregamento"
+      },
+      "automower_total_collisions": {
+        "name": "Colisões"
+      },
+      "automower_total_drive_distance": {
+        "name": "Distância total percorrida"
+      },
+      "automower_blade_usage_time": {
+        "name": "Tempo de uso da lâmina"
+      },
+      "automower_total_running_time": {
+        "name": "Tempo total de funcionamento"
+      },
+      "automower_total_searching_time": {
+        "name": "Tempo total de procura"
+      },
+      "automower_activity": {
+        "name": "Atividade",
+        "state": {
+          "unknown": "Desconhecido",
+          "not_applicable": "Não aplicável",
+          "mowing": "A cortar",
+          "going_home": "A voltar",
+          "charging": "A carregar",
+          "leaving": "A sair",
+          "parked_in_cs": "Estacionado",
+          "stopped_in_garden": "Parado no jardim"
+        }
+      },
+      "automower_state": {
+        "name": "Estado",
+        "state": {
+          "unknown": "Desconhecido",
+          "not_applicable": "Não aplicável",
+          "paused": "Pausado",
+          "in_operation": "Em operação",
+          "wait_updating": "A atualizar",
+          "wait_power_up": "A iniciar",
+          "restricted": "Restrito",
+          "off": "Desligado",
+          "stopped": "Parado",
+          "error": "Erro",
+          "fatal_error": "Erro fatal",
+          "error_at_power_up": "Erro ao iniciar"
+        }
+      },
+      "automower_inactive_reason": {
+        "name": "Razão de inatividade"
+      },
+      "automower_restricted_reason": {
+        "name": "Razão de restrição",
+        "state": {
+          "none": "Nenhuma",
+          "week_schedule": "Horário semanal",
+          "park_override": "Estacionar forçado",
+          "sensor": "Sensor",
+          "daily_limit": "Limite diário",
+          "fota": "Atualização de firmware",
+          "frost": "Geada",
+          "all_work_areas_completed": "Todas as áreas concluídas",
+          "external": "Externo",
+          "not_applicable": "Não aplicável"
+        }
+      },
+      "automower_error_code": {
+        "name": "Código de erro"
+      },
+      "automower_error_code_timestamp": {
+        "name": "Hora do último erro"
+      },
+      "automower_total_charging_time": {
+        "name": "Tempo total de carregamento"
+      },
+      "automower_planner_override": {
+        "name": "Substituição de horário",
+        "state": {
+          "not_active": "Não ativo",
+          "force_park": "Forçar estacionar",
+          "force_mow": "Forçar cortar"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Último contacto"
+      },
+      "power_socket_remaining_duration": {
+        "name": "Tempo de alimentação restante"
+      },
+      "power_socket_last_error_code": {
+        "name": "Último código de erro"
+      },
+      "valve_last_error_code": {
+        "name": "Código de erro da válvula"
+      },
+      "valve_remaining_duration": {
+        "name": "Tempo de rega restante"
+      },
+      "hub_device_count": {
+        "name": "Contagem de dispositivos"
+      },
+      "hub_polling_interval": {
+        "name": "Intervalo de consulta"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Bateria baixa"
+      },
+      "valve_error": {
+        "name": "Erro da válvula"
+      },
+      "mower_error": {
+        "name": "Erro do cortador"
+      },
+      "automower_error": {
+        "name": "Erro"
+      },
+      "automower_connected": {
+        "name": "Ligado"
+      },
+      "rf_link_online": {
+        "name": "Ligação RF"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket ligado"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Modo dos faróis",
+        "state": {
+          "always_on": "Sempre ligado",
+          "always_off": "Sempre desligado",
+          "evening_only": "Apenas à noite",
+          "evening_and_night": "Noite e madrugada"
+        }
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Alimentação"
+      },
+      "automower_headlight": {
+        "name": "Farol"
+      },
+      "automower_stay_out_zone": {
+        "name": "Zona proibida: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Área de trabalho: {work_area}"
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Válvula"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Cortador"
+      },
+      "automower": {
+        "name": "Cortador"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Altura de corte"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Altura de corte: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Substituição de horário"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Posição"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Horário de corte"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Confirmar erro"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "Evento do cortador",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "Começou a cortar",
+              "stopped": "Parado",
+              "leaving": "A sair",
+              "searching": "A procurar",
+              "charging": "A carregar",
+              "parked": "Estacionado",
+              "paused": "Pausado",
+              "error": "Erro",
+              "error_cleared": "Erro limpo"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Evento da válvula",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Começou a regar",
+              "stopped_watering": "Parou de regar",
+              "error": "Erro",
+              "error_cleared": "Erro limpo"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Evento da tomada",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Ligada",
+              "turned_off": "Desligada",
+              "error": "Erro",
+              "error_cleared": "Erro limpo"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Evento do cortador",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Começou a cortar",
+              "stopped": "Parado",
+              "going_home": "A voltar",
+              "charging": "A carregar",
+              "leaving": "A sair da estação",
+              "parked": "Estacionado",
+              "paused": "Pausado",
+              "error": "Erro",
+              "error_cleared": "Erro limpo"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Iniciar rega",
+      "description": "Iniciar rega de uma válvula por uma duração específica.",
+      "fields": {
+        "duration": {
+          "name": "Duração",
+          "description": "Duração em minutos (1-1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Ligar durante",
+      "description": "Ligar uma tomada inteligente por uma duração específica.",
+      "fields": {
+        "duration": {
+          "name": "Duração",
+          "description": "Duração em minutos (1-1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Substituir horário",
+      "description": "Forçar o cortador a cortar por uma duração específica.",
+      "fields": {
+        "duration": {
+          "name": "Duração",
+          "description": "Duração em minutos (1-480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Estacionar indefinidamente",
+      "description": "Estacionar o cortador indefinidamente."
+    },
+    "resume_schedule": {
+      "name": "Retomar horário",
+      "description": "Retomar o horário automático do cortador."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Falha ao enviar comando: {error}"
+    },
+    "device_unavailable": {
+      "message": "O dispositivo não está disponível."
+    },
+    "command_throttled": {
+      "message": "Os comandos estão a ser enviados demasiado rápido."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "Ligação WebSocket perdida",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Reconectar WebSocket",
+            "description": "A ligação em tempo real foi interrompida. Confirme para tentar reconectar."
+          }
+        }
+      }
+    }
+  }
+}

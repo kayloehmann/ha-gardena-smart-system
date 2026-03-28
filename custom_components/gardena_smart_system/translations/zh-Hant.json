@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "連線至 Husqvarna",
+        "description": "輸入您在 Husqvarna 開發者入口網站上的應用程式憑證。",
+        "data": {
+          "client_id": "應用程式金鑰 (Client ID)",
+          "client_secret": "應用程式密鑰"
+        },
+        "data_description": {
+          "client_id": "您的 Husqvarna 開發者帳戶中的應用程式金鑰。",
+          "client_secret": "您的 Husqvarna 開發者帳戶中的應用程式密鑰。"
+        }
+      },
+      "api_type": {
+        "title": "選擇 API",
+        "description": "選擇要連線的 Husqvarna API。您可以透過設定兩次整合來同時新增兩個。",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "選擇您的花園",
+        "description": "在您的帳戶中找到了多個花園。請選擇您要新增的花園。",
+        "data": {
+          "location_id": "花園"
+        }
+      },
+      "reauth_confirm": {
+        "title": "重新驗證",
+        "description": "您的憑證已失效。請重新輸入您的應用程式憑證。",
+        "data": {
+          "client_id": "應用程式金鑰 (Client ID)",
+          "client_secret": "應用程式密鑰"
+        }
+      },
+      "reconfigure": {
+        "title": "重新設定",
+        "description": "更新您的應用程式憑證。",
+        "data": {
+          "client_id": "應用程式金鑰 (Client ID)",
+          "client_secret": "應用程式密鑰"
+        }
+      },
+      "reconfigure_location": {
+        "title": "選擇花園",
+        "description": "找到了多個花園。請選擇此項目應使用的花園。",
+        "data": {
+          "location_id": "花園"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "憑證無效。請在 Husqvarna 開發者入口網站檢查您的應用程式金鑰和密鑰。",
+      "forbidden": "API 存取被拒絕。請確認 Gardena Smart System API 已在 Husqvarna 開發者入口網站中連線至您的應用程式。",
+      "automower_not_connected": "Automower Connect API 未連線至您的應用程式。請在 Husqvarna 開發者入口網站的「已連線的 API」中啟用它。",
+      "rate_limited": "已達到 API 速率限制或被暫時封鎖。請等待幾分鐘後重試，或在 Husqvarna 開發者入口網站中建立新的應用程式。",
+      "cannot_connect": "無法連線至 API。請檢查您的網路連線後重試。",
+      "unknown": "發生了意外錯誤。"
+    },
+    "abort": {
+      "already_configured": "此設定已存在。",
+      "reauth_successful": "重新驗證成功。",
+      "reconfigure_successful": "重新設定成功。"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Gardena Smart System 選項",
+        "data": {
+          "default_watering_minutes": "預設澆水時長",
+          "default_socket_minutes": "預設電源插座時長",
+          "poll_interval_minutes": "輪詢間隔"
+        },
+        "data_description": {
+          "default_watering_minutes": "未指定時長時開啟閥門的預設時長（分鐘，1-1440）。",
+          "default_socket_minutes": "開啟電源插座的時長（分鐘，1-1440）。設為 1440（24小時）可實現近乎無限期運作。",
+          "poll_interval_minutes": "輪詢 API 取得更新的間隔（分鐘，5-1440）。較低的值提供更新的資料，但會消耗更多的 API 配額。預設值：30（Gardena）/ 15（Automower）。"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "電池"
+      },
+      "rf_link_level": {
+        "name": "訊號強度"
+      },
+      "soil_humidity": {
+        "name": "土壤濕度"
+      },
+      "soil_temperature": {
+        "name": "土壤溫度"
+      },
+      "ambient_temperature": {
+        "name": "環境溫度"
+      },
+      "light_intensity": {
+        "name": "光照強度"
+      },
+      "mower_operating_hours": {
+        "name": "運作時數"
+      },
+      "mower_activity": {
+        "name": "割草機活動"
+      },
+      "mower_last_error_code": {
+        "name": "最後錯誤代碼"
+      },
+      "automower_battery_level": {
+        "name": "電池"
+      },
+      "automower_cutting_height": {
+        "name": "切割高度"
+      },
+      "automower_next_start": {
+        "name": "下次啟動"
+      },
+      "automower_total_cutting_time": {
+        "name": "總切割時間"
+      },
+      "automower_total_charging_cycles": {
+        "name": "充電次數"
+      },
+      "automower_total_collisions": {
+        "name": "碰撞次數"
+      },
+      "automower_total_drive_distance": {
+        "name": "總行駛距離"
+      },
+      "automower_blade_usage_time": {
+        "name": "刀片使用時間"
+      },
+      "automower_total_running_time": {
+        "name": "總運作時間"
+      },
+      "automower_total_searching_time": {
+        "name": "總搜尋時間"
+      },
+      "automower_activity": {
+        "name": "活動",
+        "state": {
+          "unknown": "未知",
+          "not_applicable": "不適用",
+          "mowing": "割草中",
+          "going_home": "返回中",
+          "charging": "充電中",
+          "leaving": "出發中",
+          "parked_in_cs": "已停靠",
+          "stopped_in_garden": "在花園中停止"
+        }
+      },
+      "automower_state": {
+        "name": "狀態",
+        "state": {
+          "unknown": "未知",
+          "not_applicable": "不適用",
+          "paused": "已暫停",
+          "in_operation": "運作中",
+          "wait_updating": "更新中",
+          "wait_power_up": "啟動中",
+          "restricted": "受限",
+          "off": "關閉",
+          "stopped": "已停止",
+          "error": "錯誤",
+          "fatal_error": "嚴重錯誤",
+          "error_at_power_up": "啟動時出錯"
+        }
+      },
+      "automower_inactive_reason": {
+        "name": "停用原因"
+      },
+      "automower_restricted_reason": {
+        "name": "受限原因",
+        "state": {
+          "none": "無",
+          "week_schedule": "每週排程",
+          "park_override": "停靠覆寫",
+          "sensor": "感測器",
+          "daily_limit": "每日限制",
+          "fota": "韌體更新",
+          "frost": "霜凍",
+          "all_work_areas_completed": "所有工作區域已完成",
+          "external": "外部",
+          "not_applicable": "不適用"
+        }
+      },
+      "automower_error_code": {
+        "name": "錯誤代碼"
+      },
+      "automower_error_code_timestamp": {
+        "name": "最後錯誤時間"
+      },
+      "automower_total_charging_time": {
+        "name": "總充電時間"
+      },
+      "automower_planner_override": {
+        "name": "排程覆寫",
+        "state": {
+          "not_active": "未啟用",
+          "force_park": "強制停靠",
+          "force_mow": "強制割草"
+        }
+      },
+      "automower_last_seen": {
+        "name": "最後上線"
+      },
+      "battery_state": {
+        "name": "電池狀態",
+        "state": {
+          "ok": "正常",
+          "low": "電量低",
+          "replace_now": "請立即更換",
+          "out_of_operation": "停止運作",
+          "charging": "充電中",
+          "no_battery": "無電池",
+          "unknown": "未知"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "剩餘通電時間"
+      },
+      "power_socket_last_error_code": {
+        "name": "最後錯誤代碼"
+      },
+      "valve_last_error_code": {
+        "name": "閥門錯誤代碼"
+      },
+      "valve_remaining_duration": {
+        "name": "剩餘澆水時間"
+      },
+      "hub_device_count": {
+        "name": "裝置數量"
+      },
+      "hub_polling_interval": {
+        "name": "輪詢間隔"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "電池電量低"
+      },
+      "valve_error": {
+        "name": "閥門錯誤"
+      },
+      "mower_error": {
+        "name": "割草機錯誤"
+      },
+      "automower_error": {
+        "name": "錯誤"
+      },
+      "automower_connected": {
+        "name": "已連線"
+      },
+      "rf_link_online": {
+        "name": "RF 連線"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket 已連線"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "電源"
+      },
+      "automower_headlight": {
+        "name": "頭燈"
+      },
+      "automower_stay_out_zone": {
+        "name": "禁入區域：{zone_name}"
+      },
+      "automower_work_area": {
+        "name": "工作區域：{work_area}"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "頭燈模式",
+        "state": {
+          "always_on": "常亮",
+          "always_off": "常滅",
+          "evening_only": "僅傍晚",
+          "evening_and_night": "傍晚與夜間"
+        }
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "閥門"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "割草機"
+      },
+      "automower": {
+        "name": "割草機"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "切割高度"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "切割高度：{work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "排程覆寫"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "位置"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "割草排程"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "確認錯誤"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "割草機事件",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "開始割草",
+              "stopped": "已停止",
+              "leaving": "出發中",
+              "searching": "搜尋中",
+              "charging": "充電中",
+              "parked": "已停靠",
+              "paused": "已暫停",
+              "error": "錯誤",
+              "error_cleared": "錯誤已清除"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "閥門事件",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "開始澆水",
+              "stopped_watering": "停止澆水",
+              "error": "錯誤",
+              "error_cleared": "錯誤已清除"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "電源插座事件",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "已開啟",
+              "turned_off": "已關閉",
+              "error": "錯誤",
+              "error_cleared": "錯誤已清除"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "割草機事件",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "開始割草",
+              "stopped": "已停止",
+              "going_home": "返回中",
+              "charging": "充電中",
+              "leaving": "離開充電站",
+              "parked": "已停靠",
+              "paused": "已暫停",
+              "error": "錯誤",
+              "error_cleared": "錯誤已清除"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "開始澆水",
+      "description": "在指定時長內開始澆水，覆寫當前排程。",
+      "fields": {
+        "duration": {
+          "name": "時長",
+          "description": "時長（分鐘，1-1440）。"
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "定時開啟",
+      "description": "在指定時長內開啟智慧電源插座。",
+      "fields": {
+        "duration": {
+          "name": "時長",
+          "description": "時長（分鐘，1-1440）。"
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "覆寫排程",
+      "description": "強制割草機在指定時長內割草，忽略其排程。",
+      "fields": {
+        "duration": {
+          "name": "時長",
+          "description": "時長（分鐘，1-480）。"
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "停靠直至另行通知",
+      "description": "無限期停靠割草機。它將留在充電站中，直到手動恢復。"
+    },
+    "resume_schedule": {
+      "name": "恢復排程",
+      "description": "恢復割草機的自動割草排程。"
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "向裝置傳送命令失敗：{error}"
+    },
+    "device_unavailable": {
+      "message": "裝置目前無法使用。"
+    },
+    "command_throttled": {
+      "message": "命令傳送過於頻繁。請在兩次命令之間等待幾秒鐘，以避免超過 API 速率限制。"
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "WebSocket 連線中斷",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "重新連線 WebSocket",
+            "description": "與 Husqvarna 雲端的即時連線已中斷。整合目前正在使用輪詢作為備用方案。確認以嘗試重新連線。"
+          }
+        }
+      }
+    }
+  }
+}

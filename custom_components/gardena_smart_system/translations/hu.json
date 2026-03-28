@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Csatlakozás a Husqvarnához",
+        "description": "Adja meg a Husqvarna fejlesztői portálon található alkalmazás hitelesítő adatait.",
+        "data": {
+          "client_id": "Alkalmazáskulcs (Client ID)",
+          "client_secret": "Alkalmazás titok"
+        },
+        "data_description": {
+          "client_id": "Az alkalmazáskulcs a Husqvarna fejlesztői fiókjából.",
+          "client_secret": "Az alkalmazás titok a Husqvarna fejlesztői fiókjából."
+        }
+      },
+      "api_type": {
+        "title": "API kiválasztása",
+        "description": "Válassza ki, melyik Husqvarna API-hoz csatlakozzon. Mindkettőt hozzáadhatja az integráció kétszeri beállításával.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Válassza ki a kertjét",
+        "description": "Több kert található a fiókjában. Válassza ki a hozzáadni kívántat.",
+        "data": {
+          "location_id": "Kert"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Újrahitelesítés",
+        "description": "A hitelesítő adatai már nem érvényesek. Kérjük, adja meg újra az alkalmazás hitelesítő adatait.",
+        "data": {
+          "client_id": "Alkalmazáskulcs (Client ID)",
+          "client_secret": "Alkalmazás titok"
+        }
+      },
+      "reconfigure": {
+        "title": "Újrakonfigurálás",
+        "description": "Frissítse az alkalmazás hitelesítő adatait.",
+        "data": {
+          "client_id": "Alkalmazáskulcs (Client ID)",
+          "client_secret": "Alkalmazás titok"
+        }
+      },
+      "reconfigure_location": {
+        "title": "Kert kiválasztása",
+        "description": "Több kert található. Válassza ki, melyik kertet használja ez a bejegyzés.",
+        "data": {
+          "location_id": "Kert"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Érvénytelen hitelesítő adatok. Ellenőrizze az alkalmazáskulcsot és a titkot a Husqvarna fejlesztői portálon.",
+      "forbidden": "API hozzáférés megtagadva. Győződjön meg róla, hogy a Gardena Smart System API csatlakoztatva van az alkalmazásához a Husqvarna fejlesztői portálon.",
+      "automower_not_connected": "Az Automower Connect API nincs csatlakoztatva az alkalmazásához. Engedélyezze a Husqvarna fejlesztői portálon a Csatlakoztatott API-k alatt.",
+      "rate_limited": "API sebességkorlát elérve vagy ideiglenesen blokkolva. Várjon néhány percet és próbálja újra, vagy hozzon létre új alkalmazást a Husqvarna fejlesztői portálon.",
+      "cannot_connect": "Nem sikerült csatlakozni az API-hoz. Ellenőrizze a hálózati kapcsolatot és próbálja újra.",
+      "unknown": "Váratlan hiba történt."
+    },
+    "abort": {
+      "already_configured": "Ez a konfiguráció már létezik.",
+      "reauth_successful": "Az újrahitelesítés sikeres volt.",
+      "reconfigure_successful": "Az újrakonfigurálás sikeres volt."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Gardena Smart System beállítások",
+        "data": {
+          "default_watering_minutes": "Alapértelmezett öntözési időtartam",
+          "default_socket_minutes": "Alapértelmezett aljzat időtartam",
+          "poll_interval_minutes": "Lekérdezési időköz"
+        },
+        "data_description": {
+          "default_watering_minutes": "Időtartam percben szelep nyitásakor időtartam megadása nélkül (1-1440).",
+          "default_socket_minutes": "Időtartam percben aljzat bekapcsolásakor (1-1440). Állítsa 1440-re (24 óra) a közel végtelen működéshez.",
+          "poll_interval_minutes": "Milyen gyakran kérdezze le az API-t frissítésekért percben (5-1440). Az alacsonyabb értékek frissebb adatokat biztosítanak, de több API-kvótát használnak. Alapértelmezett: 30 (Gardena) / 15 (Automower)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Akkumulátor"
+      },
+      "rf_link_level": {
+        "name": "Jelerősség"
+      },
+      "soil_humidity": {
+        "name": "Talajnedvesség"
+      },
+      "soil_temperature": {
+        "name": "Talajhőmérséklet"
+      },
+      "ambient_temperature": {
+        "name": "Környezeti hőmérséklet"
+      },
+      "light_intensity": {
+        "name": "Fényerősség"
+      },
+      "mower_operating_hours": {
+        "name": "Üzemórák"
+      },
+      "mower_activity": {
+        "name": "Fűnyíró tevékenység"
+      },
+      "mower_last_error_code": {
+        "name": "Utolsó hibakód"
+      },
+      "automower_battery_level": {
+        "name": "Akkumulátor"
+      },
+      "automower_cutting_height": {
+        "name": "Vágási magasság"
+      },
+      "automower_next_start": {
+        "name": "Következő indulás"
+      },
+      "automower_total_cutting_time": {
+        "name": "Összes vágási idő"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Töltési ciklusok"
+      },
+      "automower_total_collisions": {
+        "name": "Ütközések"
+      },
+      "automower_total_drive_distance": {
+        "name": "Összes megtett távolság"
+      },
+      "automower_blade_usage_time": {
+        "name": "Penge használati idő"
+      },
+      "automower_total_running_time": {
+        "name": "Összes futási idő"
+      },
+      "automower_total_searching_time": {
+        "name": "Összes keresési idő"
+      },
+      "automower_activity": {
+        "name": "Tevékenység",
+        "state": {
+          "unknown": "Ismeretlen",
+          "not_applicable": "Nem alkalmazható",
+          "mowing": "Nyírás",
+          "going_home": "Hazatérés",
+          "charging": "Töltés",
+          "leaving": "Indulás",
+          "parked_in_cs": "Parkolva",
+          "stopped_in_garden": "Megállva a kertben"
+        }
+      },
+      "automower_state": {
+        "name": "Állapot",
+        "state": {
+          "unknown": "Ismeretlen",
+          "not_applicable": "Nem alkalmazható",
+          "paused": "Szüneteltetve",
+          "in_operation": "Működésben",
+          "wait_updating": "Frissítés",
+          "wait_power_up": "Bekapcsolás",
+          "restricted": "Korlátozott",
+          "off": "Kikapcsolva",
+          "stopped": "Megállítva",
+          "error": "Hiba",
+          "fatal_error": "Végzetes hiba",
+          "error_at_power_up": "Hiba bekapcsoláskor"
+        }
+      },
+      "automower_inactive_reason": {
+        "name": "Inaktivitás oka"
+      },
+      "automower_restricted_reason": {
+        "name": "Korlátozás oka",
+        "state": {
+          "none": "Nincs",
+          "week_schedule": "Heti ütemezés",
+          "park_override": "Parkolás felülbírálat",
+          "sensor": "Érzékelő",
+          "daily_limit": "Napi limit",
+          "fota": "Firmware frissítés",
+          "frost": "Fagy",
+          "all_work_areas_completed": "Minden munkaterület kész",
+          "external": "Külső",
+          "not_applicable": "Nem alkalmazható"
+        }
+      },
+      "automower_error_code": {
+        "name": "Hibakód"
+      },
+      "automower_error_code_timestamp": {
+        "name": "Utolsó hiba ideje"
+      },
+      "automower_total_charging_time": {
+        "name": "Összes töltési idő"
+      },
+      "automower_planner_override": {
+        "name": "Ütemezés felülbírálat",
+        "state": {
+          "not_active": "Nem aktív",
+          "force_park": "Kényszerített parkolás",
+          "force_mow": "Kényszerített nyírás"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Utoljára látva"
+      },
+      "battery_state": {
+        "name": "Akkumulátor állapot",
+        "state": {
+          "ok": "OK",
+          "low": "Alacsony",
+          "replace_now": "Cserélje ki most",
+          "out_of_operation": "Üzemen kívül",
+          "charging": "Töltés",
+          "no_battery": "Nincs akkumulátor",
+          "unknown": "Ismeretlen"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Hátralévő üzemidő"
+      },
+      "power_socket_last_error_code": {
+        "name": "Utolsó hibakód"
+      },
+      "valve_last_error_code": {
+        "name": "Szelep hibakód"
+      },
+      "valve_remaining_duration": {
+        "name": "Hátralévő öntözési idő"
+      },
+      "hub_device_count": {
+        "name": "Eszközök száma"
+      },
+      "hub_polling_interval": {
+        "name": "Lekérdezési időköz"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Alacsony töltöttség"
+      },
+      "valve_error": {
+        "name": "Szelep hiba"
+      },
+      "mower_error": {
+        "name": "Fűnyíró hiba"
+      },
+      "automower_error": {
+        "name": "Hiba"
+      },
+      "automower_connected": {
+        "name": "Csatlakoztatva"
+      },
+      "rf_link_online": {
+        "name": "RF kapcsolat"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket csatlakoztatva"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Tápellátás"
+      },
+      "automower_headlight": {
+        "name": "Fényszóró"
+      },
+      "automower_stay_out_zone": {
+        "name": "Tiltott zóna: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Munkaterület: {work_area}"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Fényszóró mód",
+        "state": {
+          "always_on": "Mindig bekapcsolva",
+          "always_off": "Mindig kikapcsolva",
+          "evening_only": "Csak este",
+          "evening_and_night": "Este és éjszaka"
+        }
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Szelep"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Fűnyíró"
+      },
+      "automower": {
+        "name": "Fűnyíró"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Vágási magasság"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Vágási magasság: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Ütemezés felülbírálat"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Pozíció"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Nyírási ütemezés"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Hiba megerősítése"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "Fűnyíró esemény",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "Nyírás elkezdve",
+              "stopped": "Megállítva",
+              "leaving": "Indulás",
+              "searching": "Keresés",
+              "charging": "Töltés",
+              "parked": "Parkolva",
+              "paused": "Szüneteltetve",
+              "error": "Hiba",
+              "error_cleared": "Hiba törölve"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Szelep esemény",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Öntözés elkezdve",
+              "stopped_watering": "Öntözés leállítva",
+              "error": "Hiba",
+              "error_cleared": "Hiba törölve"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Aljzat esemény",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Bekapcsolva",
+              "turned_off": "Kikapcsolva",
+              "error": "Hiba",
+              "error_cleared": "Hiba törölve"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Fűnyíró esemény",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Nyírás elkezdve",
+              "stopped": "Megállítva",
+              "going_home": "Hazatérés",
+              "charging": "Töltés",
+              "leaving": "Indulás az állomásról",
+              "parked": "Parkolva",
+              "paused": "Szüneteltetve",
+              "error": "Hiba",
+              "error_cleared": "Hiba törölve"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Öntözés indítása",
+      "description": "Szelep öntözésének indítása megadott időtartamra, az ütemezés felülbírálásával.",
+      "fields": {
+        "duration": {
+          "name": "Időtartam",
+          "description": "Időtartam percben (1–1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Bekapcsolás időtartamra",
+      "description": "Okos aljzat bekapcsolása megadott időtartamra.",
+      "fields": {
+        "duration": {
+          "name": "Időtartam",
+          "description": "Időtartam percben (1–1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Ütemezés felülbírálása",
+      "description": "A fűnyíró kényszerített nyírása megadott időtartamra, az ütemezés figyelmen kívül hagyásával.",
+      "fields": {
+        "duration": {
+          "name": "Időtartam",
+          "description": "Időtartam percben (1–480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Parkolás további értesítésig",
+      "description": "A fűnyíró határozatlan idejű parkolása. A töltőállomáson marad, amíg manuálisan nem indítják újra."
+    },
+    "resume_schedule": {
+      "name": "Ütemezés folytatása",
+      "description": "A fűnyíró automatikus nyírási ütemezésének folytatása."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Nem sikerült parancsot küldeni az eszköznek: {error}"
+    },
+    "device_unavailable": {
+      "message": "Az eszköz jelenleg nem elérhető."
+    },
+    "command_throttled": {
+      "message": "A parancsok túl gyorsan kerülnek küldésre. Kérjük, várjon néhány másodpercet a parancsok között az API sebességkorlát túllépésének elkerülése érdekében."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "WebSocket kapcsolat megszakadt",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "WebSocket újracsatlakoztatás",
+            "description": "A Husqvarna felhővel való valós idejű kapcsolat megszakadt. Az integráció jelenleg lekérdezést használ tartalékként. Erősítse meg az újracsatlakozási kísérlethez."
+          }
+        }
+      }
+    }
+  }
+}

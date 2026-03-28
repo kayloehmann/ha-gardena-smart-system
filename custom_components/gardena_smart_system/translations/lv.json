@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Savienot ar Husqvarna",
+        "description": "Ievadiet savas lietojumprogrammas akreditācijas datus no Husqvarna izstrādātāju portāla.",
+        "data": {
+          "client_id": "Lietojumprogrammas atslēga (Client ID)",
+          "client_secret": "Lietojumprogrammas noslēpums"
+        },
+        "data_description": {
+          "client_id": "Lietojumprogrammas atslēga no jūsu Husqvarna izstrādātāja konta.",
+          "client_secret": "Lietojumprogrammas noslēpums no jūsu Husqvarna izstrādātāja konta."
+        }
+      },
+      "api_type": {
+        "title": "Izvēlieties API",
+        "description": "Izvēlieties, kuram Husqvarna API pieslēgties. Abus var pievienot, iestatot integrāciju divreiz.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Izvēlieties savu dārzu",
+        "description": "Jūsu kontā tika atrasti vairāki dārzi. Izvēlieties to, kuru vēlaties pievienot.",
+        "data": {
+          "location_id": "Dārzs"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Atkārtota autentifikācija",
+        "description": "Jūsu akreditācijas dati vairs nav derīgi. Lūdzu, ievadiet savas lietojumprogrammas akreditācijas datus vēlreiz.",
+        "data": {
+          "client_id": "Lietojumprogrammas atslēga (Client ID)",
+          "client_secret": "Lietojumprogrammas noslēpums"
+        }
+      },
+      "reconfigure": {
+        "title": "Pārkonfigurēt",
+        "description": "Atjauniniet savas lietojumprogrammas akreditācijas datus.",
+        "data": {
+          "client_id": "Lietojumprogrammas atslēga (Client ID)",
+          "client_secret": "Lietojumprogrammas noslēpums"
+        }
+      },
+      "reconfigure_location": {
+        "title": "Izvēlieties dārzu",
+        "description": "Tika atrasti vairāki dārzi. Izvēlieties, kuru dārzu šim ierakstam jāizmanto.",
+        "data": {
+          "location_id": "Dārzs"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Nederīgi akreditācijas dati. Pārbaudiet savu lietojumprogrammas atslēgu un noslēpumu Husqvarna izstrādātāju portālā.",
+      "forbidden": "API piekļuve liegta. Pārliecinieties, ka Gardena Smart System API ir pievienota jūsu lietojumprogrammai Husqvarna izstrādātāju portālā.",
+      "automower_not_connected": "Automower Connect API nav pievienota jūsu lietojumprogrammai. Iespējojiet to Husqvarna izstrādātāju portālā sadaļā Pievienotie API.",
+      "rate_limited": "API pieprasījumu limits ir sasniegts vai īslaicīgi bloķēts. Uzgaidiet dažas minūtes un mēģiniet vēlreiz vai izveidojiet jaunu lietojumprogrammu Husqvarna izstrādātāju portālā.",
+      "cannot_connect": "Nevar izveidot savienojumu ar API. Pārbaudiet savu tīkla savienojumu un mēģiniet vēlreiz.",
+      "unknown": "Radās neparedzēta kļūda."
+    },
+    "abort": {
+      "already_configured": "Šī konfigurācija jau pastāv.",
+      "reauth_successful": "Atkārtota autentifikācija bija veiksmīga.",
+      "reconfigure_successful": "Pārkonfigurēšana bija veiksmīga."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Gardena Smart System opcijas",
+        "data": {
+          "default_watering_minutes": "Noklusējuma laistīšanas ilgums",
+          "default_socket_minutes": "Noklusējuma kontaktligzdas ilgums",
+          "poll_interval_minutes": "Aptaujas intervāls"
+        },
+        "data_description": {
+          "default_watering_minutes": "Ilgums minūtēs, atverot vārstu bez norādīta ilguma (1–1440).",
+          "default_socket_minutes": "Ilgums minūtēs, ieslēdzot kontaktligzdu (1–1440). Iestatiet 1440 (24h) gandrīz nepārtrauktai darbībai.",
+          "poll_interval_minutes": "Cik bieži aptaujāt API par atjauninājumiem minūtēs (5–1440). Mazākas vērtības nodrošina svaigākus datus, bet patērē vairāk API kvotas. Noklusējums: 30 (Gardena) / 15 (Automower)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Akumulators"
+      },
+      "rf_link_level": {
+        "name": "Signāla stiprums"
+      },
+      "soil_humidity": {
+        "name": "Augsnes mitrums"
+      },
+      "soil_temperature": {
+        "name": "Augsnes temperatūra"
+      },
+      "ambient_temperature": {
+        "name": "Apkārtējā temperatūra"
+      },
+      "light_intensity": {
+        "name": "Gaismas intensitāte"
+      },
+      "mower_operating_hours": {
+        "name": "Darba stundas"
+      },
+      "mower_activity": {
+        "name": "Pļāvēja aktivitāte"
+      },
+      "mower_last_error_code": {
+        "name": "Pēdējais kļūdas kods"
+      },
+      "automower_battery_level": {
+        "name": "Akumulators"
+      },
+      "automower_cutting_height": {
+        "name": "Pļaušanas augstums"
+      },
+      "automower_next_start": {
+        "name": "Nākamā palaišana"
+      },
+      "automower_total_cutting_time": {
+        "name": "Kopējais pļaušanas laiks"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Uzlādes cikli"
+      },
+      "automower_total_collisions": {
+        "name": "Sadursmes"
+      },
+      "automower_total_drive_distance": {
+        "name": "Kopējais nobrauktais attālums"
+      },
+      "automower_blade_usage_time": {
+        "name": "Asmeņu lietošanas laiks"
+      },
+      "automower_total_running_time": {
+        "name": "Kopējais darbības laiks"
+      },
+      "automower_total_searching_time": {
+        "name": "Kopējais meklēšanas laiks"
+      },
+      "automower_activity": {
+        "name": "Aktivitāte",
+        "state": {
+          "unknown": "Nezināms",
+          "not_applicable": "Nav piemērojams",
+          "mowing": "Pļauj",
+          "going_home": "Dodas mājup",
+          "charging": "Uzlādē",
+          "leaving": "Izbrauc",
+          "parked_in_cs": "Novietots",
+          "stopped_in_garden": "Apstājies dārzā"
+        }
+      },
+      "automower_state": {
+        "name": "Stāvoklis",
+        "state": {
+          "unknown": "Nezināms",
+          "not_applicable": "Nav piemērojams",
+          "paused": "Pauzēts",
+          "in_operation": "Darbojas",
+          "wait_updating": "Atjaunina",
+          "wait_power_up": "Ieslēdzas",
+          "restricted": "Ierobežots",
+          "off": "Izslēgts",
+          "stopped": "Apstājies",
+          "error": "Kļūda",
+          "fatal_error": "Kritiska kļūda",
+          "error_at_power_up": "Kļūda ieslēdzoties"
+        }
+      },
+      "automower_inactive_reason": {
+        "name": "Neaktivitātes iemesls"
+      },
+      "automower_restricted_reason": {
+        "name": "Ierobežojuma iemesls",
+        "state": {
+          "none": "Nav",
+          "week_schedule": "Nedēļas grafiks",
+          "park_override": "Novietošanas pārrakstīšana",
+          "sensor": "Sensors",
+          "daily_limit": "Dienas limits",
+          "fota": "Programmatūras atjauninājums",
+          "frost": "Sals",
+          "all_work_areas_completed": "Visas darba zonas pabeigtas",
+          "external": "Ārējs",
+          "not_applicable": "Nav piemērojams"
+        }
+      },
+      "automower_error_code": {
+        "name": "Kļūdas kods"
+      },
+      "automower_error_code_timestamp": {
+        "name": "Pēdējās kļūdas laiks"
+      },
+      "automower_total_charging_time": {
+        "name": "Kopējais uzlādes laiks"
+      },
+      "automower_planner_override": {
+        "name": "Grafika pārrakstīšana",
+        "state": {
+          "not_active": "Nav aktīvs",
+          "force_park": "Piespiedu novietošana",
+          "force_mow": "Piespiedu pļaušana"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Pēdējo reizi redzēts"
+      },
+      "battery_state": {
+        "name": "Akumulatora stāvoklis",
+        "state": {
+          "ok": "OK",
+          "low": "Zems",
+          "replace_now": "Nomainīt tagad",
+          "out_of_operation": "Ārpus ekspluatācijas",
+          "charging": "Uzlādē",
+          "no_battery": "Nav akumulatora",
+          "unknown": "Nezināms"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Atlikušais darbības laiks"
+      },
+      "power_socket_last_error_code": {
+        "name": "Pēdējais kļūdas kods"
+      },
+      "valve_last_error_code": {
+        "name": "Vārsta kļūdas kods"
+      },
+      "valve_remaining_duration": {
+        "name": "Atlikušais laistīšanas laiks"
+      },
+      "hub_device_count": {
+        "name": "Ierīču skaits"
+      },
+      "hub_polling_interval": {
+        "name": "Aptaujas intervāls"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Zems akumulatora līmenis"
+      },
+      "valve_error": {
+        "name": "Vārsta kļūda"
+      },
+      "mower_error": {
+        "name": "Pļāvēja kļūda"
+      },
+      "automower_error": {
+        "name": "Kļūda"
+      },
+      "automower_connected": {
+        "name": "Savienots"
+      },
+      "rf_link_online": {
+        "name": "RF savienojums"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket savienots"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Barošana"
+      },
+      "automower_headlight": {
+        "name": "Priekšējais lukturis"
+      },
+      "automower_stay_out_zone": {
+        "name": "Aizliegtā zona: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Darba zona: {work_area}"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Priekšējā luktura režīms",
+        "state": {
+          "always_on": "Vienmēr ieslēgts",
+          "always_off": "Vienmēr izslēgts",
+          "evening_only": "Tikai vakarā",
+          "evening_and_night": "Vakarā un naktī"
+        }
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Vārsts"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Pļāvējs"
+      },
+      "automower": {
+        "name": "Pļāvējs"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Pļaušanas augstums"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Pļaušanas augstums: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Grafika pārrakstīšana"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Atrašanās vieta"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Pļaušanas grafiks"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Apstiprināt kļūdu"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "Pļāvēja notikums",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "Sāka pļaut",
+              "stopped": "Apstājies",
+              "leaving": "Izbrauc",
+              "searching": "Meklē",
+              "charging": "Uzlādē",
+              "parked": "Novietots",
+              "paused": "Pauzēts",
+              "error": "Kļūda",
+              "error_cleared": "Kļūda novērsta"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Vārsta notikums",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Sāka laistīt",
+              "stopped_watering": "Beidza laistīt",
+              "error": "Kļūda",
+              "error_cleared": "Kļūda novērsta"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Kontaktligzdas notikums",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Ieslēgta",
+              "turned_off": "Izslēgta",
+              "error": "Kļūda",
+              "error_cleared": "Kļūda novērsta"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Pļāvēja notikums",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Sāka pļaut",
+              "stopped": "Apstājies",
+              "going_home": "Dodas mājup",
+              "charging": "Uzlādē",
+              "leaving": "Izbrauc no stacijas",
+              "parked": "Novietots",
+              "paused": "Pauzēts",
+              "error": "Kļūda",
+              "error_cleared": "Kļūda novērsta"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Sākt laistīšanu",
+      "description": "Sākt vārsta laistīšanu uz noteiktu laiku, pārrakstot grafiku.",
+      "fields": {
+        "duration": {
+          "name": "Ilgums",
+          "description": "Ilgums minūtēs (1–1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Ieslēgt uz laiku",
+      "description": "Ieslēgt viedo kontaktligzdu uz noteiktu laiku.",
+      "fields": {
+        "duration": {
+          "name": "Ilgums",
+          "description": "Ilgums minūtēs (1–1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Pārrakstīt grafiku",
+      "description": "Piespiest pļāvēju pļaut noteiktu laiku, ignorējot grafiku.",
+      "fields": {
+        "duration": {
+          "name": "Ilgums",
+          "description": "Ilgums minūtēs (1–480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Novietot līdz turpmākam paziņojumam",
+      "description": "Novietot pļāvēju uz nenoteiktu laiku. Tas paliks uzlādes stacijā, līdz tiks manuāli atsākts."
+    },
+    "resume_schedule": {
+      "name": "Atsākt grafiku",
+      "description": "Atsākt pļāvēja automātisko pļaušanas grafiku."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Neizdevās nosūtīt komandu ierīcei: {error}"
+    },
+    "device_unavailable": {
+      "message": "Ierīce pašlaik nav pieejama."
+    },
+    "command_throttled": {
+      "message": "Komandas tiek sūtītas pārāk ātri. Lūdzu, uzgaidiet dažas sekundes starp komandām, lai nepārsniegtu API pieprasījumu limitu."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "WebSocket savienojums zaudēts",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Atkārtoti savienot WebSocket",
+            "description": "Reāllaika savienojums ar Husqvarna mākoni tika pārtraukts. Integrācija pašlaik izmanto aptauju kā rezerves risinājumu. Apstipriniet, lai mēģinātu atkārtoti savienoties."
+          }
+        }
+      }
+    }
+  }
+}

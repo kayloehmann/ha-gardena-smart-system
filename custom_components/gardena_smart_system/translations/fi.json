@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Yhdistä Husqvarnaan",
+        "description": "Syötä tunnistetiedot Husqvarna-kehittäjäportaalin sovelluksestasi.",
+        "data": {
+          "client_id": "Sovellusavain (Client ID)",
+          "client_secret": "Sovelluksen salaisuus"
+        },
+        "data_description": {
+          "client_id": "Sovellusavain Husqvarna-kehittäjätililtäsi.",
+          "client_secret": "Sovelluksen salaisuus Husqvarna-kehittäjätililtäsi."
+        }
+      },
+      "api_type": {
+        "title": "Valitse API",
+        "description": "Valitse mihin Husqvarna API:in yhdistetään. Voit lisätä molemmat määrittämällä integraation kahdesti.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Valitse puutarhasi",
+        "description": "Tililtäsi löytyi useita puutarhoja. Valitse lisättävä puutarha.",
+        "data": {
+          "location_id": "Puutarha"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Todenna uudelleen",
+        "description": "Tunnistetietosi eivät ole enää voimassa. Syötä sovelluksen tunnistetiedot uudelleen.",
+        "data": {
+          "client_id": "Sovellusavain (Client ID)",
+          "client_secret": "Sovelluksen salaisuus"
+        }
+      },
+      "reconfigure": {
+        "title": "Määritä uudelleen",
+        "description": "Päivitä sovelluksen tunnistetiedot.",
+        "data": {
+          "client_id": "Sovellusavain (Client ID)",
+          "client_secret": "Sovelluksen salaisuus"
+        }
+      },
+      "reconfigure_location": {
+        "title": "Valitse puutarha",
+        "description": "Useita puutarhoja löytyi. Valitse puutarha, jota tämän merkinnän tulisi käyttää.",
+        "data": {
+          "location_id": "Puutarha"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Virheelliset tunnistetiedot. Tarkista sovellusavain ja salaisuus Husqvarna-kehittäjäportaalissa.",
+      "forbidden": "API-pääsy estetty. Varmista, että Gardena Smart System API on yhdistetty sovellukseesi Husqvarna-kehittäjäportaalissa.",
+      "automower_not_connected": "Automower Connect API ei ole yhdistetty sovellukseesi. Ota se käyttöön Husqvarna-kehittäjäportaalissa kohdassa Yhdistetyt API:t.",
+      "rate_limited": "API-nopeusrajoitus saavutettu tai tilapäisesti estetty. Odota muutama minuutti ja yritä uudelleen tai luo uusi sovellus Husqvarna-kehittäjäportaalissa.",
+      "cannot_connect": "Yhteyttä API:in ei voitu muodostaa. Tarkista verkkoyhteys ja yritä uudelleen.",
+      "unknown": "Odottamaton virhe tapahtui."
+    },
+    "abort": {
+      "already_configured": "Tämä määritys on jo olemassa.",
+      "reauth_successful": "Uudelleentodennus onnistui.",
+      "reconfigure_successful": "Uudelleenmääritys onnistui."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Gardena Smart System -asetukset",
+        "data": {
+          "default_watering_minutes": "Oletuskastelun kesto",
+          "default_socket_minutes": "Pistorasian oletuskesto",
+          "poll_interval_minutes": "Kyselyväli"
+        },
+        "data_description": {
+          "default_watering_minutes": "Kesto minuutteina, kun venttiili avataan ilman keston määritystä (1–1440).",
+          "default_socket_minutes": "Kesto minuutteina, kun pistorasia kytketään päälle (1–1440). Aseta 1440 (24 h) lähes jatkuvaa käyttöä varten.",
+          "poll_interval_minutes": "Kuinka usein API:sta haetaan päivityksiä minuutteina (5–1440). Pienempi arvo tarjoaa tuoreemmat tiedot, mutta kuluttaa enemmän API-kiintiötä. Oletus: 30 (Gardena) / 15 (Automower)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Akku"
+      },
+      "rf_link_level": {
+        "name": "Signaalin voimakkuus"
+      },
+      "soil_humidity": {
+        "name": "Maaperän kosteus"
+      },
+      "soil_temperature": {
+        "name": "Maaperän lämpötila"
+      },
+      "ambient_temperature": {
+        "name": "Ympäristön lämpötila"
+      },
+      "light_intensity": {
+        "name": "Valon voimakkuus"
+      },
+      "mower_operating_hours": {
+        "name": "Käyttötunnit"
+      },
+      "mower_activity": {
+        "name": "Ruohonleikkurin toiminta"
+      },
+      "mower_last_error_code": {
+        "name": "Viimeisin virhekoodi"
+      },
+      "automower_battery_level": {
+        "name": "Akku"
+      },
+      "automower_cutting_height": {
+        "name": "Leikkuukorkeus"
+      },
+      "automower_next_start": {
+        "name": "Seuraava käynnistys"
+      },
+      "automower_total_cutting_time": {
+        "name": "Leikkuuaika yhteensä"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Latausjaksot"
+      },
+      "automower_total_collisions": {
+        "name": "Törmäykset"
+      },
+      "automower_total_drive_distance": {
+        "name": "Ajettu matka yhteensä"
+      },
+      "automower_blade_usage_time": {
+        "name": "Terän käyttöaika"
+      },
+      "automower_total_running_time": {
+        "name": "Käyntiaika yhteensä"
+      },
+      "automower_total_searching_time": {
+        "name": "Hakuaika yhteensä"
+      },
+      "automower_activity": {
+        "name": "Toiminta",
+        "state": {
+          "unknown": "Tuntematon",
+          "not_applicable": "Ei sovellettavissa",
+          "mowing": "Leikkaa",
+          "going_home": "Palaa kotiin",
+          "charging": "Lataa",
+          "leaving": "Lähtee",
+          "parked_in_cs": "Pysäköity",
+          "stopped_in_garden": "Pysähtynyt puutarhaan"
+        }
+      },
+      "automower_state": {
+        "name": "Tila",
+        "state": {
+          "unknown": "Tuntematon",
+          "not_applicable": "Ei sovellettavissa",
+          "paused": "Keskeytetty",
+          "in_operation": "Käynnissä",
+          "wait_updating": "Päivittää",
+          "wait_power_up": "Käynnistyy",
+          "restricted": "Rajoitettu",
+          "off": "Pois päältä",
+          "stopped": "Pysähtynyt",
+          "error": "Virhe",
+          "fatal_error": "Vakava virhe",
+          "error_at_power_up": "Virhe käynnistyksessä"
+        }
+      },
+      "automower_inactive_reason": {
+        "name": "Toimettomuuden syy"
+      },
+      "automower_restricted_reason": {
+        "name": "Rajoituksen syy",
+        "state": {
+          "none": "Ei mitään",
+          "week_schedule": "Viikkoaikataulu",
+          "park_override": "Pysäköinnin ohitus",
+          "sensor": "Anturi",
+          "daily_limit": "Päiväraja",
+          "fota": "Laiteohjelmistopäivitys",
+          "frost": "Pakkanen",
+          "all_work_areas_completed": "Kaikki työalueet valmiit",
+          "external": "Ulkoinen",
+          "not_applicable": "Ei sovellettavissa"
+        }
+      },
+      "automower_error_code": {
+        "name": "Virhekoodi"
+      },
+      "automower_error_code_timestamp": {
+        "name": "Viimeisimmän virheen aika"
+      },
+      "automower_total_charging_time": {
+        "name": "Latausaika yhteensä"
+      },
+      "automower_planner_override": {
+        "name": "Aikataulun ohitus",
+        "state": {
+          "not_active": "Ei aktiivinen",
+          "force_park": "Pakota pysäköinti",
+          "force_mow": "Pakota leikkuu"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Viimeksi nähty"
+      },
+      "battery_state": {
+        "name": "Akun tila",
+        "state": {
+          "ok": "OK",
+          "low": "Matala",
+          "replace_now": "Vaihda nyt",
+          "out_of_operation": "Ei käytössä",
+          "charging": "Lataa",
+          "no_battery": "Ei akkua",
+          "unknown": "Tuntematon"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Jäljellä oleva käyntiaika"
+      },
+      "power_socket_last_error_code": {
+        "name": "Viimeisin virhekoodi"
+      },
+      "valve_last_error_code": {
+        "name": "Venttiilin virhekoodi"
+      },
+      "valve_remaining_duration": {
+        "name": "Jäljellä oleva kasteluaika"
+      },
+      "hub_device_count": {
+        "name": "Laitteiden määrä"
+      },
+      "hub_polling_interval": {
+        "name": "Kyselyväli"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Akku vähissä"
+      },
+      "valve_error": {
+        "name": "Venttiilin virhe"
+      },
+      "mower_error": {
+        "name": "Ruohonleikkurin virhe"
+      },
+      "automower_error": {
+        "name": "Virhe"
+      },
+      "automower_connected": {
+        "name": "Yhdistetty"
+      },
+      "rf_link_online": {
+        "name": "RF-yhteys"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket yhdistetty"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Virta"
+      },
+      "automower_headlight": {
+        "name": "Ajovalo"
+      },
+      "automower_stay_out_zone": {
+        "name": "Kieltoalue: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Työalue: {work_area}"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Ajovalotila",
+        "state": {
+          "always_on": "Aina päällä",
+          "always_off": "Aina pois",
+          "evening_only": "Vain illalla",
+          "evening_and_night": "Illalla ja yöllä"
+        }
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Venttiili"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Ruohonleikkuri"
+      },
+      "automower": {
+        "name": "Ruohonleikkuri"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Leikkuukorkeus"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Leikkuukorkeus: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Aikataulun ohitus"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Sijainti"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Leikkuuaikataulu"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Vahvista virhe"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "Ruohonleikkuritapahtuma",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "Leikkuu aloitettu",
+              "stopped": "Pysähtynyt",
+              "leaving": "Lähtee",
+              "searching": "Hakee",
+              "charging": "Lataa",
+              "parked": "Pysäköity",
+              "paused": "Keskeytetty",
+              "error": "Virhe",
+              "error_cleared": "Virhe poistettu"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Venttiilitapahtuma",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Kastelu aloitettu",
+              "stopped_watering": "Kastelu lopetettu",
+              "error": "Virhe",
+              "error_cleared": "Virhe poistettu"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Pistorasiatapahtuma",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Kytketty päälle",
+              "turned_off": "Kytketty pois",
+              "error": "Virhe",
+              "error_cleared": "Virhe poistettu"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Ruohonleikkuritapahtuma",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Leikkuu aloitettu",
+              "stopped": "Pysähtynyt",
+              "going_home": "Palaa kotiin",
+              "charging": "Lataa",
+              "leaving": "Lähtee asemalta",
+              "parked": "Pysäköity",
+              "paused": "Keskeytetty",
+              "error": "Virhe",
+              "error_cleared": "Virhe poistettu"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Aloita kastelu",
+      "description": "Aloita venttiilin kastelu tietyn ajan, ohittaen aikataulun.",
+      "fields": {
+        "duration": {
+          "name": "Kesto",
+          "description": "Kesto minuutteina (1–1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Kytke päälle ajaksi",
+      "description": "Kytke älypistorasia päälle tietyksi ajaksi.",
+      "fields": {
+        "duration": {
+          "name": "Kesto",
+          "description": "Kesto minuutteina (1–1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Ohita aikataulu",
+      "description": "Pakota ruohonleikkuri leikkaamaan tietyn ajan, ohittaen aikataulun.",
+      "fields": {
+        "duration": {
+          "name": "Kesto",
+          "description": "Kesto minuutteina (1–480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Pysäköi toistaiseksi",
+      "description": "Pysäköi ruohonleikkuri toistaiseksi. Se pysyy latausasemassa, kunnes se käynnistetään manuaalisesti."
+    },
+    "resume_schedule": {
+      "name": "Jatka aikataulua",
+      "description": "Jatka ruohonleikkurin automaattista leikkuuaikataulua."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Komennon lähettäminen laitteelle epäonnistui: {error}"
+    },
+    "device_unavailable": {
+      "message": "Laite ei ole tällä hetkellä käytettävissä."
+    },
+    "command_throttled": {
+      "message": "Komentoja lähetetään liian nopeasti. Odota muutama sekunti komentojen välillä, jotta API-nopeusrajaa ei ylitetä."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "WebSocket-yhteys katkesi",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Yhdistä WebSocket uudelleen",
+            "description": "Reaaliaikainen yhteys Husqvarna-pilveen katkesi. Integraatio käyttää tällä hetkellä kyselyä varavaihtoehtona. Vahvista yrittääksesi uudelleenyhdistämistä."
+          }
+        }
+      }
+    }
+  }
+}

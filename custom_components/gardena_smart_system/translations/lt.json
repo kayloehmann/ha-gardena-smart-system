@@ -1,0 +1,459 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Prisijungti prie Husqvarna",
+        "description": "Įveskite kredencialus iš savo programos Husqvarna kūrėjų portale.",
+        "data": {
+          "client_id": "Programos raktas (Client ID)",
+          "client_secret": "Programos paslaptis"
+        },
+        "data_description": {
+          "client_id": "Programos raktas iš jūsų Husqvarna kūrėjo paskyros.",
+          "client_secret": "Programos paslaptis iš jūsų Husqvarna kūrėjo paskyros."
+        }
+      },
+      "api_type": {
+        "title": "Pasirinkite API",
+        "description": "Pasirinkite, prie kurio Husqvarna API prisijungti. Galite pridėti abu, du kartus nustatę integraciją.",
+        "data": {
+          "api_type": "API"
+        }
+      },
+      "location": {
+        "title": "Pasirinkite savo sodą",
+        "description": "Jūsų paskyroje rasti keli sodai. Pasirinkite tą, kurį norite pridėti.",
+        "data": {
+          "location_id": "Sodas"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Pakartotinis autentifikavimas",
+        "description": "Jūsų kredencialai nebegalioja. Prašome iš naujo įvesti programos kredencialus.",
+        "data": {
+          "client_id": "Programos raktas (Client ID)",
+          "client_secret": "Programos paslaptis"
+        }
+      },
+      "reconfigure": {
+        "title": "Perkonfigūravimas",
+        "description": "Atnaujinkite programos kredencialus.",
+        "data": {
+          "client_id": "Programos raktas (Client ID)",
+          "client_secret": "Programos paslaptis"
+        }
+      },
+      "reconfigure_location": {
+        "title": "Pasirinkite sodą",
+        "description": "Rasta keletas sodų. Pasirinkite, kurį sodą šis įrašas turėtų naudoti.",
+        "data": {
+          "location_id": "Sodas"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Neteisingi kredencialai. Patikrinkite programos raktą ir paslaptį Husqvarna kūrėjų portale.",
+      "forbidden": "API prieiga uždrausta. Įsitikinkite, kad Gardena Smart System API yra prijungtas prie jūsų programos Husqvarna kūrėjų portale.",
+      "automower_not_connected": "Automower Connect API nėra prijungtas prie jūsų programos. Įjunkite jį Husqvarna kūrėjų portale skiltyje Prijungti API.",
+      "rate_limited": "Pasiektas API užklausų limitas arba laikinas blokavimas. Palaukite kelias minutes ir bandykite dar kartą arba sukurkite naują programą Husqvarna kūrėjų portale.",
+      "cannot_connect": "Nepavyko prisijungti prie API. Patikrinkite tinklo ryšį ir bandykite dar kartą.",
+      "unknown": "Įvyko netikėta klaida."
+    },
+    "abort": {
+      "already_configured": "Ši konfigūracija jau egzistuoja.",
+      "reauth_successful": "Pakartotinis autentifikavimas sėkmingas.",
+      "reconfigure_successful": "Perkonfigūravimas sėkmingas."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Gardena Smart System nustatymai",
+        "data": {
+          "default_watering_minutes": "Numatytoji laistymo trukmė",
+          "default_socket_minutes": "Numatytoji lizdo trukmė",
+          "poll_interval_minutes": "Apklausos intervalas"
+        },
+        "data_description": {
+          "default_watering_minutes": "Trukmė minutėmis atidarant vožtuvą be nurodytos trukmės (1-1440).",
+          "default_socket_minutes": "Trukmė minutėmis įjungiant lizdą (1-1440). Nustatykite 1440 (24 val.) beveik neribotam veikimui.",
+          "poll_interval_minutes": "Kaip dažnai apklausti API dėl atnaujinimų minutėmis (5-1440). Mažesnės reikšmės teikia šviežesnius duomenis, bet naudoja daugiau API kvotos. Numatytasis: 30 (Gardena) / 15 (Automower)."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_level": {
+        "name": "Baterija"
+      },
+      "rf_link_level": {
+        "name": "Signalo stiprumas"
+      },
+      "soil_humidity": {
+        "name": "Dirvožemio drėgmė"
+      },
+      "soil_temperature": {
+        "name": "Dirvožemio temperatūra"
+      },
+      "ambient_temperature": {
+        "name": "Aplinkos temperatūra"
+      },
+      "light_intensity": {
+        "name": "Šviesos intensyvumas"
+      },
+      "mower_operating_hours": {
+        "name": "Darbo valandos"
+      },
+      "mower_activity": {
+        "name": "Vejapjovės veikla"
+      },
+      "mower_last_error_code": {
+        "name": "Paskutinis klaidos kodas"
+      },
+      "automower_battery_level": {
+        "name": "Baterija"
+      },
+      "automower_cutting_height": {
+        "name": "Pjovimo aukštis"
+      },
+      "automower_next_start": {
+        "name": "Kitas paleidimas"
+      },
+      "automower_total_cutting_time": {
+        "name": "Bendras pjovimo laikas"
+      },
+      "automower_total_charging_cycles": {
+        "name": "Krovimo ciklai"
+      },
+      "automower_total_collisions": {
+        "name": "Susidūrimai"
+      },
+      "automower_total_drive_distance": {
+        "name": "Bendras nuvažiuotas atstumas"
+      },
+      "automower_blade_usage_time": {
+        "name": "Peilio naudojimo laikas"
+      },
+      "automower_total_running_time": {
+        "name": "Bendras veikimo laikas"
+      },
+      "automower_total_searching_time": {
+        "name": "Bendras paieškos laikas"
+      },
+      "automower_activity": {
+        "name": "Veikla",
+        "state": {
+          "unknown": "Nežinoma",
+          "not_applicable": "Netaikoma",
+          "mowing": "Pjauna",
+          "going_home": "Grįžta",
+          "charging": "Kraunasi",
+          "leaving": "Išvažiuoja",
+          "parked_in_cs": "Pastatyta",
+          "stopped_in_garden": "Sustojusi sode"
+        }
+      },
+      "automower_state": {
+        "name": "Būsena",
+        "state": {
+          "unknown": "Nežinoma",
+          "not_applicable": "Netaikoma",
+          "paused": "Pristabdyta",
+          "in_operation": "Veikia",
+          "wait_updating": "Atnaujinimas",
+          "wait_power_up": "Paleidimas",
+          "restricted": "Apribota",
+          "off": "Išjungta",
+          "stopped": "Sustabdyta",
+          "error": "Klaida",
+          "fatal_error": "Kritinė klaida",
+          "error_at_power_up": "Klaida paleidžiant"
+        }
+      },
+      "automower_inactive_reason": {
+        "name": "Neveikimo priežastis"
+      },
+      "automower_restricted_reason": {
+        "name": "Apribojimo priežastis",
+        "state": {
+          "none": "Nėra",
+          "week_schedule": "Savaitės tvarkaraštis",
+          "park_override": "Priverstinis statymas",
+          "sensor": "Jutiklis",
+          "daily_limit": "Dienos limitas",
+          "fota": "Firmware atnaujinimas",
+          "frost": "Šalna",
+          "all_work_areas_completed": "Visos zonos baigtos",
+          "external": "Išorinis",
+          "not_applicable": "Netaikoma"
+        }
+      },
+      "automower_error_code": {
+        "name": "Klaidos kodas"
+      },
+      "automower_error_code_timestamp": {
+        "name": "Paskutinės klaidos laikas"
+      },
+      "automower_total_charging_time": {
+        "name": "Bendras krovimo laikas"
+      },
+      "automower_planner_override": {
+        "name": "Tvarkaraščio perrašymas",
+        "state": {
+          "not_active": "Neaktyvus",
+          "force_park": "Priverstinis statymas",
+          "force_mow": "Priverstinis pjovimas"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Paskutinį kartą matyta"
+      },
+      "battery_state": {
+        "name": "Baterijos būsena",
+        "state": {
+          "ok": "OK",
+          "low": "Žema",
+          "replace_now": "Pakeiskite dabar",
+          "out_of_operation": "Neveikia",
+          "charging": "Kraunasi",
+          "no_battery": "Nėra baterijos",
+          "unknown": "Nežinoma"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Likęs veikimo laikas"
+      },
+      "power_socket_last_error_code": {
+        "name": "Paskutinis klaidos kodas"
+      },
+      "valve_last_error_code": {
+        "name": "Vožtuvo klaidos kodas"
+      },
+      "valve_remaining_duration": {
+        "name": "Likęs laistymo laikas"
+      },
+      "hub_device_count": {
+        "name": "Įrenginių skaičius"
+      },
+      "hub_polling_interval": {
+        "name": "Apklausos intervalas"
+      }
+    },
+    "binary_sensor": {
+      "battery_low": {
+        "name": "Žema baterija"
+      },
+      "valve_error": {
+        "name": "Vožtuvo klaida"
+      },
+      "mower_error": {
+        "name": "Vejapjovės klaida"
+      },
+      "automower_error": {
+        "name": "Klaida"
+      },
+      "automower_connected": {
+        "name": "Prisijungta"
+      },
+      "rf_link_online": {
+        "name": "RF ryšys"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket prijungtas"
+      }
+    },
+    "switch": {
+      "power_socket": {
+        "name": "Maitinimas"
+      },
+      "automower_headlight": {
+        "name": "Priekinis žibintas"
+      },
+      "automower_stay_out_zone": {
+        "name": "Draudžiama zona: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Darbo zona: {work_area}"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Žibintų režimas",
+        "state": {
+          "always_on": "Visada įjungti",
+          "always_off": "Visada išjungti",
+          "evening_only": "Tik vakarais",
+          "evening_and_night": "Vakarais ir naktį"
+        }
+      }
+    },
+    "valve": {
+      "valve": {
+        "name": "Vožtuvas"
+      }
+    },
+    "lawn_mower": {
+      "mower": {
+        "name": "Vejapjovė"
+      },
+      "automower": {
+        "name": "Vejapjovė"
+      }
+    },
+    "number": {
+      "automower_cutting_height": {
+        "name": "Pjovimo aukštis"
+      },
+      "automower_work_area_cutting_height": {
+        "name": "Pjovimo aukštis: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Tvarkaraščio perrašymas"
+      }
+    },
+    "device_tracker": {
+      "automower_position": {
+        "name": "Pozicija"
+      }
+    },
+    "calendar": {
+      "automower_schedule": {
+        "name": "Pjovimo tvarkaraštis"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Patvirtinti klaidą"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "Vejapjovės įvykis",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "Pjovimas pradėtas",
+              "stopped": "Sustabdyta",
+              "leaving": "Išvažiuoja",
+              "searching": "Ieško",
+              "charging": "Kraunasi",
+              "parked": "Pastatyta",
+              "paused": "Pristabdyta",
+              "error": "Klaida",
+              "error_cleared": "Klaida pašalinta"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Vožtuvo įvykis",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Laistymas pradėtas",
+              "stopped_watering": "Laistymas sustabdytas",
+              "error": "Klaida",
+              "error_cleared": "Klaida pašalinta"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Lizdo įvykis",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Įjungta",
+              "turned_off": "Išjungta",
+              "error": "Klaida",
+              "error_cleared": "Klaida pašalinta"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Vejapjovės įvykis",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Pjovimas pradėtas",
+              "stopped": "Sustabdyta",
+              "going_home": "Grįžta",
+              "charging": "Kraunasi",
+              "leaving": "Palieka stotį",
+              "parked": "Pastatyta",
+              "paused": "Pristabdyta",
+              "error": "Klaida",
+              "error_cleared": "Klaida pašalinta"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "start_watering": {
+      "name": "Pradėti laistymą",
+      "description": "Pradėkite vožtuvo laistymą nurodytai trukmei, perrašydami tvarkaraštį.",
+      "fields": {
+        "duration": {
+          "name": "Trukmė",
+          "description": "Trukmė minutėmis (1–1440)."
+        }
+      }
+    },
+    "turn_on_for": {
+      "name": "Įjungti laikui",
+      "description": "Įjunkite išmanųjį lizdą nurodytai trukmei.",
+      "fields": {
+        "duration": {
+          "name": "Trukmė",
+          "description": "Trukmė minutėmis (1–1440)."
+        }
+      }
+    },
+    "override_schedule": {
+      "name": "Perrašyti tvarkaraštį",
+      "description": "Priverstinai paleiskite pjovimą nurodytai trukmei, ignoruodami tvarkaraštį.",
+      "fields": {
+        "duration": {
+          "name": "Trukmė",
+          "description": "Trukmė minutėmis (1–480)."
+        }
+      }
+    },
+    "park_until_further_notice": {
+      "name": "Pastatyti iki tolesnio pranešimo",
+      "description": "Pastatykite vejapjovę neribotam laikui. Ji liks krovimo stotyje, kol bus paleista rankiniu būdu."
+    },
+    "resume_schedule": {
+      "name": "Tęsti tvarkaraštį",
+      "description": "Tęskite automatinį pjovimo tvarkaraštį."
+    }
+  },
+  "exceptions": {
+    "command_failed": {
+      "message": "Nepavyko išsiųsti komandos įrenginiui: {error}"
+    },
+    "device_unavailable": {
+      "message": "Įrenginys šiuo metu nepasiekiamas."
+    },
+    "command_throttled": {
+      "message": "Komandos siunčiamos per greitai. Prašome palaukti kelias sekundes tarp komandų, kad neviršytumėte API limito."
+    }
+  },
+  "issues": {
+    "websocket_connection_failed": {
+      "title": "WebSocket ryšys nutrūko",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Pakartotinis WebSocket prisijungimas",
+            "description": "Realaus laiko ryšys su Husqvarna debesimi buvo nutrauktas. Integracija šiuo metu naudoja apklausą kaip atsarginį variantą. Patvirtinkite bandymui prisijungti iš naujo."
+          }
+        }
+      }
+    }
+  }
+}
