@@ -550,3 +550,328 @@ class TestGardenaPowerSocketEvent:
         finally:
             for p in reversed(patches):
                 p.__exit__(None, None, None)
+
+    async def test_power_socket_event_error(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Power socket event fires error on state transition to ERROR."""
+        device = make_mock_device(has_sensor=False, has_power_socket=True)
+        device.power_socket.activity = "FOREVER_ON"
+        device.power_socket.state = "OK"
+        devices = {device.device_id: device}
+
+        _mock_client, patches = await _setup_with_devices_ctx(
+            hass, mock_config_entry, devices
+        )
+        try:
+            coordinator = mock_config_entry.runtime_data
+
+            updated = _copy_device(device)
+            updated.power_socket = MagicMock()
+            updated.power_socket.activity = "FOREVER_ON"
+            updated.power_socket.state = "ERROR"
+            updated.power_socket.duration = None
+            updated.power_socket.last_error_code = None
+            coordinator.async_set_updated_data({device.device_id: updated})
+            await hass.async_block_till_done()
+
+            entity_reg = er.async_get(hass)
+            ps_events = [
+                e
+                for e in entity_reg.entities.values()
+                if e.platform == "gardena_smart_system"
+                and e.domain == "event"
+                and "power_socket_event" in (e.unique_id or "")
+            ]
+            state = hass.states.get(ps_events[0].entity_id)
+            assert state is not None
+            assert state.attributes.get("event_type") == "error"
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+    async def test_power_socket_event_error_cleared(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Power socket event fires error_cleared when leaving error state."""
+        device = make_mock_device(has_sensor=False, has_power_socket=True)
+        device.power_socket.activity = "FOREVER_ON"
+        device.power_socket.state = "ERROR"
+        devices = {device.device_id: device}
+
+        _mock_client, patches = await _setup_with_devices_ctx(
+            hass, mock_config_entry, devices
+        )
+        try:
+            coordinator = mock_config_entry.runtime_data
+
+            updated = _copy_device(device)
+            updated.power_socket = MagicMock()
+            updated.power_socket.activity = "FOREVER_ON"
+            updated.power_socket.state = "OK"
+            updated.power_socket.duration = None
+            updated.power_socket.last_error_code = None
+            coordinator.async_set_updated_data({device.device_id: updated})
+            await hass.async_block_till_done()
+
+            entity_reg = er.async_get(hass)
+            ps_events = [
+                e
+                for e in entity_reg.entities.values()
+                if e.platform == "gardena_smart_system"
+                and e.domain == "event"
+                and "power_socket_event" in (e.unique_id or "")
+            ]
+            state = hass.states.get(ps_events[0].entity_id)
+            assert state is not None
+            assert state.attributes.get("event_type") == "error_cleared"
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+
+class TestGardenaEventMowerTransitions:
+    """Test remaining mower event transitions (leaving, searching, charging, paused, stopped)."""
+
+    async def test_mower_event_leaving(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Mower event fires leaving on OK_LEAVING activity."""
+        device = make_mock_device(has_sensor=False, has_mower=True)
+        device.mower.activity = "PARKED_TIMER"
+        device.mower.state = "OK"
+        devices = {device.device_id: device}
+
+        _mock_client, patches = await _setup_with_devices_ctx(
+            hass, mock_config_entry, devices
+        )
+        try:
+            coordinator = mock_config_entry.runtime_data
+            updated = _copy_device(device)
+            updated.mower = MagicMock()
+            updated.mower.activity = "OK_LEAVING"
+            updated.mower.state = "OK"
+            coordinator.async_set_updated_data({device.device_id: updated})
+            await hass.async_block_till_done()
+
+            entity_reg = er.async_get(hass)
+            event_entries = [
+                e for e in entity_reg.entities.values()
+                if e.platform == "gardena_smart_system" and e.domain == "event"
+                and "mower_event" in (e.unique_id or "")
+            ]
+            state = hass.states.get(event_entries[0].entity_id)
+            assert state is not None
+            assert state.attributes.get("event_type") == "leaving"
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+    async def test_mower_event_searching(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Mower event fires searching on OK_SEARCHING activity."""
+        device = make_mock_device(has_sensor=False, has_mower=True)
+        device.mower.activity = "OK_CUTTING"
+        device.mower.state = "OK"
+        devices = {device.device_id: device}
+
+        _mock_client, patches = await _setup_with_devices_ctx(
+            hass, mock_config_entry, devices
+        )
+        try:
+            coordinator = mock_config_entry.runtime_data
+            updated = _copy_device(device)
+            updated.mower = MagicMock()
+            updated.mower.activity = "OK_SEARCHING"
+            updated.mower.state = "OK"
+            coordinator.async_set_updated_data({device.device_id: updated})
+            await hass.async_block_till_done()
+
+            entity_reg = er.async_get(hass)
+            event_entries = [
+                e for e in entity_reg.entities.values()
+                if e.platform == "gardena_smart_system" and e.domain == "event"
+                and "mower_event" in (e.unique_id or "")
+            ]
+            state = hass.states.get(event_entries[0].entity_id)
+            assert state is not None
+            assert state.attributes.get("event_type") == "searching"
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+    async def test_mower_event_charging(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Mower event fires charging on OK_CHARGING activity."""
+        device = make_mock_device(has_sensor=False, has_mower=True)
+        device.mower.activity = "OK_CUTTING"
+        device.mower.state = "OK"
+        devices = {device.device_id: device}
+
+        _mock_client, patches = await _setup_with_devices_ctx(
+            hass, mock_config_entry, devices
+        )
+        try:
+            coordinator = mock_config_entry.runtime_data
+            updated = _copy_device(device)
+            updated.mower = MagicMock()
+            updated.mower.activity = "OK_CHARGING"
+            updated.mower.state = "OK"
+            coordinator.async_set_updated_data({device.device_id: updated})
+            await hass.async_block_till_done()
+
+            entity_reg = er.async_get(hass)
+            event_entries = [
+                e for e in entity_reg.entities.values()
+                if e.platform == "gardena_smart_system" and e.domain == "event"
+                and "mower_event" in (e.unique_id or "")
+            ]
+            state = hass.states.get(event_entries[0].entity_id)
+            assert state is not None
+            assert state.attributes.get("event_type") == "charging"
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+    async def test_mower_event_paused(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Mower event fires paused on PAUSED activity."""
+        device = make_mock_device(has_sensor=False, has_mower=True)
+        device.mower.activity = "OK_CUTTING"
+        device.mower.state = "OK"
+        devices = {device.device_id: device}
+
+        _mock_client, patches = await _setup_with_devices_ctx(
+            hass, mock_config_entry, devices
+        )
+        try:
+            coordinator = mock_config_entry.runtime_data
+            updated = _copy_device(device)
+            updated.mower = MagicMock()
+            updated.mower.activity = "PAUSED"
+            updated.mower.state = "OK"
+            coordinator.async_set_updated_data({device.device_id: updated})
+            await hass.async_block_till_done()
+
+            entity_reg = er.async_get(hass)
+            event_entries = [
+                e for e in entity_reg.entities.values()
+                if e.platform == "gardena_smart_system" and e.domain == "event"
+                and "mower_event" in (e.unique_id or "")
+            ]
+            state = hass.states.get(event_entries[0].entity_id)
+            assert state is not None
+            assert state.attributes.get("event_type") == "paused"
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+    async def test_mower_event_stopped(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Mower event fires stopped on STOPPED_IN_GARDEN activity."""
+        device = make_mock_device(has_sensor=False, has_mower=True)
+        device.mower.activity = "OK_CUTTING"
+        device.mower.state = "OK"
+        devices = {device.device_id: device}
+
+        _mock_client, patches = await _setup_with_devices_ctx(
+            hass, mock_config_entry, devices
+        )
+        try:
+            coordinator = mock_config_entry.runtime_data
+            updated = _copy_device(device)
+            updated.mower = MagicMock()
+            updated.mower.activity = "STOPPED_IN_GARDEN"
+            updated.mower.state = "OK"
+            coordinator.async_set_updated_data({device.device_id: updated})
+            await hass.async_block_till_done()
+
+            entity_reg = er.async_get(hass)
+            event_entries = [
+                e for e in entity_reg.entities.values()
+                if e.platform == "gardena_smart_system" and e.domain == "event"
+                and "mower_event" in (e.unique_id or "")
+            ]
+            state = hass.states.get(event_entries[0].entity_id)
+            assert state is not None
+            assert state.attributes.get("event_type") == "stopped"
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+
+class TestGardenaValveEventErrorCleared:
+    """Test valve error_cleared event."""
+
+    async def test_valve_event_error_cleared(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Valve event fires error_cleared when leaving error state."""
+        device = make_mock_device(valve_count=1, has_sensor=False)
+        vid = f"{device.device_id}:1"
+        device.valves[vid].activity = "CLOSED"
+        device.valves[vid].state = "ERROR"
+        devices = {device.device_id: device}
+
+        _mock_client, patches = await _setup_with_devices_ctx(
+            hass, mock_config_entry, devices
+        )
+        try:
+            coordinator = mock_config_entry.runtime_data
+
+            updated = _copy_device(device)
+            new_valve = MagicMock()
+            new_valve.activity = "CLOSED"
+            new_valve.state = "OK"
+            new_valve.service_id = vid
+            new_valve.name = "Valve 1"
+            new_valve.duration = None
+            new_valve.last_error_code = None
+            updated.valves = {vid: new_valve}
+            coordinator.async_set_updated_data({device.device_id: updated})
+            await hass.async_block_till_done()
+
+            entity_reg = er.async_get(hass)
+            valve_events = [
+                e for e in entity_reg.entities.values()
+                if e.platform == "gardena_smart_system" and e.domain == "event"
+                and "valve" in (e.unique_id or "")
+            ]
+            state = hass.states.get(valve_events[0].entity_id)
+            assert state is not None
+            assert state.attributes.get("event_type") == "error_cleared"
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+
+class TestGardenaEventDeviceNone:
+    """Test event entities handle device removal (coordinator.data missing device)."""
+
+    async def test_valve_event_device_removed(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Valve event entity handles device removed from coordinator data."""
+        device = make_mock_device(valve_count=1, has_sensor=False)
+        vid = f"{device.device_id}:1"
+        device.valves[vid].activity = "CLOSED"
+        device.valves[vid].state = "OK"
+        devices = {device.device_id: device}
+
+        _mock_client, patches = await _setup_with_devices_ctx(
+            hass, mock_config_entry, devices
+        )
+        try:
+            coordinator = mock_config_entry.runtime_data
+            # Remove device from coordinator data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+            # Entity should not crash, just become unavailable
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+

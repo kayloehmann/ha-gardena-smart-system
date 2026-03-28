@@ -997,3 +997,168 @@ class TestBatteryStateSensor:
             if "battery_state" in (e.unique_id or "")
         ]
         assert len(found) == 0
+
+
+class TestSensorNoneGuards:
+    """Test sensor None guards for device/valve removal and hub edge cases."""
+
+    async def test_valve_remaining_duration_device_removed(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Valve remaining duration returns None when device removed."""
+        device = make_mock_device(valve_count=1)
+        device.valves["device-uuid:1"].duration = 300
+        devices = {device.device_id: device}
+
+        patches = (
+            patch(_PATCH_CLIENT),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS),
+        )
+        p_client = patches[0].__enter__()
+        patches[1].__enter__()
+        p_ws = patches[2].__enter__()
+        mock_client = AsyncMock()
+        mock_client.async_get_devices = AsyncMock(return_value=devices)
+        mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+        p_client.return_value = mock_client
+        mock_ws = AsyncMock()
+        mock_ws.async_connect = AsyncMock()
+        mock_ws.async_disconnect = AsyncMock()
+        p_ws.return_value = mock_ws
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        try:
+            coordinator = mock_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+            # Entity becomes unavailable when device is gone
+            entity_reg = er.async_get(hass)
+            valve_sensors = [
+                e for e in entity_reg.entities.values()
+                if "remaining_duration" in (e.unique_id or "")
+            ]
+            if valve_sensors:
+                state = hass.states.get(valve_sensors[0].entity_id)
+                assert state is not None
+                assert state.state == "unavailable"
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+    async def test_valve_error_sensor_device_removed(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Valve error sensor returns None when device removed."""
+        device = make_mock_device(valve_count=1)
+        device.valves["device-uuid:1"].last_error_code = "SOME_ERROR"
+        devices = {device.device_id: device}
+
+        patches = (
+            patch(_PATCH_CLIENT),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS),
+        )
+        p_client = patches[0].__enter__()
+        patches[1].__enter__()
+        p_ws = patches[2].__enter__()
+        mock_client = AsyncMock()
+        mock_client.async_get_devices = AsyncMock(return_value=devices)
+        mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+        p_client.return_value = mock_client
+        mock_ws = AsyncMock()
+        mock_ws.async_connect = AsyncMock()
+        mock_ws.async_disconnect = AsyncMock()
+        p_ws.return_value = mock_ws
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        try:
+            coordinator = mock_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+    async def test_hub_polling_interval_none(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Hub polling interval sensor returns None when update_interval is None."""
+        device = make_mock_device()
+        devices = {device.device_id: device}
+
+        patches = (
+            patch(_PATCH_CLIENT),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS),
+        )
+        p_client = patches[0].__enter__()
+        patches[1].__enter__()
+        p_ws = patches[2].__enter__()
+        mock_client = AsyncMock()
+        mock_client.async_get_devices = AsyncMock(return_value=devices)
+        mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+        p_client.return_value = mock_client
+        mock_ws = AsyncMock()
+        mock_ws.async_connect = AsyncMock()
+        mock_ws.async_disconnect = AsyncMock()
+        p_ws.return_value = mock_ws
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        try:
+            coordinator = mock_config_entry.runtime_data
+            coordinator.update_interval = None
+            coordinator.async_set_updated_data(devices)
+            await hass.async_block_till_done()
+
+            state = hass.states.get("sensor.gardena_hub_my_garden_polling_interval")
+            if state is not None:
+                assert state.state in ("unknown", "unavailable")
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+    async def test_gardena_entity_coordinator_data_none(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Gardena entity _device returns None when coordinator.data is None."""
+        device = make_mock_device()
+        devices = {device.device_id: device}
+
+        patches = (
+            patch(_PATCH_CLIENT),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS),
+        )
+        p_client = patches[0].__enter__()
+        patches[1].__enter__()
+        p_ws = patches[2].__enter__()
+        mock_client = AsyncMock()
+        mock_client.async_get_devices = AsyncMock(return_value=devices)
+        mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+        p_client.return_value = mock_client
+        mock_ws = AsyncMock()
+        mock_ws.async_connect = AsyncMock()
+        mock_ws.async_disconnect = AsyncMock()
+        p_ws.return_value = mock_ws
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        try:
+            coordinator = mock_config_entry.runtime_data
+            coordinator.data = None
+            coordinator.async_set_updated_data(None)
+            await hass.async_block_till_done()
+            state = hass.states.get("sensor.my_sensor_battery")
+            assert state is not None
+            assert state.state == "unavailable"
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)

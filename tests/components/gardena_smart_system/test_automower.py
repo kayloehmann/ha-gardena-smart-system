@@ -4151,3 +4151,254 @@ class TestAutomowerHeadlightSelect:
         async with _setup_automower(hass, automower_config_entry, devices):
             state = hass.states.get("select.test_mower_headlight_mode")
             assert state is None
+
+    async def test_select_device_removed(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Select current_option returns None when device removed."""
+        device = make_mock_automower_device(has_headlights=True)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            # Remove device from coordinator data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+            state = hass.states.get("select.test_mower_headlight_mode")
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+    async def test_select_option_device_gone_unavailable(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Select entity is unavailable when device removed — covers current_option None path."""
+        device = make_mock_automower_device(has_headlights=True)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+            state = hass.states.get("select.test_mower_headlight_mode")
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+    async def test_select_option_auth_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Select async_select_option raises on auth error."""
+        device = make_mock_automower_device(has_headlights=True)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            mock_client.async_set_headlight_mode.side_effect = AutomowerAuthenticationError("auth fail")
+            with pytest.raises(HomeAssistantError):
+                await hass.services.async_call(
+                    "select",
+                    "select_option",
+                    {"entity_id": "select.test_mower_headlight_mode", "option": "always_on"},
+                    blocking=True,
+                )
+
+    async def test_select_option_generic_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Select async_select_option raises on generic error."""
+        device = make_mock_automower_device(has_headlights=True)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            mock_client.async_set_headlight_mode.side_effect = AutomowerException("fail")
+            with pytest.raises(HomeAssistantError):
+                await hass.services.async_call(
+                    "select",
+                    "select_option",
+                    {"entity_id": "select.test_mower_headlight_mode", "option": "always_on"},
+                    blocking=True,
+                )
+
+
+class TestAutomowerNoneGuards:
+    """Test device-removed / None guard branches across automower platforms."""
+
+    async def test_button_available_false_when_device_gone(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Confirm error button returns unavailable when device removed."""
+        device = make_mock_automower_device(
+            is_error_confirmable=True, can_confirm_error=True,
+            mower_state=MowerState.ERROR, error_code=1,
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+            state = hass.states.get("button.test_mower_confirm_error")
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+    async def test_button_press_device_gone_unavailable(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Confirm error button is unavailable when device removed."""
+        device = make_mock_automower_device(
+            is_error_confirmable=True, can_confirm_error=True,
+            mower_state=MowerState.ERROR, error_code=1,
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+            state = hass.states.get("button.test_mower_confirm_error")
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+    async def test_number_value_none_when_device_gone(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Schedule override number returns unavailable when device removed."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+            state = hass.states.get("number.test_mower_schedule_override")
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+    async def test_number_set_device_gone_unavailable(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Schedule override number is unavailable when device removed."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+            state = hass.states.get("number.test_mower_schedule_override")
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+    async def test_work_area_switch_device_gone(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Work area switch returns unavailable when device removed."""
+        device = make_mock_automower_device(
+            has_work_areas=True,
+            work_areas={1: WorkArea(work_area_id=1, name="Front Lawn", cutting_height=50, enabled=True)},
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+            state = hass.states.get("switch.test_mower_work_area_front_lawn")
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+    async def test_work_area_switch_area_removed(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Work area switch returns None when work area removed from device."""
+        device = make_mock_automower_device(
+            has_work_areas=True,
+            work_areas={1: WorkArea(work_area_id=1, name="Front Lawn", cutting_height=50, enabled=True)},
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            # Update device with work_areas empty
+            updated = make_mock_automower_device(
+                has_work_areas=True, work_areas={},
+            )
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({device.mower_id: updated})
+            await hass.async_block_till_done()
+            state = hass.states.get("switch.test_mower_work_area_front_lawn")
+            assert state is not None
+            # is_on returns None → unknown
+            assert state.state in ("unknown", STATE_UNAVAILABLE)
+
+    async def test_work_area_switch_set_device_gone_unavailable(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Work area switch is unavailable when device removed."""
+        device = make_mock_automower_device(
+            has_work_areas=True,
+            work_areas={1: WorkArea(work_area_id=1, name="Front Lawn", cutting_height=50, enabled=False)},
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+            state = hass.states.get("switch.test_mower_work_area_front_lawn")
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+    async def test_work_area_switch_auth_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Work area switch raises on auth error."""
+        device = make_mock_automower_device(
+            has_work_areas=True,
+            work_areas={1: WorkArea(work_area_id=1, name="Front Lawn", cutting_height=50, enabled=False)},
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            mock_client.async_set_work_area_enabled.side_effect = AutomowerAuthenticationError("auth")
+            with pytest.raises(HomeAssistantError):
+                await hass.services.async_call(
+                    "switch",
+                    "turn_on",
+                    {"entity_id": "switch.test_mower_work_area_front_lawn"},
+                    blocking=True,
+                )
+
+    async def test_work_area_switch_generic_error(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Work area switch raises on generic error."""
+        device = make_mock_automower_device(
+            has_work_areas=True,
+            work_areas={1: WorkArea(work_area_id=1, name="Front Lawn", cutting_height=50, enabled=False)},
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            mock_client.async_set_work_area_enabled.side_effect = AutomowerException("fail")
+            with pytest.raises(HomeAssistantError):
+                await hass.services.async_call(
+                    "switch",
+                    "turn_on",
+                    {"entity_id": "switch.test_mower_work_area_front_lawn"},
+                    blocking=True,
+                )
+
+    async def test_entity_device_none_coordinator_data_none(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Entity _device returns None when coordinator.data is None."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            coordinator = automower_config_entry.runtime_data
+            # Set data to None (simulates coordinator failure)
+            coordinator.data = None
+            coordinator.async_set_updated_data(None)
+            await hass.async_block_till_done()
+            state = hass.states.get("sensor.test_mower_battery")
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE

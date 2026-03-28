@@ -40,6 +40,8 @@ async def async_setup_entry(
 
     @callback
     def _async_add_new_entities() -> None:
+        if coordinator.data is None:
+            return
         new_entities: list[SelectEntity] = []
         for device in coordinator.data.values():
             if device.capabilities.headlights:

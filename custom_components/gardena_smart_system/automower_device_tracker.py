@@ -31,6 +31,8 @@ async def async_setup_entry(
 
     @callback
     def _async_add_new_entities() -> None:
+        if coordinator.data is None:
+            return
         new_entities: list[AutomowerTrackerEntity] = []
         for device in coordinator.data.values():
             if device.mower_id not in known_ids and device.capabilities.position:

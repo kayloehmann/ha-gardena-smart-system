@@ -2,67 +2,67 @@
   "config": {
     "step": {
       "user": {
-        "title": "Connexion a Husqvarna",
-        "description": "Saisis les identifiants de ton application depuis le portail developpeur Husqvarna.",
+        "title": "Connexion à Husqvarna",
+        "description": "Saisis les identifiants de ton application depuis le portail développeur Husqvarna.",
         "data": {
-          "client_id": "Cle d'application (Client ID)",
+          "client_id": "Clé d'application (Client ID)",
           "client_secret": "Secret d'application"
         },
         "data_description": {
-          "client_id": "La cle d'application de ton compte developpeur Husqvarna.",
-          "client_secret": "Le secret d'application de ton compte developpeur Husqvarna."
+          "client_id": "La clé d'application de ton compte développeur Husqvarna.",
+          "client_secret": "Le secret d'application de ton compte développeur Husqvarna."
         }
       },
       "api_type": {
         "title": "Choix de l'API",
-        "description": "Choisis l'API Husqvarna souhaitee. Tu peux ajouter les deux en configurant l'integration deux fois.",
+        "description": "Choisis l'API Husqvarna souhaitée. Tu peux ajouter les deux en configurant l'intégration deux fois.",
         "data": {
           "api_type": "API"
         }
       },
       "location": {
         "title": "Choix du jardin",
-        "description": "Plusieurs jardins ont ete trouves dans ton compte. Choisis le jardin que tu souhaites ajouter.",
+        "description": "Plusieurs jardins ont été trouvés dans ton compte. Choisis le jardin que tu souhaites ajouter.",
         "data": {
           "location_id": "Jardin"
         }
       },
       "reauth_confirm": {
-        "title": "Reauthentification",
-        "description": "Tes identifiants ne sont plus valides. Saisis a nouveau les identifiants de ton application.",
+        "title": "Réauthentification",
+        "description": "Tes identifiants ne sont plus valides. Saisis à nouveau les identifiants de ton application.",
         "data": {
-          "client_id": "Cle d'application (Client ID)",
+          "client_id": "Clé d'application (Client ID)",
           "client_secret": "Secret d'application"
         }
       },
       "reconfigure": {
         "title": "Reconfiguration",
-        "description": "Mets a jour les identifiants de ton application.",
+        "description": "Mets à jour les identifiants de ton application.",
         "data": {
-          "client_id": "Cle d'application (Client ID)",
+          "client_id": "Clé d'application (Client ID)",
           "client_secret": "Secret d'application"
         }
       },
       "reconfigure_location": {
         "title": "Choix du jardin",
-        "description": "Plusieurs jardins ont ete trouves. Choisis le jardin que cette entree doit utiliser.",
+        "description": "Plusieurs jardins ont été trouvés. Choisis le jardin que cette entrée doit utiliser.",
         "data": {
           "location_id": "Jardin"
         }
       }
     },
     "error": {
-      "invalid_auth": "Identifiants invalides. Verifie ta cle d'application et ton secret dans le portail developpeur Husqvarna.",
-      "forbidden": "Acces a l'API refuse. Assure-toi que l'API Gardena Smart System est connectee a ton application dans le portail developpeur Husqvarna.",
-      "automower_not_connected": "L'API Automower Connect n'est pas connectee a ton application. Active-la dans le portail developpeur Husqvarna sous \"API connectees\".",
-      "rate_limited": "Limite de requetes API atteinte ou temporairement bloquee. Attends quelques minutes et reessaie, ou cree une nouvelle application dans le portail developpeur Husqvarna.",
-      "cannot_connect": "Impossible de se connecter a l'API. Verifie ta connexion reseau et reessaie.",
+      "invalid_auth": "Identifiants invalides. Vérifie ta clé d'application et ton secret dans le portail développeur Husqvarna.",
+      "forbidden": "Accès à l'API refusé. Assure-toi que l'API Gardena Smart System est connectée à ton application dans le portail développeur Husqvarna.",
+      "automower_not_connected": "L'API Automower Connect n'est pas connectée à ton application. Active-la dans le portail développeur Husqvarna sous \"API connectées\".",
+      "rate_limited": "Limite de requêtes API atteinte ou temporairement bloquée. Attends quelques minutes et réessaie, ou crée une nouvelle application dans le portail développeur Husqvarna.",
+      "cannot_connect": "Impossible de se connecter à l'API. Vérifie ta connexion réseau et réessaie.",
       "unknown": "Une erreur inattendue s'est produite."
     },
     "abort": {
-      "already_configured": "Cette configuration existe deja.",
-      "reauth_successful": "Reauthentification reussie.",
-      "reconfigure_successful": "Reconfiguration reussie."
+      "already_configured": "Cette configuration existe déjà.",
+      "reauth_successful": "Réauthentification réussie.",
+      "reconfigure_successful": "Reconfiguration réussie."
     }
   },
   "options": {
@@ -70,14 +70,14 @@
       "init": {
         "title": "Options Gardena Smart System",
         "data": {
-          "default_watering_minutes": "Duree d'arrosage par defaut",
-          "default_socket_minutes": "Duree de la prise par defaut",
+          "default_watering_minutes": "Durée d'arrosage par défaut",
+          "default_socket_minutes": "Durée de la prise par défaut",
           "poll_interval_minutes": "Intervalle d'interrogation"
         },
         "data_description": {
-          "default_watering_minutes": "Duree en minutes lors de l'ouverture d'une vanne sans indication de duree (1-1440).",
-          "default_socket_minutes": "Duree en minutes lors de l'activation d'une prise (1-1440). Mets 1440 (24 h) pour un fonctionnement quasi illimite.",
-          "poll_interval_minutes": "Frequence d'interrogation de l'API en minutes (5-1440). Des valeurs plus basses fournissent des donnees plus recentes, mais consomment plus de quota API. Par defaut : 30 (Gardena) / 15 (Automower)."
+          "default_watering_minutes": "Durée en minutes lors de l'ouverture d'une vanne sans indication de durée (1-1440).",
+          "default_socket_minutes": "Durée en minutes lors de l'activation d'une prise (1-1440). Mets 1440 (24 h) pour un fonctionnement quasi illimité.",
+          "poll_interval_minutes": "Fréquence d'interrogation de l'API en minutes (5-1440). Des valeurs plus basses fournissent des données plus récentes, mais consomment plus de quota API. Par défaut : 30 (Gardena) / 15 (Automower)."
         }
       }
     }
@@ -91,22 +91,22 @@
         "name": "Niveau du signal"
       },
       "soil_humidity": {
-        "name": "Humidite du sol"
+        "name": "Humidité du sol"
       },
       "soil_temperature": {
-        "name": "Temperature du sol"
+        "name": "Température du sol"
       },
       "ambient_temperature": {
-        "name": "Temperature ambiante"
+        "name": "Température ambiante"
       },
       "light_intensity": {
-        "name": "Intensite lumineuse"
+        "name": "Intensité lumineuse"
       },
       "mower_operating_hours": {
         "name": "Heures de fonctionnement"
       },
       "mower_activity": {
-        "name": "Activite de la tondeuse"
+        "name": "Activité de la tondeuse"
       },
       "mower_last_error_code": {
         "name": "Dernier code d'erreur"
@@ -118,7 +118,7 @@
         "name": "Hauteur de coupe"
       },
       "automower_next_start": {
-        "name": "Prochain demarrage"
+        "name": "Prochain démarrage"
       },
       "automower_total_cutting_time": {
         "name": "Temps de tonte total"
@@ -142,55 +142,55 @@
         "name": "Temps de recherche total"
       },
       "automower_activity": {
-        "name": "Activite",
+        "name": "Activité",
         "state": {
           "unknown": "Inconnu",
           "not_applicable": "Non applicable",
           "mowing": "Tond",
-          "going_home": "Retour a la station",
+          "going_home": "Retour à la station",
           "charging": "En charge",
           "leaving": "Quitte la station",
-          "parked_in_cs": "Stationne",
-          "stopped_in_garden": "Arrete dans le jardin"
+          "parked_in_cs": "Stationné",
+          "stopped_in_garden": "Arrêté dans le jardin"
         }
       },
       "automower_state": {
-        "name": "Etat",
+        "name": "État",
         "state": {
           "unknown": "Inconnu",
           "not_applicable": "Non applicable",
           "paused": "En pause",
           "in_operation": "En fonctionnement",
-          "wait_updating": "Mise a jour",
-          "wait_power_up": "Demarrage",
+          "wait_updating": "Mise à jour",
+          "wait_power_up": "Démarrage",
           "restricted": "Restreint",
-          "off": "Eteint",
-          "stopped": "Arrete",
+          "off": "Éteint",
+          "stopped": "Arrêté",
           "error": "Erreur",
           "fatal_error": "Erreur critique",
-          "error_at_power_up": "Erreur au demarrage"
+          "error_at_power_up": "Erreur au démarrage"
         }
       },
       "automower_inactive_reason": {
-        "name": "Raison d'inactivite"
+        "name": "Raison d'inactivité"
       },
       "automower_restricted_reason": {
         "name": "Raison de restriction",
         "state": {
           "none": "Aucune",
           "week_schedule": "Programme hebdomadaire",
-          "park_override": "Stationnement force",
+          "park_override": "Stationnement forcé",
           "sensor": "Capteur",
-          "daily_limit": "Limite journaliere",
-          "fota": "Mise a jour firmware",
+          "daily_limit": "Limite journalière",
+          "fota": "Mise à jour firmware",
           "frost": "Gel",
-          "all_work_areas_completed": "Toutes les zones terminees",
+          "all_work_areas_completed": "Toutes les zones terminées",
           "external": "Externe",
           "not_applicable": "Non applicable"
         }
       },
       "automower_error_code_timestamp": {
-        "name": "Heure de la derniere erreur"
+        "name": "Heure de la dernière erreur"
       },
       "power_socket_last_error_code": {
         "name": "Dernier code d'erreur"
@@ -254,7 +254,7 @@
         "name": "Erreur"
       },
       "automower_connected": {
-        "name": "Connecte"
+        "name": "Connecté"
       },
       "rf_link_online": {
         "name": "Liaison RF"
@@ -313,63 +313,63 @@
     },
     "event": {
       "gardena_mower_event": {
-        "name": "Evenement tondeuse",
+        "name": "Événement tondeuse",
         "state_attributes": {
           "event_type": {
             "state": {
-              "started_cutting": "Tonte demarree",
-              "stopped": "Arretee",
-              "leaving": "En depart",
+              "started_cutting": "Tonte démarrée",
+              "stopped": "Arrêtée",
+              "leaving": "En départ",
               "searching": "En recherche",
               "charging": "En charge",
-              "parked": "Stationnee",
+              "parked": "Stationnée",
               "paused": "En pause",
               "error": "Erreur",
-              "error_cleared": "Erreur resolue"
+              "error_cleared": "Erreur résolue"
             }
           }
         }
       },
       "gardena_valve_event": {
-        "name": "Evenement vanne",
+        "name": "Événement vanne",
         "state_attributes": {
           "event_type": {
             "state": {
-              "started_watering": "Arrosage demarre",
-              "stopped_watering": "Arrosage arrete",
+              "started_watering": "Arrosage démarré",
+              "stopped_watering": "Arrosage arrêté",
               "error": "Erreur",
-              "error_cleared": "Erreur resolue"
+              "error_cleared": "Erreur résolue"
             }
           }
         }
       },
       "gardena_power_socket_event": {
-        "name": "Evenement prise",
+        "name": "Événement prise",
         "state_attributes": {
           "event_type": {
             "state": {
-              "turned_on": "Allumee",
-              "turned_off": "Eteinte",
+              "turned_on": "Allumée",
+              "turned_off": "Éteinte",
               "error": "Erreur",
-              "error_cleared": "Erreur resolue"
+              "error_cleared": "Erreur résolue"
             }
           }
         }
       },
       "automower_event": {
-        "name": "Evenement tondeuse",
+        "name": "Événement tondeuse",
         "state_attributes": {
           "event_type": {
             "state": {
-              "started_mowing": "Tonte demarree",
-              "stopped": "Arretee",
-              "going_home": "Retour a la station",
+              "started_mowing": "Tonte démarrée",
+              "stopped": "Arrêtée",
+              "going_home": "Retour à la station",
               "charging": "En charge",
               "leaving": "Quitte la station",
-              "parked": "Stationnee",
+              "parked": "Stationnée",
               "paused": "En pause",
               "error": "Erreur",
-              "error_cleared": "Erreur resolue"
+              "error_cleared": "Erreur résolue"
             }
           }
         }
@@ -395,37 +395,37 @@
   "services": {
     "start_watering": {
       "name": "Lancer l'arrosage",
-      "description": "Lance l'arrosage d'une vanne pour une duree donnee en ignorant le programme.",
+      "description": "Lance l'arrosage d'une vanne pour une durée donnée en ignorant le programme.",
       "fields": {
         "duration": {
-          "name": "Duree",
-          "description": "Duree en minutes (1-1440)."
+          "name": "Durée",
+          "description": "Durée en minutes (1-1440)."
         }
       }
     },
     "turn_on_for": {
       "name": "Allumer pour",
-      "description": "Allume une prise connectee pour une duree donnee.",
+      "description": "Allume une prise connectée pour une durée donnée.",
       "fields": {
         "duration": {
-          "name": "Duree",
-          "description": "Duree en minutes (1-1440)."
+          "name": "Durée",
+          "description": "Durée en minutes (1-1440)."
         }
       }
     },
     "override_schedule": {
       "name": "Forcer le programme",
-      "description": "Force la tonte pour une duree donnee, independamment du programme.",
+      "description": "Force la tonte pour une durée donnée, indépendamment du programme.",
       "fields": {
         "duration": {
-          "name": "Duree",
-          "description": "Duree en minutes (1-480)."
+          "name": "Durée",
+          "description": "Durée en minutes (1-480)."
         }
       }
     },
     "park_until_further_notice": {
-      "name": "Stationner jusqu'a nouvel ordre",
-      "description": "Stationne la tondeuse pour une duree indeterminee. Elle reste dans la station de charge jusqu'a ce qu'elle soit relancee manuellement."
+      "name": "Stationner jusqu'à nouvel ordre",
+      "description": "Stationne la tondeuse pour une durée indéterminée. Elle reste dans la station de charge jusqu'à ce qu'elle soit relancée manuellement."
     },
     "resume_schedule": {
       "name": "Reprendre le programme",
@@ -434,13 +434,13 @@
   },
   "exceptions": {
     "command_failed": {
-      "message": "Impossible d'envoyer la commande a l'appareil : {error}"
+      "message": "Impossible d'envoyer la commande à l'appareil : {error}"
     },
     "device_unavailable": {
       "message": "L'appareil est actuellement indisponible."
     },
     "command_throttled": {
-      "message": "Les commandes sont envoyees trop rapidement. Attends quelques secondes entre les commandes pour ne pas depasser la limite de requetes API."
+      "message": "Les commandes sont envoyées trop rapidement. Attends quelques secondes entre les commandes pour ne pas dépasser la limite de requêtes API."
     }
   },
   "issues": {
@@ -450,7 +450,7 @@
         "step": {
           "init": {
             "title": "Reconnecter le WebSocket",
-            "description": "La connexion en temps reel au cloud Husqvarna a ete interrompue. L'integration utilise actuellement l'interrogation periodique en remplacement. Confirme pour tenter une reconnexion."
+            "description": "La connexion en temps réel au cloud Husqvarna a été interrompue. L'intégration utilise actuellement l'interrogation périodique en remplacement. Confirme pour tenter une reconnexion."
           }
         }
       }

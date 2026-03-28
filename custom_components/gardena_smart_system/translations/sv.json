@@ -54,7 +54,7 @@
     "error": {
       "invalid_auth": "Ogiltiga uppgifter. Kontrollera din applikationsnyckel och hemlighet i Husqvarna Developer Portal.",
       "forbidden": "API-åtkomst nekad. Kontrollera att Gardena Smart System API är kopplad till din applikation i Husqvarna Developer Portal.",
-      "automower_not_connected": "Automower Connect API är inte kopplad till din applikation. Aktivera den i Husqvarna Developer Portal under “Anslutna API:er”.",
+      "automower_not_connected": "Automower Connect API är inte kopplad till din applikation. Aktivera den i Husqvarna Developer Portal under \"Anslutna API:er\".",
       "rate_limited": "API-hastighetsgräns uppnådd eller tillfälligt blockerad. Vänta några minuter och försök igen, eller skapa en ny applikation i Husqvarna Developer Portal.",
       "cannot_connect": "Kan inte ansluta till API:et. Kontrollera din nätverksanslutning och försök igen.",
       "unknown": "Ett oväntat fel uppstod."
@@ -175,18 +175,18 @@
         "name": "Inaktivitetsorsak"
       },
       "automower_restricted_reason": {
-        "name": "Begransningsorsak",
+        "name": "Begränsningsorsak",
         "state": {
           "none": "Ingen",
           "week_schedule": "Veckoschema",
-          "park_override": "Tvangsparkering",
+          "park_override": "Tvångsparkering",
           "sensor": "Sensor",
-          "daily_limit": "Daglig grans",
+          "daily_limit": "Daglig gräns",
           "fota": "Firmwareuppdatering",
           "frost": "Frost",
           "all_work_areas_completed": "Alla arbetsytor klara",
           "external": "Extern",
-          "not_applicable": "Ej tillampligt"
+          "not_applicable": "Ej tillämpligt"
         }
       },
       "automower_error_code_timestamp": {
@@ -257,7 +257,7 @@
         "name": "Ansluten"
       },
       "rf_link_online": {
-        "name": "RF-lank"
+        "name": "RF-länk"
       },
       "hub_websocket_connected": {
         "name": "WebSocket ansluten"
@@ -313,63 +313,63 @@
     },
     "event": {
       "gardena_mower_event": {
-        "name": "Klipparhandelse",
+        "name": "Klipparhändelse",
         "state_attributes": {
           "event_type": {
             "state": {
-              "started_cutting": "Borjade klippa",
+              "started_cutting": "Började klippa",
               "stopped": "Stoppad",
-              "leaving": "Lamnar",
-              "searching": "Soker",
+              "leaving": "Lämnar",
+              "searching": "Söker",
               "charging": "Laddar",
               "parked": "Parkerad",
               "paused": "Pausad",
               "error": "Fel",
-              "error_cleared": "Fel atgardat"
+              "error_cleared": "Fel åtgärdat"
             }
           }
         }
       },
       "gardena_valve_event": {
-        "name": "Ventilhandelse",
+        "name": "Ventilhändelse",
         "state_attributes": {
           "event_type": {
             "state": {
               "started_watering": "Bevattning startad",
               "stopped_watering": "Bevattning stoppad",
               "error": "Fel",
-              "error_cleared": "Fel atgardat"
+              "error_cleared": "Fel åtgärdat"
             }
           }
         }
       },
       "gardena_power_socket_event": {
-        "name": "Uttagshandelse",
+        "name": "Uttagshändelse",
         "state_attributes": {
           "event_type": {
             "state": {
-              "turned_on": "Paslagen",
-              "turned_off": "Avstangd",
+              "turned_on": "Påslagen",
+              "turned_off": "Avstängd",
               "error": "Fel",
-              "error_cleared": "Fel atgardat"
+              "error_cleared": "Fel åtgärdat"
             }
           }
         }
       },
       "automower_event": {
-        "name": "Klipparhandelse",
+        "name": "Klipparhändelse",
         "state_attributes": {
           "event_type": {
             "state": {
-              "started_mowing": "Borjade klippa",
+              "started_mowing": "Började klippa",
               "stopped": "Stoppad",
-              "going_home": "Aker hem",
+              "going_home": "Åker hem",
               "charging": "Laddar",
-              "leaving": "Lamnar stationen",
+              "leaving": "Lämnar stationen",
               "parked": "Parkerad",
               "paused": "Pausad",
               "error": "Fel",
-              "error_cleared": "Fel atgardat"
+              "error_cleared": "Fel åtgärdat"
             }
           }
         }
@@ -377,7 +377,7 @@
     },
     "button": {
       "automower_confirm_error": {
-        "name": "Bekrafta fel"
+        "name": "Bekräfta fel"
       }
     },
     "select": {

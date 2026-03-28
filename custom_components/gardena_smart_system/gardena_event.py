@@ -78,6 +78,8 @@ async def async_setup_entry(
 
     @callback
     def _async_add_new_entities() -> None:
+        if coordinator.data is None:
+            return
         new_entities: list[EventEntity] = []
         for device in coordinator.data.values():
             if device.mower is not None:

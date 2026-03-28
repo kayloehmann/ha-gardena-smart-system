@@ -108,6 +108,8 @@ async def async_setup_entry(
 
     @callback
     def _async_add_new_entities() -> None:
+        if coordinator.data is None:
+            return
         new_entities: list[GardenaBinarySensorEntity] = []
         for device in coordinator.data.values():
             for description in BINARY_SENSORS:

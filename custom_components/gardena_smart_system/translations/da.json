@@ -172,19 +172,19 @@
         }
       },
       "automower_inactive_reason": {
-        "name": "Inaktivitetsarsag"
+        "name": "Inaktivitetsårsag"
       },
       "automower_restricted_reason": {
-        "name": "Begransningsarsag",
+        "name": "Begrænsningsårsag",
         "state": {
           "none": "Ingen",
           "week_schedule": "Ugeplan",
           "park_override": "Tvangsparkering",
           "sensor": "Sensor",
-          "daily_limit": "Daglig grange",
+          "daily_limit": "Daglig grænse",
           "fota": "Firmwareopdatering",
           "frost": "Frost",
-          "all_work_areas_completed": "Alle arbejdsomrader faerdige",
+          "all_work_areas_completed": "Alle arbejdsområder færdige",
           "external": "Ekstern",
           "not_applicable": "Ikke relevant"
         }
@@ -271,10 +271,10 @@
         "name": "Forlygte"
       },
       "automower_stay_out_zone": {
-        "name": "Sperrezone: {zone_name}"
+        "name": "Spærrezone: {zone_name}"
       },
       "automower_work_area": {
-        "name": "Arbejdsomrade: {work_area}"
+        "name": "Arbejdsområde: {work_area}"
       }
     },
     "valve": {
@@ -313,63 +313,63 @@
     },
     "event": {
       "gardena_mower_event": {
-        "name": "Klipperhaendelse",
+        "name": "Klipperhændelse",
         "state_attributes": {
           "event_type": {
             "state": {
               "started_cutting": "Klipning startet",
               "stopped": "Stoppet",
               "leaving": "Forlader",
-              "searching": "Soeger",
+              "searching": "Søger",
               "charging": "Oplader",
               "parked": "Parkeret",
-              "paused": "Sat pa pause",
+              "paused": "Sat på pause",
               "error": "Fejl",
-              "error_cleared": "Fejl lest"
+              "error_cleared": "Fejl løst"
             }
           }
         }
       },
       "gardena_valve_event": {
-        "name": "Ventilhaendelse",
+        "name": "Ventilhændelse",
         "state_attributes": {
           "event_type": {
             "state": {
               "started_watering": "Vanding startet",
               "stopped_watering": "Vanding stoppet",
               "error": "Fejl",
-              "error_cleared": "Fejl lest"
+              "error_cleared": "Fejl løst"
             }
           }
         }
       },
       "gardena_power_socket_event": {
-        "name": "Stikkontakthaendelse",
+        "name": "Stikkontakthændelse",
         "state_attributes": {
           "event_type": {
             "state": {
-              "turned_on": "Taendt",
+              "turned_on": "Tændt",
               "turned_off": "Slukket",
               "error": "Fejl",
-              "error_cleared": "Fejl lest"
+              "error_cleared": "Fejl løst"
             }
           }
         }
       },
       "automower_event": {
-        "name": "Klipperhaendelse",
+        "name": "Klipperhændelse",
         "state_attributes": {
           "event_type": {
             "state": {
               "started_mowing": "Klipning startet",
               "stopped": "Stoppet",
-              "going_home": "Koerer til station",
+              "going_home": "Kører til station",
               "charging": "Oplader",
               "leaving": "Forlader station",
               "parked": "Parkeret",
-              "paused": "Sat pa pause",
+              "paused": "Sat på pause",
               "error": "Fejl",
-              "error_cleared": "Fejl lest"
+              "error_cleared": "Fejl løst"
             }
           }
         }
@@ -377,7 +377,7 @@
     },
     "button": {
       "automower_confirm_error": {
-        "name": "Bekraeft fejl"
+        "name": "Bekræft fejl"
       }
     },
     "select": {

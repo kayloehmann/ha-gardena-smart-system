@@ -172,7 +172,7 @@
         }
       },
       "automower_inactive_reason": {
-        "name": "Przyczyna nieaktywnosci"
+        "name": "Przyczyna nieaktywności"
       },
       "automower_restricted_reason": {
         "name": "Przyczyna ograniczenia",
@@ -183,20 +183,20 @@
           "sensor": "Czujnik",
           "daily_limit": "Limit dzienny",
           "fota": "Aktualizacja oprogramowania",
-          "frost": "Mroz",
-          "all_work_areas_completed": "Wszystkie strefy ukonczone",
-          "external": "Zewnetrzny",
+          "frost": "Mróz",
+          "all_work_areas_completed": "Wszystkie strefy ukończone",
+          "external": "Zewnętrzny",
           "not_applicable": "Nie dotyczy"
         }
       },
       "automower_error_code_timestamp": {
-        "name": "Czas ostatniego bledu"
+        "name": "Czas ostatniego błędu"
       },
       "power_socket_last_error_code": {
-        "name": "Ostatni kod bledu"
+        "name": "Ostatni kod błędu"
       },
       "valve_last_error_code": {
-        "name": "Kod bledu zaworu"
+        "name": "Kod błędu zaworu"
       },
       "automower_error_code": {
         "name": "Kod błędu"
@@ -257,7 +257,7 @@
         "name": "Połączona"
       },
       "rf_link_online": {
-        "name": "Lacze RF"
+        "name": "Łącze RF"
       },
       "hub_websocket_connected": {
         "name": "WebSocket połączony"
@@ -317,15 +317,15 @@
         "state_attributes": {
           "event_type": {
             "state": {
-              "started_cutting": "Koszenie rozpoczete",
+              "started_cutting": "Koszenie rozpoczęte",
               "stopped": "Zatrzymana",
-              "leaving": "Wyjedza",
+              "leaving": "Wyjeżdża",
               "searching": "Szuka",
-              "charging": "Laduje",
+              "charging": "Ładuje",
               "parked": "Zaparkowana",
               "paused": "Wstrzymana",
-              "error": "Blad",
-              "error_cleared": "Blad usuniety"
+              "error": "Błąd",
+              "error_cleared": "Błąd usunięty"
             }
           }
         }
@@ -335,10 +335,10 @@
         "state_attributes": {
           "event_type": {
             "state": {
-              "started_watering": "Podlewanie rozpoczete",
+              "started_watering": "Podlewanie rozpoczęte",
               "stopped_watering": "Podlewanie zatrzymane",
-              "error": "Blad",
-              "error_cleared": "Blad usuniety"
+              "error": "Błąd",
+              "error_cleared": "Błąd usunięty"
             }
           }
         }
@@ -348,10 +348,10 @@
         "state_attributes": {
           "event_type": {
             "state": {
-              "turned_on": "Wlaczone",
-              "turned_off": "Wylaczone",
-              "error": "Blad",
-              "error_cleared": "Blad usuniety"
+              "turned_on": "Włączone",
+              "turned_off": "Wyłączone",
+              "error": "Błąd",
+              "error_cleared": "Błąd usunięty"
             }
           }
         }
@@ -361,15 +361,15 @@
         "state_attributes": {
           "event_type": {
             "state": {
-              "started_mowing": "Koszenie rozpoczete",
+              "started_mowing": "Koszenie rozpoczęte",
               "stopped": "Zatrzymana",
               "going_home": "Wraca do stacji",
-              "charging": "Laduje",
-              "leaving": "Opuszcza stacje",
+              "charging": "Ładuje",
+              "leaving": "Opuszcza stację",
               "parked": "Zaparkowana",
               "paused": "Wstrzymana",
-              "error": "Blad",
-              "error_cleared": "Blad usuniety"
+              "error": "Błąd",
+              "error_cleared": "Błąd usunięty"
             }
           }
         }
@@ -377,7 +377,7 @@
     },
     "button": {
       "automower_confirm_error": {
-        "name": "Potwierdz blad"
+        "name": "Potwierdź błąd"
       }
     },
     "select": {
