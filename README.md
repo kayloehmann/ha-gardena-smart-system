@@ -103,12 +103,17 @@ If you installed via HACS, you can also uninstall the integration entirely:
 | Entity | Device Class | Unit | Category | Default |
 |--------|-------------|------|----------|---------|
 | Battery | `battery` | % | Diagnostic | Enabled |
+| Battery state | `enum` | -- | Diagnostic | Enabled |
 | Signal strength | -- | % | Diagnostic | **Disabled** |
 | Soil moisture | `moisture` | % | -- | Enabled |
 | Soil temperature | `temperature` | °C | -- | Enabled |
 | Ambient temperature | `temperature` | °C | -- | Enabled |
 | Light intensity | `illuminance` | lx | -- | Enabled |
 | Operating hours (mower) | -- | h | Diagnostic | **Disabled** |
+| Mower activity | -- | -- | Diagnostic | Enabled |
+| Last error code | -- | -- | Diagnostic | **Disabled** |
+| Power socket remaining time | `duration` | s | -- | Enabled |
+| Power socket last error | -- | -- | Diagnostic | **Disabled** |
 
 ### Gardena Binary Sensors
 
@@ -117,6 +122,7 @@ If you installed via HACS, you can also uninstall the integration entirely:
 | Battery low | `battery` | Diagnostic | Enabled |
 | Valve error | `problem` | Diagnostic | **Disabled** |
 | Mower error | `problem` | Diagnostic | Enabled |
+| RF link | `connectivity` | Diagnostic | Enabled |
 
 ### Gardena Valve
 
@@ -178,14 +184,23 @@ Created for Husqvarna Automower robotic mowers. Reports current activity mapped 
 | Cutting height | -- | -- | -- | Enabled |
 | Next start | `timestamp` | -- | -- | Enabled |
 | Total cutting time | -- | h | Diagnostic | Enabled |
+| Total charging time | -- | h | Diagnostic | Enabled |
 | Charging cycles | -- | -- | Diagnostic | Enabled |
 | Collisions | -- | -- | Diagnostic | Enabled |
 | Total drive distance | -- | m | Diagnostic | Enabled |
 | Blade usage time | -- | h | Diagnostic | Enabled |
 | Total running time | -- | h | Diagnostic | Enabled |
 | Total searching time | -- | h | Diagnostic | Enabled |
+| Activity | `enum` | -- | Diagnostic | Enabled |
+| State | `enum` | -- | Diagnostic | Enabled |
+| Inactive reason | -- | -- | Diagnostic | Enabled |
+| Restricted reason | `enum` | -- | Diagnostic | Enabled |
+| Error code | -- | -- | Diagnostic | Enabled |
+| Last error time | `timestamp` | -- | Diagnostic | Enabled |
+| Schedule override | `enum` | -- | Diagnostic | Enabled |
+| Last seen | `timestamp` | -- | Diagnostic | Enabled |
 
-Time-based statistics (cutting time, blade usage, running time, searching time) are reported by the API in seconds and converted to hours for display.
+Time-based statistics (cutting time, charging time, blade usage, running time, searching time) are reported by the API in seconds and converted to hours for display.
 
 ### Automower Binary Sensors
 
@@ -202,8 +217,17 @@ Time-based statistics (cutting time, blade usage, running time, searching time) 
 |--------|-------------|
 | Headlight | Turn headlights always on or always off |
 | Stay-out zone: *{name}* | Enable or disable individual stay-out zones |
+| Work area: *{name}* | Enable or disable individual work areas |
 
-Headlight and stay-out zone switches are only created if the mower model supports them (capability-based).
+Headlight, stay-out zone, and work area switches are only created if the mower model supports them (capability-based).
+
+### Automower Select Controls
+
+| Entity | Options | Description |
+|--------|---------|-------------|
+| Headlight mode | Always on, Always off, Evening only, Evening and night | Fine-grained headlight mode control |
+
+The headlight mode select complements the simple on/off headlight switch with all four modes supported by the mower.
 
 ### Automower Number Controls
 
@@ -216,11 +240,11 @@ Work area cutting height entities are only created if the mower supports work ar
 
 ### Automower Device Tracker
 
-| Entity | Source Type |
-|--------|-------------|
-| Position | GPS |
+| Entity | Source Type | Default |
+|--------|-------------|---------|
+| Position | GPS | **Disabled** |
 
-Shows the mower's latitude and longitude from the most recent GPS position. Only created for mower models with GPS capability.
+Shows the mower's latitude and longitude from the most recent GPS position. Only created for mower models with GPS capability. **Disabled by default** for privacy — enable it manually in the entity settings if you want GPS tracking.
 
 ### Automower Calendar
 
@@ -229,6 +253,32 @@ Shows the mower's latitude and longitude from the most recent GPS position. Only
 | Mowing schedule | Read-only calendar showing scheduled mowing tasks |
 
 Each schedule task appears as a calendar event with the summary "Mowing" (or "Mowing (*work area name*)" for work-area-specific schedules).
+
+### Automower Button
+
+| Entity | Description |
+|--------|-------------|
+| Confirm error | Acknowledge and clear the current mower error |
+
+### Event Entities
+
+Both Gardena and Automower devices expose event entities for state transitions, useful for automations.
+
+| Entity | Events |
+|--------|--------|
+| Gardena Mower event | started_cutting, stopped, leaving, searching, charging, parked, paused, error, error_cleared |
+| Gardena Valve event | started_watering, stopped_watering, error, error_cleared |
+| Gardena Power socket event | turned_on, turned_off, error, error_cleared |
+| Automower event | started_mowing, stopped, going_home, charging, leaving, parked, paused, error, error_cleared |
+
+### Hub Diagnostic Sensors
+
+Each config entry creates a virtual "hub" device with integration-level diagnostic sensors.
+
+| Entity | Description | Category |
+|--------|-------------|----------|
+| Device count | Number of devices managed by this entry | Diagnostic |
+| Polling interval | Current polling interval in seconds | Diagnostic |
 
 ## Services
 
@@ -283,6 +333,34 @@ target:
   entity_id: lawn_mower.sileno_mower
 data:
   duration: 60
+```
+
+### `gardena_smart_system.park_until_further_notice`
+
+Park the mower indefinitely. It will stay in the charging station until manually resumed.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `target` | entity | Yes | A `lawn_mower` entity from this integration |
+
+```yaml
+service: gardena_smart_system.park_until_further_notice
+target:
+  entity_id: lawn_mower.automower_450x_mower
+```
+
+### `gardena_smart_system.resume_schedule`
+
+Resume the mower's automatic mowing schedule.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `target` | entity | Yes | A `lawn_mower` entity from this integration |
+
+```yaml
+service: gardena_smart_system.resume_schedule
+target:
+  entity_id: lawn_mower.automower_450x_mower
 ```
 
 ## Use Cases & Automation Examples
@@ -539,15 +617,41 @@ This integration targets the [Home Assistant Integration Quality Scale](https://
 
 Key quality features:
 
-- **99% test coverage** across 367 automated tests
+- **99% test coverage** across 462 automated tests
 - **mypy --strict** passes with zero errors on all 23 source files
 - **PEP 561** compliant (`py.typed` markers on both client libraries)
 - **Full async** codebase — no blocking I/O in the event loop
 - **WebSocket session injection** — `aiohttp.ClientSession` provided by Home Assistant, not created internally
-- **Diagnostics** with sensitive data redaction (credentials, serial numbers)
+- **Diagnostics** with sensitive data redaction (credentials, serial numbers, GPS coordinates, device names)
+- **Security hardening** — STRIDE threat model audit, WebSocket error isolation, log truncation, OAuth token revocation on shutdown
 - **Repair issues** for WebSocket connection loss
 - **Stale device cleanup** — devices removed from the API are automatically removed from the HA device registry
 - **Translated exceptions** — all error messages use the HA translation framework
+
+## Translations
+
+The integration is fully translated into **30 languages** with 191 strings each:
+
+| Language | Code | Language | Code |
+|----------|------|----------|------|
+| English | `en` | Portuguese (BR) | `pt-BR` |
+| German | `de` | Russian | `ru` |
+| French | `fr` | Ukrainian | `uk` |
+| Dutch | `nl` | Czech | `cs` |
+| Swedish | `sv` | Slovak | `sk` |
+| Italian | `it` | Hungarian | `hu` |
+| Spanish | `es` | Romanian | `ro` |
+| Danish | `da` | Greek | `el` |
+| Polish | `pl` | Bulgarian | `bg` |
+| Portuguese | `pt` | Finnish | `fi` |
+| Norwegian | `nb` | Croatian | `hr` |
+| Slovenian | `sl` | Estonian | `et` |
+| Latvian | `lv` | Lithuanian | `lt` |
+| Turkish | `tr` | Catalan | `ca` |
+| Chinese (Simplified) | `zh-Hans` | Chinese (Traditional) | `zh-Hant` |
+| Japanese | `ja` | | |
+
+Translations cover all entity names, config flow text, options, services, error messages, and enum state labels.
 
 ## License
 
