@@ -57,6 +57,7 @@ AUTOMOWER_PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
     Platform.LAWN_MOWER,
     Platform.SWITCH,
+    Platform.SELECT,
     Platform.NUMBER,
     Platform.DEVICE_TRACKER,
     Platform.CALENDAR,

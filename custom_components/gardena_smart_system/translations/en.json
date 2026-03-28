@@ -195,6 +195,35 @@
       "automower_error_code_timestamp": {
         "name": "Last error time"
       },
+      "automower_total_charging_time": {
+        "name": "Total charging time"
+      },
+      "automower_planner_override": {
+        "name": "Schedule override",
+        "state": {
+          "not_active": "Not active",
+          "force_park": "Force park",
+          "force_mow": "Force mow"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Last seen"
+      },
+      "battery_state": {
+        "name": "Battery state",
+        "state": {
+          "ok": "OK",
+          "low": "Low",
+          "replace_now": "Replace now",
+          "out_of_operation": "Out of operation",
+          "charging": "Charging",
+          "no_battery": "No battery",
+          "unknown": "Unknown"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Remaining power time"
+      },
       "power_socket_last_error_code": {
         "name": "Last error code"
       },
@@ -246,6 +275,17 @@
       },
       "automower_work_area": {
         "name": "Work area: {work_area}"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Headlight mode",
+        "state": {
+          "always_on": "Always on",
+          "always_off": "Always off",
+          "evening_only": "Evening only",
+          "evening_and_night": "Evening and night"
+        }
       }
     },
     "valve": {

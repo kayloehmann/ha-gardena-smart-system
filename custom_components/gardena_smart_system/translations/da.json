@@ -209,6 +209,35 @@
       },
       "hub_polling_interval": {
         "name": "Pollingsinterval"
+      },
+      "automower_total_charging_time": {
+        "name": "Samlet opladningstid"
+      },
+      "automower_planner_override": {
+        "name": "Tidsplanerstatning",
+        "state": {
+          "not_active": "Ikke aktiv",
+          "force_park": "Tving parkering",
+          "force_mow": "Tving klipning"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Sidst set"
+      },
+      "battery_state": {
+        "name": "Batteritilstand",
+        "state": {
+          "ok": "OK",
+          "low": "Lav",
+          "replace_now": "Udskift nu",
+          "out_of_operation": "Ude af drift",
+          "charging": "Oplader",
+          "no_battery": "Intet batteri",
+          "unknown": "Ukendt"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Resterende tændtid"
       }
     },
     "binary_sensor": {
@@ -349,6 +378,17 @@
     "button": {
       "automower_confirm_error": {
         "name": "Bekraeft fejl"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Forlygtetilstand",
+        "state": {
+          "always_on": "Altid tændt",
+          "always_off": "Altid slukket",
+          "evening_only": "Kun aften",
+          "evening_and_night": "Aften og nat"
+        }
       }
     }
   },

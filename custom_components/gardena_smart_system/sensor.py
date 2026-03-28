@@ -54,6 +54,22 @@ COMMON_SENSORS: tuple[GardenaSensorDescription, ...] = (
         exists_fn=lambda d: d.common is not None and d.common.battery_level is not None,
     ),
     GardenaSensorDescription(
+        key="battery_state",
+        translation_key="battery_state",
+        device_class=SensorDeviceClass.ENUM,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        options=[
+            "ok", "low", "replace_now", "out_of_operation",
+            "charging", "no_battery", "unknown",
+        ],
+        value_fn=lambda d: (
+            d.common.battery_state.lower()
+            if d.common and d.common.battery_state
+            else None
+        ),
+        exists_fn=lambda d: d.common is not None and d.common.battery_state is not None,
+    ),
+    GardenaSensorDescription(
         key="rf_link_level",
         translation_key="rf_link_level",
         native_unit_of_measurement=PERCENTAGE,
@@ -109,6 +125,20 @@ SENSOR_SENSORS: tuple[GardenaSensorDescription, ...] = (
 )
 
 POWER_SOCKET_SENSORS: tuple[GardenaSensorDescription, ...] = (
+    GardenaSensorDescription(
+        key="power_socket_remaining_duration",
+        translation_key="power_socket_remaining_duration",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+        value_fn=lambda d: (
+            d.power_socket.duration
+            if d.power_socket and d.power_socket.duration and d.power_socket.duration > 0
+            else None
+        ),
+        exists_fn=lambda d: d.power_socket is not None,
+    ),
     GardenaSensorDescription(
         key="power_socket_last_error_code",
         translation_key="power_socket_last_error_code",

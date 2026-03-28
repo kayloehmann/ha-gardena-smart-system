@@ -209,6 +209,35 @@
       },
       "hub_polling_interval": {
         "name": "Interwał odpytywania"
+      },
+      "automower_total_charging_time": {
+        "name": "Całkowity czas ładowania"
+      },
+      "automower_planner_override": {
+        "name": "Nadpisanie harmonogramu",
+        "state": {
+          "not_active": "Nieaktywne",
+          "force_park": "Wymuś parkowanie",
+          "force_mow": "Wymuś koszenie"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Ostatnio widziany"
+      },
+      "battery_state": {
+        "name": "Stan baterii",
+        "state": {
+          "ok": "OK",
+          "low": "Niski",
+          "replace_now": "Wymień teraz",
+          "out_of_operation": "Niesprawna",
+          "charging": "Ładowanie",
+          "no_battery": "Brak baterii",
+          "unknown": "Nieznany"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Pozostały czas zasilania"
       }
     },
     "binary_sensor": {
@@ -349,6 +378,17 @@
     "button": {
       "automower_confirm_error": {
         "name": "Potwierdz blad"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Tryb reflektorów",
+        "state": {
+          "always_on": "Zawsze włączone",
+          "always_off": "Zawsze wyłączone",
+          "evening_only": "Tylko wieczorem",
+          "evening_and_night": "Wieczorem i w nocy"
+        }
       }
     }
   },

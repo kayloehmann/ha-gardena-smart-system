@@ -209,6 +209,35 @@
       },
       "hub_polling_interval": {
         "name": "Polling-interval"
+      },
+      "automower_total_charging_time": {
+        "name": "Totale laadtijd"
+      },
+      "automower_planner_override": {
+        "name": "Schema-overschrijving",
+        "state": {
+          "not_active": "Niet actief",
+          "force_park": "Parkeren forceren",
+          "force_mow": "Maaien forceren"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Laatst gezien"
+      },
+      "battery_state": {
+        "name": "Batterijstatus",
+        "state": {
+          "ok": "OK",
+          "low": "Laag",
+          "replace_now": "Nu vervangen",
+          "out_of_operation": "Buiten werking",
+          "charging": "Laden",
+          "no_battery": "Geen batterij",
+          "unknown": "Onbekend"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Resterende inschakeltijd"
       }
     },
     "binary_sensor": {
@@ -349,6 +378,17 @@
     "button": {
       "automower_confirm_error": {
         "name": "Fout bevestigen"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Koplampmodus",
+        "state": {
+          "always_on": "Altijd aan",
+          "always_off": "Altijd uit",
+          "evening_only": "Alleen 's avonds",
+          "evening_and_night": "Avond en nacht"
+        }
       }
     }
   },

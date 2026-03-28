@@ -209,6 +209,35 @@
       },
       "hub_polling_interval": {
         "name": "Intervalo de sondeo"
+      },
+      "automower_total_charging_time": {
+        "name": "Tiempo de carga total"
+      },
+      "automower_planner_override": {
+        "name": "Anulación de horario",
+        "state": {
+          "not_active": "No activo",
+          "force_park": "Forzar estacionamiento",
+          "force_mow": "Forzar siega"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Última conexión"
+      },
+      "battery_state": {
+        "name": "Estado de la batería",
+        "state": {
+          "ok": "OK",
+          "low": "Baja",
+          "replace_now": "Reemplazar ahora",
+          "out_of_operation": "Fuera de servicio",
+          "charging": "Cargando",
+          "no_battery": "Sin batería",
+          "unknown": "Desconocido"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Tiempo de encendido restante"
       }
     },
     "binary_sensor": {
@@ -349,6 +378,17 @@
     "button": {
       "automower_confirm_error": {
         "name": "Confirmar error"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Modo de faros",
+        "state": {
+          "always_on": "Siempre encendido",
+          "always_off": "Siempre apagado",
+          "evening_only": "Solo por la tarde",
+          "evening_and_night": "Tarde y noche"
+        }
       }
     }
   },

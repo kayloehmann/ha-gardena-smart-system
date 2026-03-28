@@ -6,7 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 
-from aioautomower.const import MowerActivity, MowerState, RestrictedReason
+from aioautomower.const import MowerActivity, MowerState, OverrideAction, RestrictedReason
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -245,6 +245,36 @@ SENSOR_DESCRIPTIONS: tuple[AutomowerSensorDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
         value_fn=lambda d: d.mower.error_code_timestamp,
+    ),
+    # P1: Total charging time
+    AutomowerSensorDescription(
+        key="total_charging_time",
+        translation_key="automower_total_charging_time",
+        native_unit_of_measurement=UnitOfTime.HOURS,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: d.statistics.total_charging_time // 3600,
+    ),
+    # P5: Planner override action
+    AutomowerSensorDescription(
+        key="planner_override",
+        translation_key="automower_planner_override",
+        device_class=SensorDeviceClass.ENUM,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        options=[
+            OverrideAction.NOT_ACTIVE.lower(),
+            OverrideAction.FORCE_PARK.lower(),
+            OverrideAction.FORCE_MOW.lower(),
+        ],
+        value_fn=lambda d: d.planner.override.action.lower(),
+    ),
+    # P6: Last seen timestamp
+    AutomowerSensorDescription(
+        key="last_seen",
+        translation_key="automower_last_seen",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: d.metadata.status_timestamp,
     ),
 )
 

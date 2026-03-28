@@ -904,3 +904,96 @@ class TestHubWebSocketSensor:
                 # WS connects during setup
                 assert state.state == "on"
                 break
+
+
+# ──────────────────────────────────────────────────────────────────────
+# v1.3.0 Features: P2 (Power Socket Duration), P4 (Battery State)
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestPowerSocketRemainingDuration:
+    """P2: Power socket remaining duration sensor."""
+
+    async def test_duration_when_active(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(has_power_socket=True)
+        device.power_socket.duration = 300
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get(
+            "sensor.my_sensor_remaining_power_time"
+        )
+        assert state is not None
+        assert state.state == "300"
+
+    async def test_duration_none_when_zero(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(has_power_socket=True)
+        device.power_socket.duration = 0
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get(
+            "sensor.my_sensor_remaining_power_time"
+        )
+        assert state is not None
+        assert state.state == "unknown"
+
+    async def test_no_sensor_without_power_socket(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(has_power_socket=False)
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get(
+            "sensor.my_sensor_remaining_power_time"
+        )
+        assert state is None
+
+
+class TestBatteryStateSensor:
+    """P4: Gardena battery state enum sensor."""
+
+    async def test_battery_state_ok(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device()
+        device.common.battery_state = "OK"
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get("sensor.my_sensor_battery_state")
+        assert state is not None
+        assert state.state == "ok"
+
+    async def test_battery_state_low(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device()
+        device.common.battery_state = "LOW"
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get("sensor.my_sensor_battery_state")
+        assert state is not None
+        assert state.state == "low"
+
+    async def test_battery_state_none(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device()
+        device.common.battery_state = None
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        # No entity created when battery_state is None (exists_fn)
+        entity_reg = er.async_get(hass)
+        found = [
+            e for e in entity_reg.entities.values()
+            if "battery_state" in (e.unique_id or "")
+        ]
+        assert len(found) == 0

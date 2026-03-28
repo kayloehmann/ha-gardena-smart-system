@@ -1350,7 +1350,11 @@ class TestAutomowerDeviceInfo:
             entity_reg = er.async_get(hass)
             headlight_entry = None
             for entry in entity_reg.entities.values():
-                if entry.platform == DOMAIN and "headlight" in (entry.unique_id or ""):
+                if (
+                    entry.platform == DOMAIN
+                    and entry.domain == "switch"
+                    and "headlight" in (entry.unique_id or "")
+                ):
                     headlight_entry = entry
                     break
             assert headlight_entry is not None
@@ -4007,3 +4011,143 @@ class TestAutomowerHubEntities:
             state = hass.states.get(found.entity_id)
             assert state is not None
             assert state.state == "on"
+
+
+# ──────────────────────────────────────────────────────────────────────
+# v1.3.0 Features: P1, P3, P5, P6
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestAutomowerTotalChargingTime:
+    """P1: Total charging time sensor."""
+
+    async def test_total_charging_time_value(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Sensor shows total_charging_time in hours (integer division)."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("sensor.test_mower_total_charging_time")
+            assert state is not None
+            # 10000 seconds // 3600 = 2 hours
+            assert state.state == "2"
+
+
+class TestAutomowerPlannerOverrideSensor:
+    """P5: Planner override enum sensor."""
+
+    async def test_override_not_active(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(override_action="NOT_ACTIVE")
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("sensor.test_mower_schedule_override")
+            assert state is not None
+            assert state.state == "not_active"
+
+    async def test_override_force_mow(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(override_action="FORCE_MOW")
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("sensor.test_mower_schedule_override")
+            assert state is not None
+            assert state.state == "force_mow"
+
+
+class TestAutomowerLastSeenSensor:
+    """P6: Last seen timestamp sensor."""
+
+    async def test_last_seen_value(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("sensor.test_mower_last_seen")
+            assert state is not None
+            assert "2025-06-15" in state.state
+
+
+class TestAutomowerHeadlightSelect:
+    """P3: Headlight mode select entity."""
+
+    async def test_select_entity_created(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            has_headlights=True, headlight_mode="ALWAYS_OFF"
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("select.test_mower_headlight_mode")
+            assert state is not None
+            assert state.state == "always_off"
+
+    async def test_select_always_on(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            has_headlights=True, headlight_mode="ALWAYS_ON"
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("select.test_mower_headlight_mode")
+            assert state is not None
+            assert state.state == "always_on"
+
+    async def test_select_evening_only(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            has_headlights=True, headlight_mode="EVENING_ONLY"
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("select.test_mower_headlight_mode")
+            assert state is not None
+            assert state.state == "evening_only"
+
+    async def test_select_set_option_calls_api(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(
+            has_headlights=True, headlight_mode="ALWAYS_OFF"
+        )
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(
+            hass, automower_config_entry, devices
+        ) as mock_client:
+            await hass.services.async_call(
+                "select",
+                "select_option",
+                {
+                    "entity_id": "select.test_mower_headlight_mode",
+                    "option": "evening_and_night",
+                },
+                blocking=True,
+            )
+            mock_client.async_set_headlight_mode.assert_called_once_with(
+                device.mower_id, "EVENING_AND_NIGHT"
+            )
+
+    async def test_no_select_without_headlight_capability(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device(has_headlights=False)
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("select.test_mower_headlight_mode")
+            assert state is None

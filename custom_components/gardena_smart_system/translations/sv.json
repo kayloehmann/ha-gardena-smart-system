@@ -209,6 +209,35 @@
       },
       "hub_polling_interval": {
         "name": "Pollningsintervall"
+      },
+      "automower_total_charging_time": {
+        "name": "Total laddningstid"
+      },
+      "automower_planner_override": {
+        "name": "Schemaöverskridande",
+        "state": {
+          "not_active": "Inte aktiv",
+          "force_park": "Tvinga parkering",
+          "force_mow": "Tvinga klippning"
+        }
+      },
+      "automower_last_seen": {
+        "name": "Senast sedd"
+      },
+      "battery_state": {
+        "name": "Batteristatus",
+        "state": {
+          "ok": "OK",
+          "low": "Låg",
+          "replace_now": "Byt nu",
+          "out_of_operation": "Ur drift",
+          "charging": "Laddar",
+          "no_battery": "Inget batteri",
+          "unknown": "Okänd"
+        }
+      },
+      "power_socket_remaining_duration": {
+        "name": "Återstående påslagstid"
       }
     },
     "binary_sensor": {
@@ -349,6 +378,17 @@
     "button": {
       "automower_confirm_error": {
         "name": "Bekrafta fel"
+      }
+    },
+    "select": {
+      "automower_headlight_mode": {
+        "name": "Strålkastarläge",
+        "state": {
+          "always_on": "Alltid på",
+          "always_off": "Alltid av",
+          "evening_only": "Endast kväll",
+          "evening_and_night": "Kväll och natt"
+        }
       }
     }
   },
