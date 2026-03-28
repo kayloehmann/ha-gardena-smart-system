@@ -270,11 +270,12 @@ class GardenaCoordinator(DataUpdateCoordinator[dict[str, Device]]):
         _LOGGER.warning("Gardena WebSocket connection lost, falling back to polling: %s", err)
 
     async def async_shutdown(self) -> None:
-        """Disconnect the WebSocket and clean up resources."""
+        """Disconnect the WebSocket, revoke token, and clean up resources."""
         if self._ws:
             await self._ws.async_disconnect()
             self._ws = None
         self._ws_connected = False
+        await self._auth.async_revoke_token()
 
     def check_command_throttle(self) -> None:
         """Raise if a command is sent too soon after the previous one.

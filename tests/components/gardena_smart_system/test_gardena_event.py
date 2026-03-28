@@ -18,7 +18,7 @@ async def _setup_with_devices_ctx(hass, mock_config_entry, devices):
     """Set up the integration keeping mock context active. Returns (mock_client, patches)."""
     patches = (
         patch(_PATCH_CLIENT),
-        patch(_PATCH_AUTH),
+        patch(_PATCH_AUTH, return_value=AsyncMock()),
         patch(_PATCH_WS),
     )
     p_client = patches[0].__enter__()

@@ -26,7 +26,7 @@ async def _setup_with_devices(hass, mock_config_entry, devices):
     """Set up the integration with given device map and yield mock client."""
     with (
         patch(_PATCH_CLIENT) as mock_client_cls,
-        patch(_PATCH_AUTH),
+        patch(_PATCH_AUTH, return_value=AsyncMock()),
         patch(_PATCH_WS) as mock_ws_cls,
     ):
         mock_client = AsyncMock()

@@ -47,6 +47,7 @@ class AutomowerTrackerEntity(AutomowerEntity, TrackerEntity):
     """GPS position tracker for an Automower."""
 
     _attr_translation_key = "automower_position"
+    _attr_entity_registry_enabled_default = False
 
     def __init__(self, coordinator: AutomowerCoordinator, device: AutomowerDevice) -> None:
         """Initialize the tracker entity."""

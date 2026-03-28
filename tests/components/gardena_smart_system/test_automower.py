@@ -179,7 +179,7 @@ async def _setup_automower(
     """Set up the integration with Automower devices and yield the mock client."""
     with (
         patch(_PATCH_AM_CLIENT) as mock_client_cls,
-        patch(_PATCH_AM_AUTH),
+        patch(_PATCH_AM_AUTH, return_value=AsyncMock()),
         patch(_PATCH_AM_WS) as mock_ws_cls,
     ):
         mock_client = AsyncMock()
@@ -290,7 +290,7 @@ class TestPlatformRouting:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -1087,7 +1087,19 @@ class TestAutomowerDeviceTracker:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("device_tracker.test_mower_position")
+            # Entity is disabled by default (F4 security fix — GPS is sensitive)
+            entity_id = "device_tracker.test_mower_position"
+            entity_reg = er.async_get(hass)
+            entry = entity_reg.async_get(entity_id)
+            assert entry is not None
+            assert entry.disabled_by is not None
+
+            # Enable it and reload
+            entity_reg.async_update_entity(entity_id, disabled_by=None)
+            await hass.config_entries.async_reload(automower_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            state = hass.states.get(entity_id)
             assert state is not None
             assert state.attributes["latitude"] == 52.5200
             assert state.attributes["longitude"] == 13.4050
@@ -1117,7 +1129,13 @@ class TestAutomowerDeviceTracker:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("device_tracker.test_mower_position")
+            entity_id = "device_tracker.test_mower_position"
+            entity_reg = er.async_get(hass)
+            entity_reg.async_update_entity(entity_id, disabled_by=None)
+            await hass.config_entries.async_reload(automower_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            state = hass.states.get(entity_id)
             assert state is not None
             # latitude/longitude are None when no positions
             assert state.attributes.get("latitude") is None
@@ -1225,7 +1243,7 @@ class TestAutomowerCoordinator:
 
         with (
             patch(_PATCH_AM_CLIENT) as mock_client_cls,
-            patch(_PATCH_AM_AUTH),
+            patch(_PATCH_AM_AUTH, return_value=AsyncMock()),
             patch(_PATCH_AM_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -1410,7 +1428,7 @@ class TestAutomowerCoordinatorErrors:
 
         with (
             patch(_PATCH_AM_CLIENT) as mock_client_cls,
-            patch(_PATCH_AM_AUTH),
+            patch(_PATCH_AM_AUTH, return_value=AsyncMock()),
             patch(_PATCH_AM_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -1440,7 +1458,7 @@ class TestAutomowerCoordinatorErrors:
 
         with (
             patch(_PATCH_AM_CLIENT) as mock_client_cls,
-            patch(_PATCH_AM_AUTH),
+            patch(_PATCH_AM_AUTH, return_value=AsyncMock()),
             patch(_PATCH_AM_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -1474,7 +1492,7 @@ class TestAutomowerCoordinatorErrors:
 
         with (
             patch(_PATCH_AM_CLIENT) as mock_client_cls,
-            patch(_PATCH_AM_AUTH),
+            patch(_PATCH_AM_AUTH, return_value=AsyncMock()),
             patch(_PATCH_AM_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -1526,7 +1544,7 @@ class TestAutomowerCoordinatorStaleDevices:
 
         with (
             patch(_PATCH_AM_CLIENT) as mock_client_cls,
-            patch(_PATCH_AM_AUTH),
+            patch(_PATCH_AM_AUTH, return_value=AsyncMock()),
             patch(_PATCH_AM_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -1584,7 +1602,7 @@ class TestAutomowerCoordinatorWebSocket:
 
         with (
             patch(_PATCH_AM_CLIENT) as mock_client_cls,
-            patch(_PATCH_AM_AUTH),
+            patch(_PATCH_AM_AUTH, return_value=AsyncMock()),
             patch(_PATCH_AM_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -2439,7 +2457,7 @@ class TestAutomowerDiagnostics:
             assert device.mower_id in devices_data
 
             mower_data = devices_data[device.mower_id]
-            assert mower_data["name"] == "Test Mower"
+            assert mower_data["name"] == "**REDACTED**"
             assert mower_data["model"] == "HUSQVARNA AUTOMOWER 450XH"
             assert "battery" in mower_data
             assert "mower" in mower_data
@@ -2449,7 +2467,7 @@ class TestAutomowerDiagnostics:
             assert "capabilities" in mower_data
             assert mower_data["positions_count"] == 1
             assert "1" in mower_data["work_areas"]
-            assert mower_data["work_areas"]["1"]["name"] == "Front Yard"
+            assert mower_data["work_areas"]["1"]["name"] == "**REDACTED**"
             assert "zone-1" in mower_data["stay_out_zones"]
             assert mower_data["schedule_tasks_count"] == 1
 

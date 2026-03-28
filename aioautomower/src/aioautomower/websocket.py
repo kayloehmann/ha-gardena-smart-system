@@ -132,7 +132,7 @@ class AutomowerWebSocket:
         try:
             message: dict[str, Any] = json.loads(raw)
         except json.JSONDecodeError:
-            _LOGGER.warning("Automower WebSocket: received non-JSON message: %s", raw)
+            _LOGGER.warning("Automower WebSocket: received non-JSON message: %.200s", raw)
             return
 
         # The Automower WS sends status updates with mower ID and attributes
@@ -149,5 +149,11 @@ class AutomowerWebSocket:
             )
             return
 
-        device.update_from_api(message)
+        try:
+            device.update_from_api(message)
+        except Exception:
+            _LOGGER.exception(
+                "Automower WebSocket: error processing update for mower %s", mower_id
+            )
+            return
         self._on_update(mower_id, device)

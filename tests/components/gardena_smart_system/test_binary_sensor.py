@@ -23,7 +23,7 @@ def _mock_api_factory():
     def _create(devices: dict):
         return (
             patch(_PATCH_CLIENT),
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS),
             devices,
         )
@@ -35,7 +35,7 @@ async def _setup_with_devices(hass, mock_config_entry, devices):
     """Set up the integration with given device map."""
     with (
         patch(_PATCH_CLIENT) as mock_client_cls,
-        patch(_PATCH_AUTH),
+        patch(_PATCH_AUTH, return_value=AsyncMock()),
         patch(_PATCH_WS) as mock_ws_cls,
     ):
         mock_client = AsyncMock()
@@ -293,7 +293,7 @@ class TestBinarySensorUnavailability:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -332,7 +332,7 @@ class TestBinarySensorDynamicDevices:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()

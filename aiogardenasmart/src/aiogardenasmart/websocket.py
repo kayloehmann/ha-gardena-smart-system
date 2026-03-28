@@ -147,7 +147,9 @@ class GardenaWebSocket:
         try:
             message: dict[str, Any] = json.loads(raw)
         except json.JSONDecodeError:
-            _LOGGER.warning("Gardena WebSocket: received non-JSON message: %s", raw)
+            _LOGGER.warning(
+                "Gardena WebSocket: received non-JSON message: %.200s", raw
+            )
             return
 
         msg_type: str = str(message.get("type", ""))
@@ -179,7 +181,13 @@ class GardenaWebSocket:
             )
             return
 
-        _apply_service_update(device, service_type, item_id, message)
+        try:
+            _apply_service_update(device, service_type, item_id, message)
+        except Exception:
+            _LOGGER.exception(
+                "Gardena WebSocket: error processing update for device %s", base_device_id
+            )
+            return
         self._on_update(base_device_id, device)
 
     async def _async_send_pong(self) -> None:

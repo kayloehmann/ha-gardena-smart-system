@@ -37,7 +37,7 @@ def mock_api(mock_devices: dict) -> object:
     """Patch all aiogardenasmart classes used by the coordinator."""
     with (
         patch(_PATCH_CLIENT) as mock_client_cls,
-        patch(_PATCH_AUTH),
+        patch(_PATCH_AUTH, return_value=AsyncMock()),
         patch(_PATCH_WS) as mock_ws_cls,
     ):
         mock_client = AsyncMock()
@@ -89,7 +89,7 @@ class TestSetupEntry:
     ) -> None:
         from aiogardenasmart.exceptions import GardenaAuthenticationError
 
-        with patch(_PATCH_CLIENT) as mock_cls, patch(_PATCH_AUTH):
+        with patch(_PATCH_CLIENT) as mock_cls, patch(_PATCH_AUTH, return_value=AsyncMock()):
             mock_client = AsyncMock()
             mock_client.async_get_devices = AsyncMock(
                 side_effect=GardenaAuthenticationError("expired token")
@@ -109,7 +109,7 @@ class TestSetupEntry:
     ) -> None:
         from aiogardenasmart.exceptions import GardenaConnectionError
 
-        with patch(_PATCH_CLIENT) as mock_cls, patch(_PATCH_AUTH):
+        with patch(_PATCH_CLIENT) as mock_cls, patch(_PATCH_AUTH, return_value=AsyncMock()):
             mock_client = AsyncMock()
             mock_client.async_get_devices = AsyncMock(
                 side_effect=GardenaConnectionError("connection refused")

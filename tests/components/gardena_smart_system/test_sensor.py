@@ -20,7 +20,7 @@ def _setup_mock_api(devices: dict) -> tuple:
     """Return context managers that patch the coordinator dependencies."""
     return (
         patch(_PATCH_CLIENT),
-        patch(_PATCH_AUTH),
+        patch(_PATCH_AUTH, return_value=AsyncMock()),
         patch(_PATCH_WS),
         devices,
     )
@@ -31,7 +31,7 @@ def mock_sensor_api(mock_devices: dict) -> object:
     """Patch aiogardenasmart classes and return the mock client."""
     with (
         patch(_PATCH_CLIENT) as mock_client_cls,
-        patch(_PATCH_AUTH),
+        patch(_PATCH_AUTH, return_value=AsyncMock()),
         patch(_PATCH_WS) as mock_ws_cls,
     ):
         mock_client = AsyncMock()
@@ -124,7 +124,7 @@ class TestSensorEntityCreation:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -155,7 +155,7 @@ class TestSensorEntityCreation:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -180,7 +180,7 @@ class TestSensorEntityCreation:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -207,7 +207,7 @@ class TestSensorEntityCreation:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -244,7 +244,7 @@ class TestSensorEntityCreation:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -312,7 +312,7 @@ class TestSensorUnavailability:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -335,7 +335,7 @@ class TestSensorUnavailability:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -369,7 +369,7 @@ class TestSensorUnavailability:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -396,7 +396,7 @@ class TestSensorUnavailability:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -451,7 +451,7 @@ class TestSensorDynamicDevices:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -488,7 +488,7 @@ class TestValveErrorSensor:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -517,7 +517,7 @@ class TestValveErrorSensor:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -544,7 +544,7 @@ class TestValveErrorSensor:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -575,7 +575,7 @@ class TestValveErrorSensor:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -611,7 +611,7 @@ class TestValveErrorSensor:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -640,7 +640,7 @@ class TestPowerSocketErrorSensor:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -665,7 +665,7 @@ class TestPowerSocketErrorSensor:
 
         with (
             patch(_PATCH_CLIENT) as mock_client_cls,
-            patch(_PATCH_AUTH),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
             patch(_PATCH_WS) as mock_ws_cls,
         ):
             mock_client = AsyncMock()
@@ -714,7 +714,7 @@ async def _setup_with_devices(hass, mock_config_entry, devices):
     """Set up the integration with given device map."""
     with (
         patch(_PATCH_CLIENT) as mock_client_cls,
-        patch(_PATCH_AUTH),
+        patch(_PATCH_AUTH, return_value=AsyncMock()),
         patch(_PATCH_WS) as mock_ws_cls,
     ):
         mock_client = AsyncMock()

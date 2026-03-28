@@ -18,6 +18,9 @@ TO_REDACT = {
     "serial",
     "serial_number",
     "location_id",
+    "name",
+    "latitude",
+    "longitude",
 }
 
 
