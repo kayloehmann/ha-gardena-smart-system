@@ -1264,7 +1264,10 @@ class TestAutomowerCoordinator:
             await coordinator.async_refresh()
             await hass.async_block_till_done()
 
-            assert coordinator.update_interval == AUTOMOWER_RATE_LIMIT_COOLDOWN
+            # First hit: graduated backoff starts at 5 minutes
+            from datetime import timedelta
+
+            assert coordinator.update_interval == timedelta(minutes=5)
 
     async def test_successful_fetch_restores_ws_interval(
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
@@ -1520,7 +1523,10 @@ class TestAutomowerCoordinatorErrors:
             # Trigger rate limit
             await coordinator.async_refresh()
             await hass.async_block_till_done()
-            assert coordinator.update_interval == AUTOMOWER_RATE_LIMIT_COOLDOWN
+            # First hit: graduated backoff starts at 5 minutes
+            from datetime import timedelta
+
+            assert coordinator.update_interval == timedelta(minutes=5)
 
             # Trigger successful fetch that restores interval
             await coordinator.async_refresh()

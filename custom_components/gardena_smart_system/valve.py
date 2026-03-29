@@ -113,17 +113,6 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
             return None
         return valve.activity == ValveActivity.CLOSED
 
-    @property
-    def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Return the valve activity and remaining duration as extra attributes."""
-        valve = self._valve
-        if valve is None:
-            return None
-        attrs: dict[str, Any] = {"activity": valve.activity}
-        if valve.duration is not None and valve.duration > 0:
-            attrs["duration"] = valve.duration
-        return attrs
-
     async def async_open_valve(self, **kwargs: Any) -> None:
         """Open the valve for the configured default duration."""
         duration_minutes: int = self.coordinator.config_entry.options.get(

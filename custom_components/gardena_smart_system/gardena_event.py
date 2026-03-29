@@ -8,7 +8,7 @@ from aiogardenasmart.const import (
     ServiceState,
     ValveActivity,
 )
-from homeassistant.components.event import EventDeviceClass, EventEntity
+from homeassistant.components.event import EventEntity
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -110,7 +110,7 @@ async def async_setup_entry(
 class GardenaMowerEventEntity(GardenaEntity, EventEntity):
     """Fires events on Gardena mower state transitions."""
 
-    _attr_device_class = EventDeviceClass.BUTTON
+
     _attr_event_types = _MOWER_EVENT_TYPES
     _attr_translation_key = "gardena_mower_event"
 
@@ -171,7 +171,7 @@ class GardenaMowerEventEntity(GardenaEntity, EventEntity):
 class GardenaValveEventEntity(GardenaEntity, EventEntity):
     """Fires events on Gardena valve state transitions."""
 
-    _attr_device_class = EventDeviceClass.BUTTON
+
     _attr_event_types = _VALVE_EVENT_TYPES
     _attr_translation_key = "gardena_valve_event"
 
@@ -234,7 +234,7 @@ class GardenaValveEventEntity(GardenaEntity, EventEntity):
 class GardenaPowerSocketEventEntity(GardenaEntity, EventEntity):
     """Fires events on Gardena power socket state transitions."""
 
-    _attr_device_class = EventDeviceClass.BUTTON
+
     _attr_event_types = _POWER_SOCKET_EVENT_TYPES
     _attr_translation_key = "gardena_power_socket_event"
 

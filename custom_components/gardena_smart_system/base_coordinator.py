@@ -87,6 +87,7 @@ class BaseSmartSystemCoordinator(DataUpdateCoordinator[dict[str, _DeviceT]], Gen
             and int(custom_minutes) != config.default_poll_minutes
             else None
         )
+        self._rate_limit_hits: int = 0
 
     # ── Public properties ──────────────────────────────────────────────
 
@@ -136,19 +137,26 @@ class BaseSmartSystemCoordinator(DataUpdateCoordinator[dict[str, _DeviceT]], Gen
         except cfg.auth_error_type as err:
             raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
         except cfg.rate_limit_error_type as err:
-            self.update_interval = cfg.rate_limit_cooldown
-            _LOGGER.warning(
-                "Rate limited by %s API, backing off to %s",
-                cfg.api_label,
+            self._rate_limit_hits += 1
+            backoff = min(
                 cfg.rate_limit_cooldown,
+                timedelta(minutes=5) * (2 ** (self._rate_limit_hits - 1)),
+            )
+            self.update_interval = backoff
+            _LOGGER.warning(
+                "Rate limited by %s API (hit #%d), backing off to %s",
+                cfg.api_label,
+                self._rate_limit_hits,
+                backoff,
             )
             raise UpdateFailed(
-                f"Rate limited by {cfg.api_label} API, retrying in {cfg.rate_limit_cooldown}: {err}"
+                f"Rate limited by {cfg.api_label} API, retrying in {backoff}: {err}"
             ) from err
         except cfg.connection_error_type as err:
             raise UpdateFailed(f"Cannot connect to {cfg.api_label} API: {err}") from err
 
-        # Restore normal polling interval after a successful fetch
+        # Reset rate-limit counter and restore normal polling interval
+        self._rate_limit_hits = 0
         if self._custom_poll_interval is not None:
             normal_interval = self._custom_poll_interval
         elif self._ws_connected:

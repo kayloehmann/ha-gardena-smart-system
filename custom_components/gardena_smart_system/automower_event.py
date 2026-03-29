@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from aioautomower.const import MowerActivity, MowerState
-from homeassistant.components.event import EventDeviceClass, EventEntity
+from homeassistant.components.event import EventEntity
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -73,7 +73,6 @@ async def async_setup_entry(
 class AutomowerEventEntity(AutomowerEntity, EventEntity):
     """Fires events on Automower state and activity transitions."""
 
-    _attr_device_class = EventDeviceClass.BUTTON
     _attr_event_types = _ALL_EVENT_TYPES
     _attr_translation_key = "automower_event"
 

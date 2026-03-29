@@ -106,7 +106,10 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                 self._client_secret = client_secret
                 return await self.async_step_api_type()
             finally:
-                await auth.async_revoke_token()
+                try:
+                    await auth.async_revoke_token()
+                except Exception:  # noqa: BLE001
+                    _LOGGER.debug("Token revocation failed during config flow cleanup")
 
         return self.async_show_form(
             step_id="user",

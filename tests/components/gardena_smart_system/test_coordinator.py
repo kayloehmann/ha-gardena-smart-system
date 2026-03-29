@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -342,7 +343,8 @@ class TestRateLimitBackoff:
         with pytest.raises(UpdateFailed):
             await coordinator._async_update_data()
 
-        assert coordinator.update_interval == RATE_LIMIT_COOLDOWN
+        # First hit: graduated backoff starts at 5 minutes
+        assert coordinator.update_interval == timedelta(minutes=5)
 
     async def test_successful_fetch_restores_normal_interval(
         self, coordinator: GardenaCoordinator
@@ -372,7 +374,7 @@ class TestRateLimitBackoff:
 
         assert coordinator.update_interval == SCAN_INTERVAL_WS_CONNECTED
 
-    async def test_consecutive_rate_limits_keep_cooldown(
+    async def test_consecutive_rate_limits_escalate_backoff(
         self, coordinator: GardenaCoordinator
     ) -> None:
         from aiogardenasmart.exceptions import GardenaRateLimitError
@@ -380,10 +382,54 @@ class TestRateLimitBackoff:
         coordinator._client = AsyncMock()
         coordinator._client.async_get_devices = AsyncMock(side_effect=GardenaRateLimitError("429"))
 
-        for _ in range(3):
+        expected = [timedelta(minutes=5), timedelta(minutes=10), timedelta(minutes=20)]
+        for i in range(3):
             with pytest.raises(UpdateFailed):
                 await coordinator._async_update_data()
-            assert coordinator.update_interval == RATE_LIMIT_COOLDOWN
+            assert coordinator.update_interval == expected[i]
+
+    async def test_backoff_caps_at_rate_limit_cooldown(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        """Graduated backoff never exceeds the configured rate_limit_cooldown."""
+        from aiogardenasmart.exceptions import GardenaRateLimitError
+
+        coordinator._client = AsyncMock()
+        coordinator._client.async_get_devices = AsyncMock(side_effect=GardenaRateLimitError("429"))
+
+        # Hit 7 times — 5, 10, 20, 40, 60, 60, 60
+        for _ in range(7):
+            with pytest.raises(UpdateFailed):
+                await coordinator._async_update_data()
+
+        assert coordinator.update_interval == RATE_LIMIT_COOLDOWN
+
+    async def test_successful_fetch_resets_backoff_counter(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        """After a successful fetch, the next rate limit starts at 5 min again."""
+        from aiogardenasmart.exceptions import GardenaRateLimitError
+
+        coordinator._client = AsyncMock()
+        coordinator._client.async_get_devices = AsyncMock(side_effect=GardenaRateLimitError("429"))
+
+        # Two rate-limit hits (5min, 10min)
+        for _ in range(2):
+            with pytest.raises(UpdateFailed):
+                await coordinator._async_update_data()
+        assert coordinator.update_interval == timedelta(minutes=10)
+
+        # Successful fetch resets counter
+        devices = {"dev-1": MagicMock()}
+        coordinator._client.async_get_devices = AsyncMock(return_value=devices)
+        with patch.object(coordinator, "_async_start_websocket", new_callable=AsyncMock):
+            await coordinator._async_update_data()
+
+        # Next rate limit starts at 5min again
+        coordinator._client.async_get_devices = AsyncMock(side_effect=GardenaRateLimitError("429"))
+        with pytest.raises(UpdateFailed):
+            await coordinator._async_update_data()
+        assert coordinator.update_interval == timedelta(minutes=5)
 
 
 class TestWebSocketPollIntervalAdaptation:

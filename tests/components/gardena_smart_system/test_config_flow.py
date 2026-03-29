@@ -89,6 +89,24 @@ class TestUserStep:
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "api_type"
 
+    async def test_token_revocation_failure_does_not_crash_flow(
+        self, hass: HomeAssistant
+    ) -> None:
+        """Token revocation errors during cleanup must not break the config flow."""
+        mock_auth = AsyncMock()
+        mock_auth.async_ensure_valid_token = AsyncMock()
+        mock_auth.async_revoke_token = AsyncMock(side_effect=Exception("revoke failed"))
+
+        result = await _init_user_step(hass)
+        with patch(_PATCH_AUTH, return_value=mock_auth):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {CONF_CLIENT_ID: MOCK_CLIENT_ID, CONF_CLIENT_SECRET: MOCK_CLIENT_SECRET},
+            )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "api_type"
+
     async def test_single_location_creates_entry(self, hass: HomeAssistant) -> None:
         result = await _init_user_step(hass)
         result = await _submit_credentials(hass, result["flow_id"])

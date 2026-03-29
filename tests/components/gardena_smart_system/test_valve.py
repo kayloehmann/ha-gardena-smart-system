@@ -220,68 +220,6 @@ class TestValveStateMapping:
         assert state is not None
         assert state.state == "open"
 
-    async def test_activity_exposed_as_attribute(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
-        device = make_mock_device(valve_count=1, has_sensor=False)
-        valve_id = next(iter(device.valves.keys()))
-        device.valves[valve_id].activity = "MANUAL_WATERING"
-        devices = {device.device_id: device}
-
-        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
-            pass
-
-        state = hass.states.get("valve.my_sensor_valve_1")
-        assert state is not None
-        assert state.attributes["activity"] == "MANUAL_WATERING"
-
-    async def test_duration_exposed_as_attribute_when_positive(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
-        device = make_mock_device(valve_count=1, has_sensor=False)
-        valve_id = next(iter(device.valves.keys()))
-        device.valves[valve_id].activity = "MANUAL_WATERING"
-        device.valves[valve_id].duration = 1800
-        devices = {device.device_id: device}
-
-        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
-            pass
-
-        state = hass.states.get("valve.my_sensor_valve_1")
-        assert state is not None
-        assert state.attributes["duration"] == 1800
-
-    async def test_duration_not_exposed_when_none(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
-        device = make_mock_device(valve_count=1, has_sensor=False)
-        valve_id = next(iter(device.valves.keys()))
-        device.valves[valve_id].duration = None
-        devices = {device.device_id: device}
-
-        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
-            pass
-
-        state = hass.states.get("valve.my_sensor_valve_1")
-        assert state is not None
-        assert "duration" not in state.attributes
-
-    async def test_duration_not_exposed_when_zero(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
-        device = make_mock_device(valve_count=1, has_sensor=False)
-        valve_id = next(iter(device.valves.keys()))
-        device.valves[valve_id].duration = 0
-        devices = {device.device_id: device}
-
-        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
-            pass
-
-        state = hass.states.get("valve.my_sensor_valve_1")
-        assert state is not None
-        assert "duration" not in state.attributes
-
-
 class TestValveCommands:
     """Test valve open/close/start_watering commands."""
 

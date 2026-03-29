@@ -512,7 +512,7 @@ Daily total: **~96 polls + ~24 token refreshes = ~120 requests/day** — roughly
 
 ### Rate-limited state (both APIs)
 
-After receiving HTTP 429, both coordinators back off to **1-hour polling** until the next successful response restores the normal interval.
+After receiving HTTP 429, both coordinators use **graduated backoff**: 5 min → 10 min → 20 min → 40 min → 60 min (max). Each consecutive rate limit doubles the wait. A successful API response resets the counter.
 
 ### User-triggered commands
 
@@ -532,7 +532,7 @@ Each button press or automation action is one API call. The 5-second throttle pr
 |----------|--------|
 | **WebSocket-first architecture** | Device state updates arrive in real time via persistent WebSocket connections. REST API polling is only a fallback. |
 | **Adaptive polling interval** | When WebSocket is connected: **6-hour** health-check only. When WebSocket drops: **30 min** (Gardena) / **15 min** (Automower). |
-| **Rate limit backoff** | If the API returns HTTP 429, polling backs off to **1 hour** and restores automatically after a successful response. |
+| **Graduated rate limit backoff** | If the API returns HTTP 429, polling backs off exponentially (5 min → 10 → 20 → 40 → 60 min max) and resets after a successful response. |
 | **Command throttling** | A minimum **5-second interval** is enforced between consecutive commands to prevent automations from rapid-firing API calls. |
 | **Independent budgets** | The Gardena API (~3,000/month) and Automower API (~10,000/month) have separate rate limits. Using one does not affect the other. |
 
@@ -546,11 +546,11 @@ Each button press or automation action is one API call. The 5-second throttle pr
 
 ### What Happens When Rate Limited
 
-1. The integration logs a warning (e.g., `Rate limited by Gardena API, backing off to 1:00:00`).
-2. The polling interval increases to 1 hour.
+1. The integration logs a warning (e.g., `Rate limited by Gardena API (hit #1), backing off to 0:05:00`).
+2. The polling interval increases with graduated backoff: 5 min → 10 min → 20 min → 40 min → 60 min (max).
 3. Existing entity states remain available (cached from the last successful update and WebSocket messages).
 4. Commands may fail until the rate limit resets.
-5. After a successful API response, the normal polling interval is restored automatically.
+5. After a successful API response, the backoff counter resets and the normal polling interval is restored automatically.
 
 ## Known Limitations
 
@@ -622,7 +622,7 @@ This integration targets the [Home Assistant Integration Quality Scale](https://
 
 Key quality features:
 
-- **99% test coverage** across 500 automated tests
+- **99% test coverage** across 494 automated tests
 - **mypy --strict** passes with zero errors on all 23 source files
 - **PEP 561** compliant (`py.typed` markers on both client libraries)
 - **Full async** codebase — no blocking I/O in the event loop
