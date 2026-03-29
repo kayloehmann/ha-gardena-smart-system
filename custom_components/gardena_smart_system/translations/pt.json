@@ -87,18 +87,6 @@
       "battery_level": {
         "name": "Bateria"
       },
-      "battery_state": {
-        "name": "Estado da bateria",
-        "state": {
-          "ok": "OK",
-          "low": "Baixa",
-          "replace_now": "Substituir agora",
-          "out_of_operation": "Fora de serviço",
-          "charging": "A carregar",
-          "no_battery": "Sem bateria",
-          "unknown": "Desconhecido"
-        }
-      },
       "rf_link_level": {
         "name": "Intensidade do sinal"
       },
@@ -119,6 +107,9 @@
       },
       "mower_activity": {
         "name": "Atividade do cortador"
+      },
+      "mower_state": {
+        "name": "Estado do cortador"
       },
       "mower_last_error_code": {
         "name": "Último código de erro"
@@ -221,14 +212,45 @@
       "automower_last_seen": {
         "name": "Último contacto"
       },
+      "automower_mode": {
+        "name": "Modo de operação",
+        "state": {
+          "main_area": "Zona principal",
+          "secondary_area": "Zona secundária",
+          "home": "Casa",
+          "demo": "Demonstração",
+          "unknown": "Desconhecido"
+        }
+      },
+      "battery_state": {
+        "name": "Estado da bateria",
+        "state": {
+          "ok": "OK",
+          "low": "Baixa",
+          "replace_now": "Substituir agora",
+          "out_of_operation": "Fora de serviço",
+          "charging": "A carregar",
+          "no_battery": "Sem bateria",
+          "unknown": "Desconhecido"
+        }
+      },
       "power_socket_remaining_duration": {
         "name": "Tempo de alimentação restante"
+      },
+      "power_socket_state": {
+        "name": "Estado da tomada"
       },
       "power_socket_last_error_code": {
         "name": "Último código de erro"
       },
       "valve_last_error_code": {
         "name": "Código de erro da válvula"
+      },
+      "valve_state": {
+        "name": "Estado da válvula"
+      },
+      "valve_set_last_error_code": {
+        "name": "Código de erro do grupo de válvulas"
       },
       "valve_remaining_duration": {
         "name": "Tempo de rega restante"

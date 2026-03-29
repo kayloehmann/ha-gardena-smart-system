@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Mower activity"
       },
+      "mower_state": {
+        "name": "Mower state"
+      },
       "mower_last_error_code": {
         "name": "Last error code"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "Last seen"
       },
+      "automower_mode": {
+        "name": "Operating mode",
+        "state": {
+          "main_area": "Main area",
+          "secondary_area": "Secondary area",
+          "home": "Home",
+          "demo": "Demo",
+          "unknown": "Unknown"
+        }
+      },
       "battery_state": {
         "name": "Battery state",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "Remaining power time"
       },
+      "power_socket_state": {
+        "name": "Power socket state"
+      },
       "power_socket_last_error_code": {
         "name": "Last error code"
       },
       "valve_last_error_code": {
         "name": "Valve error code"
+      },
+      "valve_state": {
+        "name": "Valve state"
+      },
+      "valve_set_last_error_code": {
+        "name": "Valve set error code"
       },
       "valve_remaining_duration": {
         "name": "Remaining watering time"

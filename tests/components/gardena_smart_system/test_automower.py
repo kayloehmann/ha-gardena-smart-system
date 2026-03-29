@@ -4076,6 +4076,34 @@ class TestAutomowerLastSeenSensor:
             assert "2025-06-15" in state.state
 
 
+class TestAutomowerModeSensor:
+    """P8: Automower operating mode enum sensor."""
+
+    async def test_mode_sensor_created(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Mode sensor is created with correct value."""
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("sensor.test_mower_operating_mode")
+            assert state is not None
+            assert state.state == "main_area"
+
+    async def test_mode_sensor_home(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        """Mode sensor shows HOME when mower is returning."""
+        device = make_mock_automower_device(mower_mode="HOME")
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices):
+            state = hass.states.get("sensor.test_mower_operating_mode")
+            assert state is not None
+            assert state.state == "home"
+
+
 class TestAutomowerHeadlightSelect:
     """P3: Headlight mode select entity."""
 

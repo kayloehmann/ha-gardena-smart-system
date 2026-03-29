@@ -140,6 +140,17 @@ POWER_SOCKET_SENSORS: tuple[GardenaSensorDescription, ...] = (
         exists_fn=lambda d: d.power_socket is not None,
     ),
     GardenaSensorDescription(
+        key="power_socket_state",
+        translation_key="power_socket_state",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: (
+            d.power_socket.state.lower()
+            if d.power_socket and d.power_socket.state
+            else None
+        ),
+        exists_fn=lambda d: d.power_socket is not None and d.power_socket.state is not None,
+    ),
+    GardenaSensorDescription(
         key="power_socket_last_error_code",
         translation_key="power_socket_last_error_code",
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -166,6 +177,13 @@ MOWER_SENSORS: tuple[GardenaSensorDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: d.mower.activity if d.mower else None,
         exists_fn=lambda d: d.mower is not None,
+    ),
+    GardenaSensorDescription(
+        key="mower_state",
+        translation_key="mower_state",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: d.mower.state.lower() if d.mower and d.mower.state else None,
+        exists_fn=lambda d: d.mower is not None and d.mower.state is not None,
     ),
     GardenaSensorDescription(
         key="mower_last_error_code",
@@ -238,6 +256,19 @@ async def async_setup_entry(
                 if key not in known_keys:
                     known_keys.add(key)
                     new_entities.append(GardenaValveErrorSensor(coordinator, device, service_id))
+            # Per-valve state sensors
+            for service_id in device.valves:
+                valve_suffix = service_id.split(":")[-1] if ":" in service_id else service_id
+                key = (device.device_id, f"valve_{valve_suffix}_state")
+                if key not in known_keys:
+                    known_keys.add(key)
+                    new_entities.append(GardenaValveStateSensor(coordinator, device, service_id))
+            # ValveSet error sensor
+            if device.valve_set is not None:
+                vs_key = (device.device_id, "valve_set_last_error_code")
+                if vs_key not in known_keys:
+                    known_keys.add(vs_key)
+                    new_entities.append(GardenaValveSetErrorSensor(coordinator, device))
         if new_entities:
             async_add_entities(new_entities)
 
@@ -345,6 +376,65 @@ class GardenaValveErrorSensor(GardenaEntity, SensorEntity):
         if valve is None:
             return None
         return valve.last_error_code
+
+
+class GardenaValveStateSensor(GardenaEntity, SensorEntity):
+    """State sensor for a specific Gardena valve."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "valve_state"
+
+    def __init__(
+        self,
+        coordinator: GardenaCoordinator,
+        device: Device,
+        service_id: str,
+    ) -> None:
+        """Initialize the valve state sensor."""
+        suffix = (
+            "valve_" + service_id.split(":")[-1] + "_state"
+            if ":" in service_id
+            else "valve_state"
+        )
+        super().__init__(coordinator, device, suffix)
+        self._service_id = service_id
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the valve's state."""
+        device = self._device
+        if device is None:
+            return None
+        valve = device.valves.get(self._service_id)
+        if valve is None:
+            return None
+        return valve.state.lower() if valve.state else None
+
+
+class GardenaValveSetErrorSensor(GardenaEntity, SensorEntity):
+    """Last error code sensor for a Gardena valve set."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
+    _attr_translation_key = "valve_set_last_error_code"
+
+    def __init__(
+        self,
+        coordinator: GardenaCoordinator,
+        device: Device,
+    ) -> None:
+        """Initialize the valve set error sensor."""
+        super().__init__(coordinator, device, "valve_set_last_error_code")
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the valve set's last error code."""
+        device = self._device
+        if device is None:
+            return None
+        if device.valve_set is None:
+            return None
+        return device.valve_set.last_error_code
 
 
 # ──────────────────────────────────────────────────────────────────────

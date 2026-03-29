@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Klipperaktivitet"
       },
+      "mower_state": {
+        "name": "Gressklippertilstand"
+      },
       "mower_last_error_code": {
         "name": "Siste feilkode"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "Sist sett"
       },
+      "automower_mode": {
+        "name": "Driftsmodus",
+        "state": {
+          "main_area": "Hovedområde",
+          "secondary_area": "Sekundært område",
+          "home": "Hjem",
+          "demo": "Demo",
+          "unknown": "Ukjent"
+        }
+      },
       "battery_state": {
         "name": "Batteritilstand",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "Gjenstående strømtid"
       },
+      "power_socket_state": {
+        "name": "Stikkontakttilstand"
+      },
       "power_socket_last_error_code": {
         "name": "Siste feilkode"
       },
       "valve_last_error_code": {
         "name": "Ventilens feilkode"
+      },
+      "valve_state": {
+        "name": "Ventiltilstand"
+      },
+      "valve_set_last_error_code": {
+        "name": "Ventilgruppe feilkode"
       },
       "valve_remaining_duration": {
         "name": "Gjenstående vanningstid"

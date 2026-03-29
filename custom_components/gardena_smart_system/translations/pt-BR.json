@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Atividade do cortador"
       },
+      "mower_state": {
+        "name": "Estado do cortador"
+      },
       "mower_last_error_code": {
         "name": "Último código de erro"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "Visto por último"
       },
+      "automower_mode": {
+        "name": "Modo de operação",
+        "state": {
+          "main_area": "Zona principal",
+          "secondary_area": "Zona secundária",
+          "home": "Casa",
+          "demo": "Demonstração",
+          "unknown": "Desconhecido"
+        }
+      },
       "battery_state": {
         "name": "Estado da bateria",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "Tempo restante de operação"
       },
+      "power_socket_state": {
+        "name": "Estado da tomada"
+      },
       "power_socket_last_error_code": {
         "name": "Último código de erro"
       },
       "valve_last_error_code": {
         "name": "Código de erro da válvula"
+      },
+      "valve_state": {
+        "name": "Estado da válvula"
+      },
+      "valve_set_last_error_code": {
+        "name": "Código de erro do grupo de válvulas"
       },
       "valve_remaining_duration": {
         "name": "Tempo restante de irrigação"

@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Fűnyíró tevékenység"
       },
+      "mower_state": {
+        "name": "Fűnyíró állapota"
+      },
       "mower_last_error_code": {
         "name": "Utolsó hibakód"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "Utoljára látva"
       },
+      "automower_mode": {
+        "name": "Üzemmód",
+        "state": {
+          "main_area": "Fő terület",
+          "secondary_area": "Másodlagos terület",
+          "home": "Otthon",
+          "demo": "Bemutató",
+          "unknown": "Ismeretlen"
+        }
+      },
       "battery_state": {
         "name": "Akkumulátor állapot",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "Hátralévő üzemidő"
       },
+      "power_socket_state": {
+        "name": "Konnektor állapota"
+      },
       "power_socket_last_error_code": {
         "name": "Utolsó hibakód"
       },
       "valve_last_error_code": {
         "name": "Szelep hibakód"
+      },
+      "valve_state": {
+        "name": "Szelep állapota"
+      },
+      "valve_set_last_error_code": {
+        "name": "Szelepcsoport hibakódja"
       },
       "valve_remaining_duration": {
         "name": "Hátralévő öntözési idő"

@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Klipparaktivitet"
       },
+      "mower_state": {
+        "name": "Gräsklipparstatus"
+      },
       "mower_last_error_code": {
         "name": "Senaste felkod"
       },
@@ -189,26 +192,11 @@
           "not_applicable": "Ej tillämpligt"
         }
       },
-      "automower_error_code_timestamp": {
-        "name": "Senaste feltid"
-      },
-      "power_socket_last_error_code": {
-        "name": "Senaste felkod"
-      },
-      "valve_last_error_code": {
-        "name": "Ventilfelkod"
-      },
       "automower_error_code": {
         "name": "Felkod"
       },
-      "valve_remaining_duration": {
-        "name": "Återstående bevattningstid"
-      },
-      "hub_device_count": {
-        "name": "Antal enheter"
-      },
-      "hub_polling_interval": {
-        "name": "Pollningsintervall"
+      "automower_error_code_timestamp": {
+        "name": "Senaste feltid"
       },
       "automower_total_charging_time": {
         "name": "Total laddningstid"
@@ -224,6 +212,16 @@
       "automower_last_seen": {
         "name": "Senast sedd"
       },
+      "automower_mode": {
+        "name": "Driftläge",
+        "state": {
+          "main_area": "Huvudområde",
+          "secondary_area": "Sekundärt område",
+          "home": "Hem",
+          "demo": "Demo",
+          "unknown": "Okänt"
+        }
+      },
       "battery_state": {
         "name": "Batteristatus",
         "state": {
@@ -238,6 +236,30 @@
       },
       "power_socket_remaining_duration": {
         "name": "Återstående påslagstid"
+      },
+      "power_socket_state": {
+        "name": "Eluttag status"
+      },
+      "power_socket_last_error_code": {
+        "name": "Senaste felkod"
+      },
+      "valve_last_error_code": {
+        "name": "Ventilfelkod"
+      },
+      "valve_state": {
+        "name": "Ventilstatus"
+      },
+      "valve_set_last_error_code": {
+        "name": "Ventilgrupp felkod"
+      },
+      "valve_remaining_duration": {
+        "name": "Återstående bevattningstid"
+      },
+      "hub_device_count": {
+        "name": "Antal enheter"
+      },
+      "hub_polling_interval": {
+        "name": "Pollningsintervall"
       }
     },
     "binary_sensor": {

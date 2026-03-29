@@ -6,7 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 
-from aioautomower.const import MowerActivity, MowerState, OverrideAction, RestrictedReason
+from aioautomower.const import MowerActivity, MowerMode, MowerState, OverrideAction, RestrictedReason
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -275,6 +275,21 @@ SENSOR_DESCRIPTIONS: tuple[AutomowerSensorDescription, ...] = (
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: d.metadata.status_timestamp,
+    ),
+    # P8: Operating mode
+    AutomowerSensorDescription(
+        key="mode",
+        translation_key="automower_mode",
+        device_class=SensorDeviceClass.ENUM,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        options=[
+            MowerMode.MAIN_AREA.lower(),
+            MowerMode.SECONDARY_AREA.lower(),
+            MowerMode.HOME.lower(),
+            MowerMode.DEMO.lower(),
+            MowerMode.UNKNOWN.lower(),
+        ],
+        value_fn=lambda d: d.mower.mode.lower() if d.mower.mode else None,
     ),
 )
 

@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Maaiactiviteit"
       },
+      "mower_state": {
+        "name": "Maaier status"
+      },
       "mower_last_error_code": {
         "name": "Laatste foutcode"
       },
@@ -189,26 +192,11 @@
           "not_applicable": "Niet van toepassing"
         }
       },
-      "automower_error_code_timestamp": {
-        "name": "Laatste fouttijdstip"
-      },
-      "power_socket_last_error_code": {
-        "name": "Laatste foutcode"
-      },
-      "valve_last_error_code": {
-        "name": "Klepfoutcode"
-      },
       "automower_error_code": {
         "name": "Foutcode"
       },
-      "valve_remaining_duration": {
-        "name": "Resterende bewateringstijd"
-      },
-      "hub_device_count": {
-        "name": "Aantal apparaten"
-      },
-      "hub_polling_interval": {
-        "name": "Polling-interval"
+      "automower_error_code_timestamp": {
+        "name": "Laatste fouttijdstip"
       },
       "automower_total_charging_time": {
         "name": "Totale laadtijd"
@@ -224,6 +212,16 @@
       "automower_last_seen": {
         "name": "Laatst gezien"
       },
+      "automower_mode": {
+        "name": "Bedrijfsmodus",
+        "state": {
+          "main_area": "Hoofdgebied",
+          "secondary_area": "Secundair gebied",
+          "home": "Thuis",
+          "demo": "Demo",
+          "unknown": "Onbekend"
+        }
+      },
       "battery_state": {
         "name": "Batterijstatus",
         "state": {
@@ -238,6 +236,30 @@
       },
       "power_socket_remaining_duration": {
         "name": "Resterende inschakeltijd"
+      },
+      "power_socket_state": {
+        "name": "Stopcontactstatus"
+      },
+      "power_socket_last_error_code": {
+        "name": "Laatste foutcode"
+      },
+      "valve_last_error_code": {
+        "name": "Klepfoutcode"
+      },
+      "valve_state": {
+        "name": "Klep status"
+      },
+      "valve_set_last_error_code": {
+        "name": "Klepgroep foutcode"
+      },
+      "valve_remaining_duration": {
+        "name": "Resterende bewateringstijd"
+      },
+      "hub_device_count": {
+        "name": "Aantal apparaten"
+      },
+      "hub_polling_interval": {
+        "name": "Polling-interval"
       }
     },
     "binary_sensor": {

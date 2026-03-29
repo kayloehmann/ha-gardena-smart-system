@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Aktywność kosiarki"
       },
+      "mower_state": {
+        "name": "Stan kosiarki"
+      },
       "mower_last_error_code": {
         "name": "Ostatni kod błędu"
       },
@@ -189,26 +192,11 @@
           "not_applicable": "Nie dotyczy"
         }
       },
-      "automower_error_code_timestamp": {
-        "name": "Czas ostatniego błędu"
-      },
-      "power_socket_last_error_code": {
-        "name": "Ostatni kod błędu"
-      },
-      "valve_last_error_code": {
-        "name": "Kod błędu zaworu"
-      },
       "automower_error_code": {
         "name": "Kod błędu"
       },
-      "valve_remaining_duration": {
-        "name": "Pozostały czas podlewania"
-      },
-      "hub_device_count": {
-        "name": "Liczba urządzeń"
-      },
-      "hub_polling_interval": {
-        "name": "Interwał odpytywania"
+      "automower_error_code_timestamp": {
+        "name": "Czas ostatniego błędu"
       },
       "automower_total_charging_time": {
         "name": "Całkowity czas ładowania"
@@ -224,6 +212,16 @@
       "automower_last_seen": {
         "name": "Ostatnio widziany"
       },
+      "automower_mode": {
+        "name": "Tryb pracy",
+        "state": {
+          "main_area": "Strefa główna",
+          "secondary_area": "Strefa dodatkowa",
+          "home": "Dom",
+          "demo": "Demo",
+          "unknown": "Nieznany"
+        }
+      },
       "battery_state": {
         "name": "Stan baterii",
         "state": {
@@ -238,6 +236,30 @@
       },
       "power_socket_remaining_duration": {
         "name": "Pozostały czas zasilania"
+      },
+      "power_socket_state": {
+        "name": "Stan gniazdka"
+      },
+      "power_socket_last_error_code": {
+        "name": "Ostatni kod błędu"
+      },
+      "valve_last_error_code": {
+        "name": "Kod błędu zaworu"
+      },
+      "valve_state": {
+        "name": "Stan zaworu"
+      },
+      "valve_set_last_error_code": {
+        "name": "Kod błędu grupy zaworów"
+      },
+      "valve_remaining_duration": {
+        "name": "Pozostały czas podlewania"
+      },
+      "hub_device_count": {
+        "name": "Liczba urządzeń"
+      },
+      "hub_polling_interval": {
+        "name": "Interwał odpytywania"
       }
     },
     "binary_sensor": {

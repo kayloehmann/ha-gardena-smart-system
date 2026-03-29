@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Biçici etkinliği"
       },
+      "mower_state": {
+        "name": "Çim biçme makinesi durumu"
+      },
       "mower_last_error_code": {
         "name": "Son hata kodu"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "Son görülme"
       },
+      "automower_mode": {
+        "name": "Çalışma modu",
+        "state": {
+          "main_area": "Ana bölge",
+          "secondary_area": "İkincil bölge",
+          "home": "Ev",
+          "demo": "Demo",
+          "unknown": "Bilinmiyor"
+        }
+      },
       "battery_state": {
         "name": "Pil durumu",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "Kalan güç süresi"
       },
+      "power_socket_state": {
+        "name": "Priz durumu"
+      },
       "power_socket_last_error_code": {
         "name": "Son hata kodu"
       },
       "valve_last_error_code": {
         "name": "Vana hata kodu"
+      },
+      "valve_state": {
+        "name": "Vana durumu"
+      },
+      "valve_set_last_error_code": {
+        "name": "Vana grubu hata kodu"
       },
       "valve_remaining_duration": {
         "name": "Kalan sulama süresi"

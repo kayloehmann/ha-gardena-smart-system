@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Дейност на косачката"
       },
+      "mower_state": {
+        "name": "Състояние на косачката"
+      },
       "mower_last_error_code": {
         "name": "Последен код на грешка"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "Последно видяна"
       },
+      "automower_mode": {
+        "name": "Режим на работа",
+        "state": {
+          "main_area": "Основна зона",
+          "secondary_area": "Вторична зона",
+          "home": "Начало",
+          "demo": "Демо",
+          "unknown": "Неизвестно"
+        }
+      },
       "battery_state": {
         "name": "Състояние на батерията",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "Оставащо време на работа"
       },
+      "power_socket_state": {
+        "name": "Състояние на контакта"
+      },
       "power_socket_last_error_code": {
         "name": "Последен код на грешка"
       },
       "valve_last_error_code": {
         "name": "Код на грешка на клапан"
+      },
+      "valve_state": {
+        "name": "Състояние на клапана"
+      },
+      "valve_set_last_error_code": {
+        "name": "Код на грешка на група клапани"
       },
       "valve_remaining_duration": {
         "name": "Оставащо време на поливане"

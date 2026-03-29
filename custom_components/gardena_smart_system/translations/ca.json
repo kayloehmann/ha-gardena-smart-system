@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Activitat de la segadora"
       },
+      "mower_state": {
+        "name": "Estat de la segadora"
+      },
       "mower_last_error_code": {
         "name": "Últim codi d'error"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "Vist per últim cop"
       },
+      "automower_mode": {
+        "name": "Mode de funcionament",
+        "state": {
+          "main_area": "Zona principal",
+          "secondary_area": "Zona secundària",
+          "home": "Inici",
+          "demo": "Demostració",
+          "unknown": "Desconegut"
+        }
+      },
       "battery_state": {
         "name": "Estat de la bateria",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "Temps d'alimentació restant"
       },
+      "power_socket_state": {
+        "name": "Estat de l'endoll"
+      },
       "power_socket_last_error_code": {
         "name": "Últim codi d'error"
       },
       "valve_last_error_code": {
         "name": "Codi d'error de la vàlvula"
+      },
+      "valve_state": {
+        "name": "Estat de la vàlvula"
+      },
+      "valve_set_last_error_code": {
+        "name": "Codi d'error del grup de vàlvules"
       },
       "valve_remaining_duration": {
         "name": "Temps de reg restant"

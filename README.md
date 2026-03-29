@@ -111,9 +111,13 @@ If you installed via HACS, you can also uninstall the integration entirely:
 | Light intensity | `illuminance` | lx | -- | Enabled |
 | Operating hours (mower) | -- | h | Diagnostic | **Disabled** |
 | Mower activity | -- | -- | Diagnostic | Enabled |
+| Mower state | -- | -- | Diagnostic | Enabled |
 | Last error code | -- | -- | Diagnostic | **Disabled** |
 | Power socket remaining time | `duration` | s | -- | Enabled |
+| Power socket state | -- | -- | Diagnostic | Enabled |
 | Power socket last error | -- | -- | Diagnostic | **Disabled** |
+| Valve state (per valve) | -- | -- | Diagnostic | Enabled |
+| Valve set error code | -- | -- | Diagnostic | **Disabled** |
 
 ### Gardena Binary Sensors
 
@@ -199,6 +203,7 @@ Created for Husqvarna Automower robotic mowers. Reports current activity mapped 
 | Last error time | `timestamp` | -- | Diagnostic | Enabled |
 | Schedule override | `enum` | -- | Diagnostic | Enabled |
 | Last seen | `timestamp` | -- | Diagnostic | Enabled |
+| Operating mode | `enum` | -- | Diagnostic | Enabled |
 
 Time-based statistics (cutting time, charging time, blade usage, running time, searching time) are reported by the API in seconds and converted to hours for display.
 
@@ -617,7 +622,7 @@ This integration targets the [Home Assistant Integration Quality Scale](https://
 
 Key quality features:
 
-- **99% test coverage** across 489 automated tests
+- **99% test coverage** across 500 automated tests
 - **mypy --strict** passes with zero errors on all 23 source files
 - **PEP 561** compliant (`py.typed` markers on both client libraries)
 - **Full async** codebase — no blocking I/O in the event loop

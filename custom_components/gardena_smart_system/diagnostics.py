@@ -38,21 +38,21 @@ async def async_get_config_entry_diagnostics(
         devices_data = _serialize_gardena_devices(coordinator.data)
 
     coordinator_info: dict[str, Any] = {
-        "ws_connected": coordinator._ws_connected,
+        "ws_connected": coordinator.ws_connected,
         "update_interval_seconds": coordinator.update_interval.total_seconds()
         if coordinator.update_interval
         else None,
         "last_update_success": coordinator.last_update_success,
         "device_count": len(coordinator.data) if coordinator.data else 0,
-        "last_command_time_monotonic": coordinator._last_command_time or None,
+        "last_command_time_monotonic": coordinator.last_command_time or None,
         "diagnostics_generated_at": datetime.now(tz=UTC).isoformat(),
     }
 
     if api_type == API_TYPE_AUTOMOWER:
-        coordinator_info["stale_miss_counts"] = dict(coordinator._stale_miss_counts)
+        coordinator_info["stale_miss_counts"] = dict(coordinator.stale_miss_counts)
     else:
         coordinator_info["location_id"] = "**REDACTED**"
-        coordinator_info["stale_miss_counts"] = dict(coordinator._stale_miss_counts)
+        coordinator_info["stale_miss_counts"] = dict(coordinator.stale_miss_counts)
 
     return async_redact_data(
         {

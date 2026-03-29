@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Δραστηριότητα χλοοκοπτικού"
       },
+      "mower_state": {
+        "name": "Κατάσταση χλοοκοπτικού"
+      },
       "mower_last_error_code": {
         "name": "Τελευταίος κωδικός σφάλματος"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "Τελευταία εμφάνιση"
       },
+      "automower_mode": {
+        "name": "Λειτουργία",
+        "state": {
+          "main_area": "Κύρια περιοχή",
+          "secondary_area": "Δευτερεύουσα περιοχή",
+          "home": "Σπίτι",
+          "demo": "Επίδειξη",
+          "unknown": "Άγνωστο"
+        }
+      },
       "battery_state": {
         "name": "Κατάσταση μπαταρίας",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "Υπολειπόμενος χρόνος τροφοδοσίας"
       },
+      "power_socket_state": {
+        "name": "Κατάσταση πρίζας"
+      },
       "power_socket_last_error_code": {
         "name": "Τελευταίος κωδικός σφάλματος"
       },
       "valve_last_error_code": {
         "name": "Κωδικός σφάλματος βαλβίδας"
+      },
+      "valve_state": {
+        "name": "Κατάσταση βαλβίδας"
+      },
+      "valve_set_last_error_code": {
+        "name": "Κωδικός σφάλματος ομάδας βαλβίδων"
       },
       "valve_remaining_duration": {
         "name": "Υπολειπόμενος χρόνος ποτίσματος"

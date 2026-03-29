@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import STATE_UNAVAILABLE
@@ -1162,3 +1162,172 @@ class TestSensorNoneGuards:
         finally:
             for p in reversed(patches):
                 p.__exit__(None, None, None)
+
+
+class TestMowerStateSensor:
+    """Test the mower state sensor (P7)."""
+
+    async def test_mower_state_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Mower state sensor is created with correct value."""
+        device = make_mock_device(
+            "mower-dev", "SN-MOWER", "My Mower", has_sensor=False, has_mower=True
+        )
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get("sensor.my_mower_mower_state")
+        assert state is not None
+        assert state.state == "ok"
+
+    async def test_mower_state_not_created_without_mower(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        """Mower state sensor not created when device has no mower."""
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+        assert hass.states.get("sensor.my_sensor_mower_state") is None
+
+
+class TestPowerSocketStateSensor:
+    """Test the power socket state sensor (P7)."""
+
+    async def test_power_socket_state_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Power socket state sensor is created with correct value."""
+        device = make_mock_device(
+            "socket-dev", "SN-SOCKET", "My Socket", has_power_socket=True
+        )
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get("sensor.my_socket_power_socket_state")
+        assert state is not None
+        assert state.state == "ok"
+
+    async def test_power_socket_state_not_created_without_socket(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        """Power socket state sensor not created when device has no socket."""
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+        assert hass.states.get("sensor.my_sensor_power_socket_state") is None
+
+
+class TestValveStateSensor:
+    """Test the per-valve state sensor (P7)."""
+
+    async def test_valve_state_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Valve state sensor is created with correct value."""
+        device = make_mock_device(valve_count=1)
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get("sensor.my_sensor_valve_state")
+        assert state is not None
+        assert state.state == "ok"
+
+    async def test_valve_state_device_removed(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Valve state sensor returns unavailable when device removed."""
+        device = make_mock_device(valve_count=1)
+        devices = {device.device_id: device}
+
+        patches = (
+            patch(_PATCH_CLIENT),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS),
+        )
+        p_client = patches[0].__enter__()
+        patches[1].__enter__()
+        p_ws = patches[2].__enter__()
+        mock_client = AsyncMock()
+        mock_client.async_get_devices = AsyncMock(return_value=devices)
+        mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+        p_client.return_value = mock_client
+        mock_ws = AsyncMock()
+        mock_ws.async_connect = AsyncMock()
+        mock_ws.async_disconnect = AsyncMock()
+        p_ws.return_value = mock_ws
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        try:
+            coordinator = mock_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+            state = hass.states.get("sensor.my_sensor_valve_state")
+            assert state is not None
+            assert state.state == "unavailable"
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+
+class TestValveSetErrorSensor:
+    """Test the valve set error sensor (P9)."""
+
+    async def test_valve_set_error_sensor_created_disabled(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """ValveSet error sensor is created but disabled by default."""
+        device = make_mock_device(valve_count=1)
+        vs = MagicMock()
+        vs.state = "OK"
+        vs.last_error_code = "NO_MESSAGE"
+        device.valve_set = vs
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        entity_reg = er.async_get(hass)
+        entry = entity_reg.async_get("sensor.my_sensor_valve_set_error_code")
+        assert entry is not None
+        assert entry.disabled_by is not None
+
+    async def test_valve_set_error_sensor_value(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """ValveSet error sensor returns correct value when enabled."""
+        device = make_mock_device(valve_count=1)
+        vs = MagicMock()
+        vs.state = "WARNING"
+        vs.last_error_code = "VALVE_ERROR_1"
+        device.valve_set = vs
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+            entity_reg = er.async_get(hass)
+            entity_reg.async_update_entity(
+                "sensor.my_sensor_valve_set_error_code", disabled_by=None
+            )
+            await hass.config_entries.async_reload(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            state = hass.states.get("sensor.my_sensor_valve_set_error_code")
+            assert state is not None
+            assert state.state == "VALVE_ERROR_1"
+
+    async def test_valve_set_error_not_created_without_valve_set(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        """ValveSet error sensor not created when device has no valve_set."""
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+        entity_reg = er.async_get(hass)
+        entry = entity_reg.async_get("sensor.my_sensor_valve_set_error_code")
+        assert entry is None

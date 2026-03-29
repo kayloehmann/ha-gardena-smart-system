@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Pļāvēja aktivitāte"
       },
+      "mower_state": {
+        "name": "Zāles pļāvēja stāvoklis"
+      },
       "mower_last_error_code": {
         "name": "Pēdējais kļūdas kods"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "Pēdējo reizi redzēts"
       },
+      "automower_mode": {
+        "name": "Darbības režīms",
+        "state": {
+          "main_area": "Galvenā zona",
+          "secondary_area": "Papildu zona",
+          "home": "Mājas",
+          "demo": "Demo",
+          "unknown": "Nezināms"
+        }
+      },
       "battery_state": {
         "name": "Akumulatora stāvoklis",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "Atlikušais darbības laiks"
       },
+      "power_socket_state": {
+        "name": "Kontaktligzdas stāvoklis"
+      },
       "power_socket_last_error_code": {
         "name": "Pēdējais kļūdas kods"
       },
       "valve_last_error_code": {
         "name": "Vārsta kļūdas kods"
+      },
+      "valve_state": {
+        "name": "Vārsta stāvoklis"
+      },
+      "valve_set_last_error_code": {
+        "name": "Vārstu grupas kļūdas kods"
       },
       "valve_remaining_duration": {
         "name": "Atlikušais laistīšanas laiks"

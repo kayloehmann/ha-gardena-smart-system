@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Активність газонокосарки"
       },
+      "mower_state": {
+        "name": "Стан газонокосарки"
+      },
       "mower_last_error_code": {
         "name": "Останній код помилки"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "Востаннє бачено"
       },
+      "automower_mode": {
+        "name": "Режим роботи",
+        "state": {
+          "main_area": "Основна зона",
+          "secondary_area": "Додаткова зона",
+          "home": "Дім",
+          "demo": "Демо",
+          "unknown": "Невідомо"
+        }
+      },
       "battery_state": {
         "name": "Стан батареї",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "Залишковий час роботи"
       },
+      "power_socket_state": {
+        "name": "Стан розетки"
+      },
       "power_socket_last_error_code": {
         "name": "Останній код помилки"
       },
       "valve_last_error_code": {
         "name": "Код помилки клапана"
+      },
+      "valve_state": {
+        "name": "Стан клапана"
+      },
+      "valve_set_last_error_code": {
+        "name": "Код помилки групи клапанів"
       },
       "valve_remaining_duration": {
         "name": "Залишковий час поливу"

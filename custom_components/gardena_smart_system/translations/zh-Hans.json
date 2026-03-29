@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "割草机活动"
       },
+      "mower_state": {
+        "name": "割草机状态"
+      },
       "mower_last_error_code": {
         "name": "最后错误代码"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "最后在线"
       },
+      "automower_mode": {
+        "name": "运行模式",
+        "state": {
+          "main_area": "主区域",
+          "secondary_area": "辅助区域",
+          "home": "归位",
+          "demo": "演示",
+          "unknown": "未知"
+        }
+      },
       "battery_state": {
         "name": "电池状态",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "剩余通电时间"
       },
+      "power_socket_state": {
+        "name": "电源插座状态"
+      },
       "power_socket_last_error_code": {
         "name": "最后错误代码"
       },
       "valve_last_error_code": {
         "name": "阀门错误代码"
+      },
+      "valve_state": {
+        "name": "阀门状态"
+      },
+      "valve_set_last_error_code": {
+        "name": "阀组错误代码"
       },
       "valve_remaining_duration": {
         "name": "剩余浇水时间"

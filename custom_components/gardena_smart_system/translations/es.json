@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Actividad del cortacesped"
       },
+      "mower_state": {
+        "name": "Estado del cortacésped"
+      },
       "mower_last_error_code": {
         "name": "Ultimo codigo de error"
       },
@@ -189,26 +192,11 @@
           "not_applicable": "No aplicable"
         }
       },
-      "automower_error_code_timestamp": {
-        "name": "Hora del ultimo error"
-      },
-      "power_socket_last_error_code": {
-        "name": "Ultimo codigo de error"
-      },
-      "valve_last_error_code": {
-        "name": "Codigo de error de valvula"
-      },
       "automower_error_code": {
         "name": "Código de error"
       },
-      "valve_remaining_duration": {
-        "name": "Tiempo de riego restante"
-      },
-      "hub_device_count": {
-        "name": "Número de dispositivos"
-      },
-      "hub_polling_interval": {
-        "name": "Intervalo de sondeo"
+      "automower_error_code_timestamp": {
+        "name": "Hora del ultimo error"
       },
       "automower_total_charging_time": {
         "name": "Tiempo de carga total"
@@ -224,6 +212,16 @@
       "automower_last_seen": {
         "name": "Última conexión"
       },
+      "automower_mode": {
+        "name": "Modo de operación",
+        "state": {
+          "main_area": "Zona principal",
+          "secondary_area": "Zona secundaria",
+          "home": "Inicio",
+          "demo": "Demostración",
+          "unknown": "Desconocido"
+        }
+      },
       "battery_state": {
         "name": "Estado de la batería",
         "state": {
@@ -238,6 +236,30 @@
       },
       "power_socket_remaining_duration": {
         "name": "Tiempo de encendido restante"
+      },
+      "power_socket_state": {
+        "name": "Estado del enchufe"
+      },
+      "power_socket_last_error_code": {
+        "name": "Ultimo codigo de error"
+      },
+      "valve_last_error_code": {
+        "name": "Codigo de error de valvula"
+      },
+      "valve_state": {
+        "name": "Estado de la válvula"
+      },
+      "valve_set_last_error_code": {
+        "name": "Código de error del grupo de válvulas"
+      },
+      "valve_remaining_duration": {
+        "name": "Tiempo de riego restante"
+      },
+      "hub_device_count": {
+        "name": "Número de dispositivos"
+      },
+      "hub_polling_interval": {
+        "name": "Intervalo de sondeo"
       }
     },
     "binary_sensor": {

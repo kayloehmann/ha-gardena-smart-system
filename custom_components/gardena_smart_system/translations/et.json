@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Muruniiduki tegevus"
       },
+      "mower_state": {
+        "name": "Muruniiduki olek"
+      },
       "mower_last_error_code": {
         "name": "Viimane veakood"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "Viimati nähtud"
       },
+      "automower_mode": {
+        "name": "Töörežiim",
+        "state": {
+          "main_area": "Põhiala",
+          "secondary_area": "Lisaala",
+          "home": "Kodu",
+          "demo": "Demo",
+          "unknown": "Teadmata"
+        }
+      },
       "battery_state": {
         "name": "Aku olek",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "Järelejäänud tööaeg"
       },
+      "power_socket_state": {
+        "name": "Pistikupesa olek"
+      },
       "power_socket_last_error_code": {
         "name": "Viimane veakood"
       },
       "valve_last_error_code": {
         "name": "Klapi veakood"
+      },
+      "valve_state": {
+        "name": "Klapi olek"
+      },
+      "valve_set_last_error_code": {
+        "name": "Klapirühma veakood"
       },
       "valve_remaining_duration": {
         "name": "Järelejäänud kastmisaeg"

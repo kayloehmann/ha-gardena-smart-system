@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Attività tosaerba"
       },
+      "mower_state": {
+        "name": "Stato del tosaerba"
+      },
       "mower_last_error_code": {
         "name": "Ultimo codice errore"
       },
@@ -189,26 +192,11 @@
           "not_applicable": "Non applicabile"
         }
       },
-      "automower_error_code_timestamp": {
-        "name": "Ora ultimo errore"
-      },
-      "power_socket_last_error_code": {
-        "name": "Ultimo codice errore"
-      },
-      "valve_last_error_code": {
-        "name": "Codice errore valvola"
-      },
       "automower_error_code": {
         "name": "Codice errore"
       },
-      "valve_remaining_duration": {
-        "name": "Tempo di irrigazione rimanente"
-      },
-      "hub_device_count": {
-        "name": "Numero dispositivi"
-      },
-      "hub_polling_interval": {
-        "name": "Intervallo di polling"
+      "automower_error_code_timestamp": {
+        "name": "Ora ultimo errore"
       },
       "automower_total_charging_time": {
         "name": "Tempo di carica totale"
@@ -224,6 +212,16 @@
       "automower_last_seen": {
         "name": "Ultimo contatto"
       },
+      "automower_mode": {
+        "name": "Modalità operativa",
+        "state": {
+          "main_area": "Zona principale",
+          "secondary_area": "Zona secondaria",
+          "home": "Casa",
+          "demo": "Demo",
+          "unknown": "Sconosciuto"
+        }
+      },
       "battery_state": {
         "name": "Stato batteria",
         "state": {
@@ -238,6 +236,30 @@
       },
       "power_socket_remaining_duration": {
         "name": "Tempo di accensione rimanente"
+      },
+      "power_socket_state": {
+        "name": "Stato della presa"
+      },
+      "power_socket_last_error_code": {
+        "name": "Ultimo codice errore"
+      },
+      "valve_last_error_code": {
+        "name": "Codice errore valvola"
+      },
+      "valve_state": {
+        "name": "Stato della valvola"
+      },
+      "valve_set_last_error_code": {
+        "name": "Codice errore gruppo valvole"
+      },
+      "valve_remaining_duration": {
+        "name": "Tempo di irrigazione rimanente"
+      },
+      "hub_device_count": {
+        "name": "Numero dispositivi"
+      },
+      "hub_polling_interval": {
+        "name": "Intervallo di polling"
       }
     },
     "binary_sensor": {

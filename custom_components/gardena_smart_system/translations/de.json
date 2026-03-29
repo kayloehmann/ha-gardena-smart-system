@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Mäher-Aktivität"
       },
+      "mower_state": {
+        "name": "Mäherstatus"
+      },
       "mower_last_error_code": {
         "name": "Letzter Fehlercode"
       },
@@ -189,26 +192,11 @@
           "not_applicable": "Nicht zutreffend"
         }
       },
-      "automower_error_code_timestamp": {
-        "name": "Letzter Fehlerzeitpunkt"
-      },
-      "power_socket_last_error_code": {
-        "name": "Letzter Fehlercode"
-      },
-      "valve_last_error_code": {
-        "name": "Ventil-Fehlercode"
-      },
       "automower_error_code": {
         "name": "Fehlercode"
       },
-      "valve_remaining_duration": {
-        "name": "Verbleibende Bewässerungszeit"
-      },
-      "hub_device_count": {
-        "name": "Geräteanzahl"
-      },
-      "hub_polling_interval": {
-        "name": "Abfrageintervall"
+      "automower_error_code_timestamp": {
+        "name": "Letzter Fehlerzeitpunkt"
       },
       "automower_total_charging_time": {
         "name": "Gesamtladezeit"
@@ -224,6 +212,16 @@
       "automower_last_seen": {
         "name": "Zuletzt gesehen"
       },
+      "automower_mode": {
+        "name": "Betriebsmodus",
+        "state": {
+          "main_area": "Hauptbereich",
+          "secondary_area": "Nebenbereich",
+          "home": "Zuhause",
+          "demo": "Demo",
+          "unknown": "Unbekannt"
+        }
+      },
       "battery_state": {
         "name": "Akkuzustand",
         "state": {
@@ -238,6 +236,30 @@
       },
       "power_socket_remaining_duration": {
         "name": "Verbleibende Einschaltzeit"
+      },
+      "power_socket_state": {
+        "name": "Steckdosenstatus"
+      },
+      "power_socket_last_error_code": {
+        "name": "Letzter Fehlercode"
+      },
+      "valve_last_error_code": {
+        "name": "Ventil-Fehlercode"
+      },
+      "valve_state": {
+        "name": "Ventilstatus"
+      },
+      "valve_set_last_error_code": {
+        "name": "Ventilgruppe Fehlercode"
+      },
+      "valve_remaining_duration": {
+        "name": "Verbleibende Bewässerungszeit"
+      },
+      "hub_device_count": {
+        "name": "Geräteanzahl"
+      },
+      "hub_polling_interval": {
+        "name": "Abfrageintervall"
       }
     },
     "binary_sensor": {

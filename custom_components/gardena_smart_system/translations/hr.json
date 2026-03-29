@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Aktivnost kosilice"
       },
+      "mower_state": {
+        "name": "Stanje kosilice"
+      },
       "mower_last_error_code": {
         "name": "Posljednji kod pogreške"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "Zadnje viđena"
       },
+      "automower_mode": {
+        "name": "Način rada",
+        "state": {
+          "main_area": "Glavno područje",
+          "secondary_area": "Sekundarno područje",
+          "home": "Dom",
+          "demo": "Demo",
+          "unknown": "Nepoznato"
+        }
+      },
       "battery_state": {
         "name": "Stanje baterije",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "Preostalo vrijeme rada"
       },
+      "power_socket_state": {
+        "name": "Stanje utičnice"
+      },
       "power_socket_last_error_code": {
         "name": "Posljednji kod pogreške"
       },
       "valve_last_error_code": {
         "name": "Kod pogreške ventila"
+      },
+      "valve_state": {
+        "name": "Stanje ventila"
+      },
+      "valve_set_last_error_code": {
+        "name": "Kôd greške grupe ventila"
       },
       "valve_remaining_duration": {
         "name": "Preostalo vrijeme zalijevanja"

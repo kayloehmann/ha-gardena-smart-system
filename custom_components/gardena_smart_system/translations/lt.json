@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Vejapjovės veikla"
       },
+      "mower_state": {
+        "name": "Vejapjovės būsena"
+      },
       "mower_last_error_code": {
         "name": "Paskutinis klaidos kodas"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "Paskutinį kartą matyta"
       },
+      "automower_mode": {
+        "name": "Veikimo režimas",
+        "state": {
+          "main_area": "Pagrindinė zona",
+          "secondary_area": "Papildoma zona",
+          "home": "Namai",
+          "demo": "Demonstracija",
+          "unknown": "Nežinoma"
+        }
+      },
       "battery_state": {
         "name": "Baterijos būsena",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "Likęs veikimo laikas"
       },
+      "power_socket_state": {
+        "name": "Lizdo būsena"
+      },
       "power_socket_last_error_code": {
         "name": "Paskutinis klaidos kodas"
       },
       "valve_last_error_code": {
         "name": "Vožtuvo klaidos kodas"
+      },
+      "valve_state": {
+        "name": "Vožtuvo būsena"
+      },
+      "valve_set_last_error_code": {
+        "name": "Vožtuvų grupės klaidos kodas"
       },
       "valve_remaining_duration": {
         "name": "Likęs laistymo laikas"

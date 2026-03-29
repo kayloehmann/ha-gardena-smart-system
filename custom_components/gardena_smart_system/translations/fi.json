@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Ruohonleikkurin toiminta"
       },
+      "mower_state": {
+        "name": "Ruohonleikkurin tila"
+      },
       "mower_last_error_code": {
         "name": "Viimeisin virhekoodi"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "Viimeksi nähty"
       },
+      "automower_mode": {
+        "name": "Käyttötila",
+        "state": {
+          "main_area": "Pääalue",
+          "secondary_area": "Toissijainen alue",
+          "home": "Koti",
+          "demo": "Demo",
+          "unknown": "Tuntematon"
+        }
+      },
       "battery_state": {
         "name": "Akun tila",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "Jäljellä oleva käyntiaika"
       },
+      "power_socket_state": {
+        "name": "Pistorasian tila"
+      },
       "power_socket_last_error_code": {
         "name": "Viimeisin virhekoodi"
       },
       "valve_last_error_code": {
         "name": "Venttiilin virhekoodi"
+      },
+      "valve_state": {
+        "name": "Venttiilin tila"
+      },
+      "valve_set_last_error_code": {
+        "name": "Venttiiliryhmän virhekoodi"
       },
       "valve_remaining_duration": {
         "name": "Jäljellä oleva kasteluaika"

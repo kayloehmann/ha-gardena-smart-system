@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Activitate mașină de tuns"
       },
+      "mower_state": {
+        "name": "Starea mașinii de tuns"
+      },
       "mower_last_error_code": {
         "name": "Ultimul cod de eroare"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "Ultima activitate"
       },
+      "automower_mode": {
+        "name": "Mod de operare",
+        "state": {
+          "main_area": "Zona principală",
+          "secondary_area": "Zona secundară",
+          "home": "Acasă",
+          "demo": "Demo",
+          "unknown": "Necunoscut"
+        }
+      },
       "battery_state": {
         "name": "Stare baterie",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "Timp rămas de alimentare"
       },
+      "power_socket_state": {
+        "name": "Starea prizei"
+      },
       "power_socket_last_error_code": {
         "name": "Ultimul cod de eroare"
       },
       "valve_last_error_code": {
         "name": "Cod eroare supapă"
+      },
+      "valve_state": {
+        "name": "Starea supapei"
+      },
+      "valve_set_last_error_code": {
+        "name": "Codul de eroare al grupului de supape"
       },
       "valve_remaining_duration": {
         "name": "Timp rămas de udare"

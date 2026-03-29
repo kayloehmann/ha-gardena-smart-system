@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "芝刈り機の活動"
       },
+      "mower_state": {
+        "name": "芝刈り機の状態"
+      },
       "mower_last_error_code": {
         "name": "最後のエラーコード"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "最終確認"
       },
+      "automower_mode": {
+        "name": "動作モード",
+        "state": {
+          "main_area": "メインエリア",
+          "secondary_area": "サブエリア",
+          "home": "ホーム",
+          "demo": "デモ",
+          "unknown": "不明"
+        }
+      },
       "battery_state": {
         "name": "バッテリー状態",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "残り稼働時間"
       },
+      "power_socket_state": {
+        "name": "電源ソケットの状態"
+      },
       "power_socket_last_error_code": {
         "name": "最後のエラーコード"
       },
       "valve_last_error_code": {
         "name": "バルブエラーコード"
+      },
+      "valve_state": {
+        "name": "バルブの状態"
+      },
+      "valve_set_last_error_code": {
+        "name": "バルブセットエラーコード"
       },
       "valve_remaining_duration": {
         "name": "残り散水時間"

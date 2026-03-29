@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Plæneklipper-aktivitet"
       },
+      "mower_state": {
+        "name": "Plæneklippertilstand"
+      },
       "mower_last_error_code": {
         "name": "Sidste fejlkode"
       },
@@ -189,26 +192,11 @@
           "not_applicable": "Ikke relevant"
         }
       },
-      "automower_error_code_timestamp": {
-        "name": "Seneste fejltidspunkt"
-      },
-      "power_socket_last_error_code": {
-        "name": "Sidste fejlkode"
-      },
-      "valve_last_error_code": {
-        "name": "Ventilfejlkode"
-      },
       "automower_error_code": {
         "name": "Fejlkode"
       },
-      "valve_remaining_duration": {
-        "name": "Resterende vandingstid"
-      },
-      "hub_device_count": {
-        "name": "Antal enheder"
-      },
-      "hub_polling_interval": {
-        "name": "Pollingsinterval"
+      "automower_error_code_timestamp": {
+        "name": "Seneste fejltidspunkt"
       },
       "automower_total_charging_time": {
         "name": "Samlet opladningstid"
@@ -224,6 +212,16 @@
       "automower_last_seen": {
         "name": "Sidst set"
       },
+      "automower_mode": {
+        "name": "Driftstilstand",
+        "state": {
+          "main_area": "Hovedområde",
+          "secondary_area": "Sekundært område",
+          "home": "Hjem",
+          "demo": "Demo",
+          "unknown": "Ukendt"
+        }
+      },
       "battery_state": {
         "name": "Batteritilstand",
         "state": {
@@ -238,6 +236,30 @@
       },
       "power_socket_remaining_duration": {
         "name": "Resterende tændtid"
+      },
+      "power_socket_state": {
+        "name": "Stikkontakttilstand"
+      },
+      "power_socket_last_error_code": {
+        "name": "Sidste fejlkode"
+      },
+      "valve_last_error_code": {
+        "name": "Ventilfejlkode"
+      },
+      "valve_state": {
+        "name": "Ventiltilstand"
+      },
+      "valve_set_last_error_code": {
+        "name": "Ventilgruppe fejlkode"
+      },
+      "valve_remaining_duration": {
+        "name": "Resterende vandingstid"
+      },
+      "hub_device_count": {
+        "name": "Antal enheder"
+      },
+      "hub_polling_interval": {
+        "name": "Pollingsinterval"
       }
     },
     "binary_sensor": {

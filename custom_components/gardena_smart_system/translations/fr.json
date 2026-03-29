@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Activité de la tondeuse"
       },
+      "mower_state": {
+        "name": "État de la tondeuse"
+      },
       "mower_last_error_code": {
         "name": "Dernier code d'erreur"
       },
@@ -189,26 +192,11 @@
           "not_applicable": "Non applicable"
         }
       },
-      "automower_error_code_timestamp": {
-        "name": "Heure de la dernière erreur"
-      },
-      "power_socket_last_error_code": {
-        "name": "Dernier code d'erreur"
-      },
-      "valve_last_error_code": {
-        "name": "Code d'erreur vanne"
-      },
       "automower_error_code": {
         "name": "Code d'erreur"
       },
-      "valve_remaining_duration": {
-        "name": "Durée d'arrosage restante"
-      },
-      "hub_device_count": {
-        "name": "Nombre d'appareils"
-      },
-      "hub_polling_interval": {
-        "name": "Intervalle d'interrogation"
+      "automower_error_code_timestamp": {
+        "name": "Heure de la dernière erreur"
       },
       "automower_total_charging_time": {
         "name": "Temps de charge total"
@@ -224,6 +212,16 @@
       "automower_last_seen": {
         "name": "Dernière connexion"
       },
+      "automower_mode": {
+        "name": "Mode de fonctionnement",
+        "state": {
+          "main_area": "Zone principale",
+          "secondary_area": "Zone secondaire",
+          "home": "Maison",
+          "demo": "Démo",
+          "unknown": "Inconnu"
+        }
+      },
       "battery_state": {
         "name": "État de la batterie",
         "state": {
@@ -238,6 +236,30 @@
       },
       "power_socket_remaining_duration": {
         "name": "Temps d'alimentation restant"
+      },
+      "power_socket_state": {
+        "name": "État de la prise"
+      },
+      "power_socket_last_error_code": {
+        "name": "Dernier code d'erreur"
+      },
+      "valve_last_error_code": {
+        "name": "Code d'erreur vanne"
+      },
+      "valve_state": {
+        "name": "État de la vanne"
+      },
+      "valve_set_last_error_code": {
+        "name": "Code d'erreur du groupe de vannes"
+      },
+      "valve_remaining_duration": {
+        "name": "Durée d'arrosage restante"
+      },
+      "hub_device_count": {
+        "name": "Nombre d'appareils"
+      },
+      "hub_polling_interval": {
+        "name": "Intervalle d'interrogation"
       }
     },
     "binary_sensor": {

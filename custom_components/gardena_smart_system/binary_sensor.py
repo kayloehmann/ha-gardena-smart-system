@@ -170,4 +170,4 @@ class HubWebSocketSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Return True if the WebSocket is connected."""
-        return self.coordinator._ws_connected
+        return self.coordinator.ws_connected

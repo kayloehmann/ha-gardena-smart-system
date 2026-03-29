@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Активность косилки"
       },
+      "mower_state": {
+        "name": "Состояние газонокосилки"
+      },
       "mower_last_error_code": {
         "name": "Последний код ошибки"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "Последнее подключение"
       },
+      "automower_mode": {
+        "name": "Режим работы",
+        "state": {
+          "main_area": "Основная зона",
+          "secondary_area": "Дополнительная зона",
+          "home": "Дом",
+          "demo": "Демо",
+          "unknown": "Неизвестно"
+        }
+      },
       "battery_state": {
         "name": "Состояние батареи",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "Оставшееся время питания"
       },
+      "power_socket_state": {
+        "name": "Состояние розетки"
+      },
       "power_socket_last_error_code": {
         "name": "Последний код ошибки"
       },
       "valve_last_error_code": {
         "name": "Код ошибки клапана"
+      },
+      "valve_state": {
+        "name": "Состояние клапана"
+      },
+      "valve_set_last_error_code": {
+        "name": "Код ошибки группы клапанов"
       },
       "valve_remaining_duration": {
         "name": "Оставшееся время полива"

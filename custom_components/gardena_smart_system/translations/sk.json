@@ -108,6 +108,9 @@
       "mower_activity": {
         "name": "Činnosť kosačky"
       },
+      "mower_state": {
+        "name": "Stav kosačky"
+      },
       "mower_last_error_code": {
         "name": "Posledný chybový kód"
       },
@@ -209,6 +212,16 @@
       "automower_last_seen": {
         "name": "Naposledy videné"
       },
+      "automower_mode": {
+        "name": "Prevádzkový režim",
+        "state": {
+          "main_area": "Hlavná oblasť",
+          "secondary_area": "Vedľajšia oblasť",
+          "home": "Doma",
+          "demo": "Demo",
+          "unknown": "Neznámy"
+        }
+      },
       "battery_state": {
         "name": "Stav batérie",
         "state": {
@@ -224,11 +237,20 @@
       "power_socket_remaining_duration": {
         "name": "Zostávajúca doba zapnutia"
       },
+      "power_socket_state": {
+        "name": "Stav zásuvky"
+      },
       "power_socket_last_error_code": {
         "name": "Posledný chybový kód"
       },
       "valve_last_error_code": {
         "name": "Chybový kód ventilu"
+      },
+      "valve_state": {
+        "name": "Stav ventilu"
+      },
+      "valve_set_last_error_code": {
+        "name": "Kód chyby skupiny ventilov"
       },
       "valve_remaining_duration": {
         "name": "Zostávajúca doba zavlažovania"

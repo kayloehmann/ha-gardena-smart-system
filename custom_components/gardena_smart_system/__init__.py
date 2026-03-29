@@ -20,7 +20,9 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-type GardenaConfigEntry = ConfigEntry
+from .base_coordinator import BaseSmartSystemCoordinator
+
+type GardenaConfigEntry = ConfigEntry[BaseSmartSystemCoordinator]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: GardenaConfigEntry) -> bool:
