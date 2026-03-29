@@ -501,8 +501,8 @@ class TestValveErrorSensor:
 
         entity_reg = er.async_get(hass)
         # Two valves: device-uuid:1 and device-uuid:2
-        entry1 = entity_reg.async_get("sensor.my_sensor_valve_error_code")
-        entry2 = entity_reg.async_get("sensor.my_sensor_valve_error_code_2")
+        entry1 = entity_reg.async_get("sensor.my_sensor_valve_error_code_zone_1")
+        entry2 = entity_reg.async_get("sensor.my_sensor_valve_error_code_zone_2")
         assert entry1 is not None
         assert entry2 is not None
         assert "valve_1_last_error_code" in entry1.unique_id
@@ -529,7 +529,7 @@ class TestValveErrorSensor:
             await _setup_integration(hass, mock_config_entry, mock_client)
 
         entity_reg = er.async_get(hass)
-        entry = entity_reg.async_get("sensor.my_sensor_valve_error_code")
+        entry = entity_reg.async_get("sensor.my_sensor_valve_error_code_zone_1")
         assert entry is not None
         assert entry.disabled_by is not None
 
@@ -556,11 +556,13 @@ class TestValveErrorSensor:
             await _setup_integration(hass, mock_config_entry, mock_client)
 
             entity_reg = er.async_get(hass)
-            entity_reg.async_update_entity("sensor.my_sensor_valve_error_code", disabled_by=None)
+            entity_reg.async_update_entity(
+                "sensor.my_sensor_valve_error_code_zone_1", disabled_by=None
+            )
             await hass.config_entries.async_reload(mock_config_entry.entry_id)
             await hass.async_block_till_done()
 
-            state = hass.states.get("sensor.my_sensor_valve_error_code")
+            state = hass.states.get("sensor.my_sensor_valve_error_code_zone_1")
             assert state is not None
             assert state.state == "WATERING_CANCELED"
 
@@ -585,7 +587,9 @@ class TestValveErrorSensor:
             await _setup_integration(hass, mock_config_entry, mock_client)
 
             entity_reg = er.async_get(hass)
-            entity_reg.async_update_entity("sensor.my_sensor_valve_error_code", disabled_by=None)
+            entity_reg.async_update_entity(
+                "sensor.my_sensor_valve_error_code_zone_1", disabled_by=None
+            )
             await hass.config_entries.async_reload(mock_config_entry.entry_id)
             await hass.async_block_till_done()
 
@@ -594,7 +598,7 @@ class TestValveErrorSensor:
             coordinator.async_set_updated_data({})
             await hass.async_block_till_done()
 
-            state = hass.states.get("sensor.my_sensor_valve_error_code")
+            state = hass.states.get("sensor.my_sensor_valve_error_code_zone_1")
             assert state is not None
             assert state.state == STATE_UNAVAILABLE
 
@@ -619,7 +623,7 @@ class TestValveErrorSensor:
             await _setup_integration(hass, mock_config_entry, mock_client)
 
         entity_reg = er.async_get(hass)
-        entry = entity_reg.async_get("sensor.my_sensor_valve_error_code")
+        entry = entity_reg.async_get("sensor.my_sensor_valve_error_code_zone_1")
         assert entry is None
 
 
@@ -1205,7 +1209,7 @@ class TestValveStateSensor:
         devices = {device.device_id: device}
         await _setup_with_devices(hass, mock_config_entry, devices)
 
-        state = hass.states.get("sensor.my_sensor_valve_state")
+        state = hass.states.get("sensor.my_sensor_valve_state_zone_1")
         assert state is not None
         assert state.state == "ok"
 
@@ -1240,7 +1244,7 @@ class TestValveStateSensor:
             coordinator = mock_config_entry.runtime_data
             coordinator.async_set_updated_data({})
             await hass.async_block_till_done()
-            state = hass.states.get("sensor.my_sensor_valve_state")
+            state = hass.states.get("sensor.my_sensor_valve_state_zone_1")
             assert state is not None
             assert state.state == "unavailable"
         finally:

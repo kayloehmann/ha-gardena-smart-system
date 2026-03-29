@@ -244,16 +244,16 @@
         "name": "Sidste fejlkode"
       },
       "valve_last_error_code": {
-        "name": "Ventilfejlkode"
+        "name": "Ventilfejlkode zone {zone}"
       },
       "valve_state": {
-        "name": "Ventiltilstand"
+        "name": "Ventiltilstand zone {zone}"
       },
       "valve_set_last_error_code": {
         "name": "Ventilgruppe fejlkode"
       },
       "valve_remaining_duration": {
-        "name": "Resterende vandingstid"
+        "name": "Resterende vandingstid zone {zone}"
       },
       "hub_device_count": {
         "name": "Antal enheder"
@@ -353,7 +353,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Ventilhændelse",
+        "name": "Ventilhændelse zone {zone}",
         "state_attributes": {
           "event_type": {
             "state": {

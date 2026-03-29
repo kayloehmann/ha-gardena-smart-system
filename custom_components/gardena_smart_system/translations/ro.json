@@ -244,16 +244,16 @@
         "name": "Ultimul cod de eroare"
       },
       "valve_last_error_code": {
-        "name": "Cod eroare supapă"
+        "name": "Cod eroare supapă zona {zone}"
       },
       "valve_state": {
-        "name": "Starea supapei"
+        "name": "Starea supapei zona {zone}"
       },
       "valve_set_last_error_code": {
         "name": "Codul de eroare al grupului de supape"
       },
       "valve_remaining_duration": {
-        "name": "Timp rămas de udare"
+        "name": "Timp rămas de udare zona {zone}"
       },
       "hub_device_count": {
         "name": "Număr dispozitive"
@@ -369,7 +369,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Eveniment supapă",
+        "name": "Eveniment supapă zona {zone}",
         "state_attributes": {
           "event_type": {
             "state": {

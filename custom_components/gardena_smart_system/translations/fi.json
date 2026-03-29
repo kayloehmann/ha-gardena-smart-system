@@ -244,16 +244,16 @@
         "name": "Viimeisin virhekoodi"
       },
       "valve_last_error_code": {
-        "name": "Venttiilin virhekoodi"
+        "name": "Venttiilin virhekoodi vyöhyke {zone}"
       },
       "valve_state": {
-        "name": "Venttiilin tila"
+        "name": "Venttiilin tila vyöhyke {zone}"
       },
       "valve_set_last_error_code": {
         "name": "Venttiiliryhmän virhekoodi"
       },
       "valve_remaining_duration": {
-        "name": "Jäljellä oleva kasteluaika"
+        "name": "Jäljellä oleva kasteluaika vyöhyke {zone}"
       },
       "hub_device_count": {
         "name": "Laitteiden määrä"
@@ -369,7 +369,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Venttiilitapahtuma",
+        "name": "Venttiilitapahtuma vyöhyke {zone}",
         "state_attributes": {
           "event_type": {
             "state": {

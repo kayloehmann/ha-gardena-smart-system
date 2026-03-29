@@ -244,16 +244,16 @@
         "name": "Dernier code d'erreur"
       },
       "valve_last_error_code": {
-        "name": "Code d'erreur vanne"
+        "name": "Code d'erreur vanne zone {zone}"
       },
       "valve_state": {
-        "name": "État de la vanne"
+        "name": "État de la vanne zone {zone}"
       },
       "valve_set_last_error_code": {
         "name": "Code d'erreur du groupe de vannes"
       },
       "valve_remaining_duration": {
-        "name": "Durée d'arrosage restante"
+        "name": "Durée d'arrosage restante zone {zone}"
       },
       "hub_device_count": {
         "name": "Nombre d'appareils"
@@ -353,7 +353,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Événement vanne",
+        "name": "Événement vanne zone {zone}",
         "state_attributes": {
           "event_type": {
             "state": {

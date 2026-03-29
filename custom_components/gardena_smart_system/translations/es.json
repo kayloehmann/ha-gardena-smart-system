@@ -244,16 +244,16 @@
         "name": "Ultimo codigo de error"
       },
       "valve_last_error_code": {
-        "name": "Codigo de error de valvula"
+        "name": "Codigo de error de valvula zona {zone}"
       },
       "valve_state": {
-        "name": "Estado de la válvula"
+        "name": "Estado de la válvula zona {zone}"
       },
       "valve_set_last_error_code": {
         "name": "Código de error del grupo de válvulas"
       },
       "valve_remaining_duration": {
-        "name": "Tiempo de riego restante"
+        "name": "Tiempo de riego restante zona {zone}"
       },
       "hub_device_count": {
         "name": "Número de dispositivos"
@@ -353,7 +353,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Evento de valvula",
+        "name": "Evento de valvula zona {zone}",
         "state_attributes": {
           "event_type": {
             "state": {

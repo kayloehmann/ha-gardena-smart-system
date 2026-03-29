@@ -244,16 +244,16 @@
         "name": "最后错误代码"
       },
       "valve_last_error_code": {
-        "name": "阀门错误代码"
+        "name": "阀门错误代码 区域 {zone}"
       },
       "valve_state": {
-        "name": "阀门状态"
+        "name": "阀门状态 区域 {zone}"
       },
       "valve_set_last_error_code": {
         "name": "阀组错误代码"
       },
       "valve_remaining_duration": {
-        "name": "剩余浇水时间"
+        "name": "剩余浇水时间 区域 {zone}"
       },
       "hub_device_count": {
         "name": "设备数量"
@@ -369,7 +369,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "阀门事件",
+        "name": "阀门事件 区域 {zone}",
         "state_attributes": {
           "event_type": {
             "state": {

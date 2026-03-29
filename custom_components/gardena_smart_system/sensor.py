@@ -324,13 +324,12 @@ class GardenaValveRemainingDurationSensor(GardenaEntity, SensorEntity):
         service_id: str,
     ) -> None:
         """Initialize the valve remaining duration sensor."""
-        suffix = (
-            "valve_" + service_id.split(":")[-1] + "_remaining_duration"
-            if ":" in service_id
-            else "valve_remaining_duration"
-        )
+        zone = service_id.split(":")[-1] if ":" in service_id else ""
+        suffix = f"valve_{zone}_remaining_duration" if zone else "valve_remaining_duration"
         super().__init__(coordinator, device, suffix)
         self._service_id = service_id
+        if zone:
+            self._attr_translation_placeholders = {"zone": zone}
 
     @property
     def native_value(self) -> int | None:
@@ -360,13 +359,12 @@ class GardenaValveErrorSensor(GardenaEntity, SensorEntity):
         service_id: str,
     ) -> None:
         """Initialize the valve error sensor."""
-        suffix = (
-            "valve_" + service_id.split(":")[-1] + "_last_error_code"
-            if ":" in service_id
-            else "valve_last_error_code"
-        )
+        zone = service_id.split(":")[-1] if ":" in service_id else ""
+        suffix = f"valve_{zone}_last_error_code" if zone else "valve_last_error_code"
         super().__init__(coordinator, device, suffix)
         self._service_id = service_id
+        if zone:
+            self._attr_translation_placeholders = {"zone": zone}
 
     @property
     def native_value(self) -> str | None:
@@ -393,11 +391,12 @@ class GardenaValveStateSensor(GardenaEntity, SensorEntity):
         service_id: str,
     ) -> None:
         """Initialize the valve state sensor."""
-        suffix = (
-            "valve_" + service_id.split(":")[-1] + "_state" if ":" in service_id else "valve_state"
-        )
+        zone = service_id.split(":")[-1] if ":" in service_id else ""
+        suffix = f"valve_{zone}_state" if zone else "valve_state"
         super().__init__(coordinator, device, suffix)
         self._service_id = service_id
+        if zone:
+            self._attr_translation_placeholders = {"zone": zone}
 
     @property
     def native_value(self) -> str | None:

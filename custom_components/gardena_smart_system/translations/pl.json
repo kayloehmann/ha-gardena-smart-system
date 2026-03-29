@@ -244,16 +244,16 @@
         "name": "Ostatni kod błędu"
       },
       "valve_last_error_code": {
-        "name": "Kod błędu zaworu"
+        "name": "Kod błędu zaworu strefa {zone}"
       },
       "valve_state": {
-        "name": "Stan zaworu"
+        "name": "Stan zaworu strefa {zone}"
       },
       "valve_set_last_error_code": {
         "name": "Kod błędu grupy zaworów"
       },
       "valve_remaining_duration": {
-        "name": "Pozostały czas podlewania"
+        "name": "Pozostały czas podlewania strefa {zone}"
       },
       "hub_device_count": {
         "name": "Liczba urządzeń"
@@ -353,7 +353,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Zdarzenie zaworu",
+        "name": "Zdarzenie zaworu strefa {zone}",
         "state_attributes": {
           "event_type": {
             "state": {

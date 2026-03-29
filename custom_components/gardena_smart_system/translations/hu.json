@@ -244,16 +244,16 @@
         "name": "Utolsó hibakód"
       },
       "valve_last_error_code": {
-        "name": "Szelep hibakód"
+        "name": "Szelep hibakód zóna {zone}"
       },
       "valve_state": {
-        "name": "Szelep állapota"
+        "name": "Szelep állapota zóna {zone}"
       },
       "valve_set_last_error_code": {
         "name": "Szelepcsoport hibakódja"
       },
       "valve_remaining_duration": {
-        "name": "Hátralévő öntözési idő"
+        "name": "Hátralévő öntözési idő zóna {zone}"
       },
       "hub_device_count": {
         "name": "Eszközök száma"
@@ -369,7 +369,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Szelep esemény",
+        "name": "Szelep esemény zóna {zone}",
         "state_attributes": {
           "event_type": {
             "state": {

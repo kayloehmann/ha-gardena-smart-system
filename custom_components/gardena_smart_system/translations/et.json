@@ -244,16 +244,16 @@
         "name": "Viimane veakood"
       },
       "valve_last_error_code": {
-        "name": "Klapi veakood"
+        "name": "Klapi veakood tsoon {zone}"
       },
       "valve_state": {
-        "name": "Klapi olek"
+        "name": "Klapi olek tsoon {zone}"
       },
       "valve_set_last_error_code": {
         "name": "Klapirühma veakood"
       },
       "valve_remaining_duration": {
-        "name": "Järelejäänud kastmisaeg"
+        "name": "Järelejäänud kastmisaeg tsoon {zone}"
       },
       "hub_device_count": {
         "name": "Seadmete arv"
@@ -369,7 +369,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Klapi sündmus",
+        "name": "Klapi sündmus tsoon {zone}",
         "state_attributes": {
           "event_type": {
             "state": {

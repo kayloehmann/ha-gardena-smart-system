@@ -244,16 +244,16 @@
         "name": "Posledný chybový kód"
       },
       "valve_last_error_code": {
-        "name": "Chybový kód ventilu"
+        "name": "Chybový kód ventilu zóna {zone}"
       },
       "valve_state": {
-        "name": "Stav ventilu"
+        "name": "Stav ventilu zóna {zone}"
       },
       "valve_set_last_error_code": {
         "name": "Kód chyby skupiny ventilov"
       },
       "valve_remaining_duration": {
-        "name": "Zostávajúca doba zavlažovania"
+        "name": "Zostávajúca doba zavlažovania zóna {zone}"
       },
       "hub_device_count": {
         "name": "Počet zariadení"
@@ -369,7 +369,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Udalosť ventilu",
+        "name": "Udalosť ventilu zóna {zone}",
         "state_attributes": {
           "event_type": {
             "state": {

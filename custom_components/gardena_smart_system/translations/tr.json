@@ -244,16 +244,16 @@
         "name": "Son hata kodu"
       },
       "valve_last_error_code": {
-        "name": "Vana hata kodu"
+        "name": "Vana hata kodu bölge {zone}"
       },
       "valve_state": {
-        "name": "Vana durumu"
+        "name": "Vana durumu bölge {zone}"
       },
       "valve_set_last_error_code": {
         "name": "Vana grubu hata kodu"
       },
       "valve_remaining_duration": {
-        "name": "Kalan sulama süresi"
+        "name": "Kalan sulama süresi bölge {zone}"
       },
       "hub_device_count": {
         "name": "Cihaz sayısı"
@@ -369,7 +369,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Vana olayı",
+        "name": "Vana olayı bölge {zone}",
         "state_attributes": {
           "event_type": {
             "state": {

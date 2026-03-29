@@ -244,16 +244,16 @@
         "name": "最後のエラーコード"
       },
       "valve_last_error_code": {
-        "name": "バルブエラーコード"
+        "name": "バルブエラーコード ゾーン {zone}"
       },
       "valve_state": {
-        "name": "バルブの状態"
+        "name": "バルブの状態 ゾーン {zone}"
       },
       "valve_set_last_error_code": {
         "name": "バルブセットエラーコード"
       },
       "valve_remaining_duration": {
-        "name": "残り散水時間"
+        "name": "残り散水時間 ゾーン {zone}"
       },
       "hub_device_count": {
         "name": "デバイス数"
@@ -369,7 +369,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "バルブイベント",
+        "name": "バルブイベント ゾーン {zone}",
         "state_attributes": {
           "event_type": {
             "state": {

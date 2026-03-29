@@ -244,16 +244,16 @@
         "name": "Last error code"
       },
       "valve_last_error_code": {
-        "name": "Valve error code"
+        "name": "Valve error code zone {zone}"
       },
       "valve_state": {
-        "name": "Valve state"
+        "name": "Valve state zone {zone}"
       },
       "valve_set_last_error_code": {
         "name": "Valve set error code"
       },
       "valve_remaining_duration": {
-        "name": "Remaining watering time"
+        "name": "Remaining watering time zone {zone}"
       },
       "hub_device_count": {
         "name": "Device count"
@@ -369,7 +369,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Valve event",
+        "name": "Valve event zone {zone}",
         "state_attributes": {
           "event_type": {
             "state": {

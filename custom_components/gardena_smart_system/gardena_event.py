@@ -177,11 +177,12 @@ class GardenaValveEventEntity(GardenaEntity, EventEntity):
 
     def __init__(self, coordinator: GardenaCoordinator, device: Device, service_id: str) -> None:
         """Initialize the valve event entity."""
-        suffix = (
-            "valve_" + service_id.split(":")[-1] + "_event" if ":" in service_id else "valve_event"
-        )
+        zone = service_id.split(":")[-1] if ":" in service_id else ""
+        suffix = f"valve_{zone}_event" if zone else "valve_event"
         super().__init__(coordinator, device, suffix)
         self._service_id = service_id
+        if zone:
+            self._attr_translation_placeholders = {"zone": zone}
         valve = device.valves.get(service_id)
         self._prev_activity = valve.activity if valve else None
         self._prev_state = valve.state if valve else None

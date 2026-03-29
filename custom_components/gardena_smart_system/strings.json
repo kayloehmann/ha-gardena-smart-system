@@ -217,7 +217,7 @@
         "name": "Remaining power time"
       },
       "valve_state": {
-        "name": "Valve state"
+        "name": "Valve state zone {zone}"
       },
       "valve_set_last_error_code": {
         "name": "Valve set error code"
