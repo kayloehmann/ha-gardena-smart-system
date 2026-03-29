@@ -754,6 +754,7 @@ class TestValveRemainingDurationSensor:
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         device = make_mock_device(valve_count=1)
+        device.valves["device-uuid:1"].activity = "MANUAL_WATERING"
         device.valves["device-uuid:1"].duration = 300
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
@@ -785,6 +786,23 @@ class TestValveRemainingDurationSensor:
     ) -> None:
         device = make_mock_device(valve_count=1)
         device.valves["device-uuid:1"].duration = None
+        await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
+
+        entity_reg = er.async_get(hass)
+        for entry in entity_reg.entities.values():
+            if "remaining_duration" in (entry.unique_id or ""):
+                state = hass.states.get(entry.entity_id)
+                assert state is not None
+                assert state.state == "unknown"
+                break
+
+    async def test_remaining_duration_none_when_valve_closed(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Duration resets to unknown when valve is closed, even if API reports stale value."""
+        device = make_mock_device(valve_count=1)
+        device.valves["device-uuid:1"].activity = "CLOSED"
+        device.valves["device-uuid:1"].duration = 300
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
         entity_reg = er.async_get(hass)
@@ -918,6 +936,7 @@ class TestPowerSocketRemainingDuration:
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         device = make_mock_device(has_power_socket=True)
+        device.power_socket.activity = "TIMER"
         device.power_socket.duration = 300
         devices = {device.device_id: device}
         await _setup_with_devices(hass, mock_config_entry, devices)
@@ -931,6 +950,20 @@ class TestPowerSocketRemainingDuration:
     ) -> None:
         device = make_mock_device(has_power_socket=True)
         device.power_socket.duration = 0
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get("sensor.my_sensor_remaining_power_time")
+        assert state is not None
+        assert state.state == "unknown"
+
+    async def test_duration_none_when_off(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Duration resets to unknown when socket is OFF, even with stale value."""
+        device = make_mock_device(has_power_socket=True)
+        device.power_socket.activity = "OFF"
+        device.power_socket.duration = 300
         devices = {device.device_id: device}
         await _setup_with_devices(hass, mock_config_entry, devices)
 

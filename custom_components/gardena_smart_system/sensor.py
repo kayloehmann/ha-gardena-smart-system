@@ -6,6 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, cast
 
+from aiogardenasmart.const import PowerSocketActivity, ValveActivity
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -138,7 +139,10 @@ POWER_SOCKET_SENSORS: tuple[GardenaSensorDescription, ...] = (
         suggested_display_precision=0,
         value_fn=lambda d: (
             d.power_socket.duration
-            if d.power_socket and d.power_socket.duration and d.power_socket.duration > 0
+            if d.power_socket
+            and d.power_socket.activity != PowerSocketActivity.OFF
+            and d.power_socket.duration
+            and d.power_socket.duration > 0
             else None
         ),
         exists_fn=lambda d: d.power_socket is not None,
@@ -339,6 +343,8 @@ class GardenaValveRemainingDurationSensor(GardenaEntity, SensorEntity):
             return None
         valve = device.valves.get(self._service_id)
         if valve is None:
+            return None
+        if valve.activity == ValveActivity.CLOSED:
             return None
         if valve.duration is not None and valve.duration > 0:
             return valve.duration
