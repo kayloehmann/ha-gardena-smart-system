@@ -26,6 +26,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from aiogardenasmart import Device
 
 from . import GardenaConfigEntry
+from .base_coordinator import BaseSmartSystemCoordinator
 from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE, DOMAIN
 from .coordinator import GardenaCoordinator
 from .entity import GardenaEntity
@@ -468,7 +469,7 @@ class HubDeviceCountSensor(CoordinatorEntity, SensorEntity):
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 0
 
-    def __init__(self, coordinator, entry: GardenaConfigEntry) -> None:
+    def __init__(self, coordinator: BaseSmartSystemCoordinator, entry: GardenaConfigEntry) -> None:
         """Initialize the hub device count sensor."""
         super().__init__(coordinator)
         self._attr_unique_id = f"hub_{entry.entry_id}_device_count"
@@ -489,7 +490,7 @@ class HubPollingIntervalSensor(CoordinatorEntity, SensorEntity):
     _attr_native_unit_of_measurement = UnitOfTime.SECONDS
     _attr_suggested_display_precision = 0
 
-    def __init__(self, coordinator, entry: GardenaConfigEntry) -> None:
+    def __init__(self, coordinator: BaseSmartSystemCoordinator, entry: GardenaConfigEntry) -> None:
         """Initialize the hub polling interval sensor."""
         super().__init__(coordinator)
         self._attr_unique_id = f"hub_{entry.entry_id}_polling_interval"
