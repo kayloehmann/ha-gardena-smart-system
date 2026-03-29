@@ -7,7 +7,7 @@ to a HA valve entity.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 import voluptuous as vol
 from aiogardenasmart.const import ControlType, ValveActivity
@@ -41,13 +41,13 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Gardena valve entities from a config entry."""
-    coordinator = entry.runtime_data
+    coordinator = cast(GardenaCoordinator, entry.runtime_data)
     known_service_ids: set[str] = set()
 
     @callback
     def _async_add_new_entities() -> None:
         if coordinator.data is None:
-            return
+            return  # type: ignore[unreachable]
         new_entities: list[GardenaValveEntity] = []
         for device in coordinator.data.values():
             for service_id in device.valves:

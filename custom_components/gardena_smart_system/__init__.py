@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
+from .base_coordinator import BaseSmartSystemCoordinator
 from .const import (
     API_TYPE_AUTOMOWER,
     API_TYPE_GARDENA,
@@ -20,9 +22,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-from .base_coordinator import BaseSmartSystemCoordinator
-
-type GardenaConfigEntry = ConfigEntry[BaseSmartSystemCoordinator]
+type GardenaConfigEntry = ConfigEntry[BaseSmartSystemCoordinator[Any]]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: GardenaConfigEntry) -> bool:

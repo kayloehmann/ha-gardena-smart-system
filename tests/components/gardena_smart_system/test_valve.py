@@ -220,6 +220,7 @@ class TestValveStateMapping:
         assert state is not None
         assert state.state == "open"
 
+
 class TestValveCommands:
     """Test valve open/close/start_watering commands."""
 

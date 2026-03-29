@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 from aioautomower.const import MowerActivity, MowerState
 from homeassistant.components.event import EventEntity
 from homeassistant.core import HomeAssistant, callback
@@ -51,13 +53,13 @@ async def async_setup_entry(
     if entry.data.get(CONF_API_TYPE) != API_TYPE_AUTOMOWER:
         return
 
-    coordinator: AutomowerCoordinator = entry.runtime_data
+    coordinator = cast(AutomowerCoordinator, entry.runtime_data)
     known_ids: set[str] = set()
 
     @callback
     def _async_add_new_entities() -> None:
         if coordinator.data is None:
-            return
+            return  # type: ignore[unreachable]
         new_entities: list[AutomowerEventEntity] = []
         for device in coordinator.data.values():
             if device.mower_id not in known_ids:

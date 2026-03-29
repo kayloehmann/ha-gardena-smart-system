@@ -5,9 +5,10 @@ from __future__ import annotations
 import logging
 import time
 from abc import abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any, Callable, Generic, TypeVar
+from typing import Any
 
 import aiohttp
 from homeassistant.config_entries import ConfigEntry
@@ -20,9 +21,6 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .const import DOMAIN, MIN_COMMAND_INTERVAL_SECONDS, OPT_POLL_INTERVAL_MINUTES
 
 _LOGGER = logging.getLogger(__name__)
-
-_DeviceT = TypeVar("_DeviceT")
-
 
 @dataclass(frozen=True)
 class CoordinatorConfig:
@@ -41,7 +39,7 @@ class CoordinatorConfig:
     device_serial_fn: Callable[[Any], str | None]
 
 
-class BaseSmartSystemCoordinator(DataUpdateCoordinator[dict[str, _DeviceT]], Generic[_DeviceT]):
+class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, DeviceT]]):
     """Base coordinator with shared WebSocket, polling, stale-device, and throttle logic.
 
     Subclasses provide:
@@ -83,8 +81,7 @@ class BaseSmartSystemCoordinator(DataUpdateCoordinator[dict[str, _DeviceT]], Gen
         self._stale_miss_counts: dict[str, int] = {}
         self._custom_poll_interval: timedelta | None = (
             timedelta(minutes=int(custom_minutes))
-            if custom_minutes is not None
-            and int(custom_minutes) != config.default_poll_minutes
+            if custom_minutes is not None and int(custom_minutes) != config.default_poll_minutes
             else None
         )
         self._rate_limit_hits: int = 0
@@ -109,11 +106,11 @@ class BaseSmartSystemCoordinator(DataUpdateCoordinator[dict[str, _DeviceT]], Gen
     # ── Abstract methods (subclass must implement) ─────────────────────
 
     @abstractmethod
-    async def _async_fetch_devices(self) -> dict[str, _DeviceT]:
+    async def _async_fetch_devices(self) -> dict[str, DeviceT]:
         """Fetch devices from the API."""
 
     @abstractmethod
-    async def _async_get_ws_url(self, devices: dict[str, _DeviceT]) -> str:
+    async def _async_get_ws_url(self, devices: dict[str, DeviceT]) -> str:
         """Return the WebSocket URL."""
 
     @abstractmethod
@@ -121,7 +118,7 @@ class BaseSmartSystemCoordinator(DataUpdateCoordinator[dict[str, _DeviceT]], Gen
         self,
         auth: Any,
         websession: aiohttp.ClientSession,
-        devices: dict[str, _DeviceT],
+        devices: dict[str, DeviceT],
         on_update: Any,
         on_error: Any,
     ) -> Any:
@@ -129,7 +126,7 @@ class BaseSmartSystemCoordinator(DataUpdateCoordinator[dict[str, _DeviceT]], Gen
 
     # ── Core coordinator logic ─────────────────────────────────────────
 
-    async def _async_update_data(self) -> dict[str, _DeviceT]:
+    async def _async_update_data(self) -> dict[str, DeviceT]:
         """Fetch the latest device state from the REST API."""
         cfg = self._config
         try:
@@ -182,7 +179,7 @@ class BaseSmartSystemCoordinator(DataUpdateCoordinator[dict[str, _DeviceT]], Gen
 
     _STALE_THRESHOLD = 3
 
-    def _async_remove_stale_devices(self, fresh_devices: dict[str, _DeviceT]) -> None:
+    def _async_remove_stale_devices(self, fresh_devices: dict[str, DeviceT]) -> None:
         """Remove HA device registry entries for devices no longer in the API response.
 
         Devices must be absent for _STALE_THRESHOLD consecutive polls before removal.
@@ -231,7 +228,7 @@ class BaseSmartSystemCoordinator(DataUpdateCoordinator[dict[str, _DeviceT]], Gen
                 device_registry.async_remove_device(ha_device.id)
             del self._stale_miss_counts[device_id]
 
-    async def _async_start_websocket(self, devices: dict[str, _DeviceT]) -> None:
+    async def _async_start_websocket(self, devices: dict[str, DeviceT]) -> None:
         """Start the WebSocket for real-time updates."""
         cfg = self._config
         try:
@@ -272,7 +269,7 @@ class BaseSmartSystemCoordinator(DataUpdateCoordinator[dict[str, _DeviceT]], Gen
             ws_interval,
         )
 
-    def _on_device_update(self, device_id: str, device: _DeviceT) -> None:
+    def _on_device_update(self, device_id: str, device: DeviceT) -> None:
         """Called by the WebSocket client when a device state changes."""
         if self.data is not None:
             self.data[device_id] = device
@@ -312,7 +309,7 @@ class BaseSmartSystemCoordinator(DataUpdateCoordinator[dict[str, _DeviceT]], Gen
         self._ws_connected = False
         try:
             await self._auth.async_revoke_token()
-        except Exception:  # noqa: BLE001
+        except Exception:
             _LOGGER.debug("Token revocation failed during shutdown")
 
     def check_command_throttle(self) -> None:

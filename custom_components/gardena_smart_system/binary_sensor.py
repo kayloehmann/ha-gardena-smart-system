@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any, cast
 
 from aiogardenasmart.const import BatteryState, ServiceState
 from homeassistant.components.binary_sensor import (
@@ -13,12 +14,14 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from aiogardenasmart import Device
 
 from . import GardenaConfigEntry
+from .base_coordinator import BaseSmartSystemCoordinator
 from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
 from .coordinator import GardenaCoordinator
 from .entity import GardenaEntity
@@ -98,18 +101,16 @@ async def async_setup_entry(
         from .sensor import _hub_device_info
 
         coordinator = entry.runtime_data
-        async_add_entities([
-            HubWebSocketSensor(coordinator, entry, _hub_device_info)
-        ])
+        async_add_entities([HubWebSocketSensor(coordinator, entry, _hub_device_info)])
         return
 
-    coordinator = entry.runtime_data
+    coordinator = cast(GardenaCoordinator, entry.runtime_data)
     known_keys: set[tuple[str, str]] = set()
 
     @callback
     def _async_add_new_entities() -> None:
         if coordinator.data is None:
-            return
+            return  # type: ignore[unreachable]
         new_entities: list[GardenaBinarySensorEntity] = []
         for device in coordinator.data.values():
             for description in BINARY_SENSORS:
@@ -160,8 +161,14 @@ class HubWebSocketSensor(CoordinatorEntity, BinarySensorEntity):
     _attr_translation_key = "hub_websocket_connected"
     _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    coordinator: BaseSmartSystemCoordinator[Any]
 
-    def __init__(self, coordinator, entry: GardenaConfigEntry, device_info_fn) -> None:
+    def __init__(
+        self,
+        coordinator: BaseSmartSystemCoordinator[Any],
+        entry: GardenaConfigEntry,
+        device_info_fn: Callable[[GardenaConfigEntry], DeviceInfo],
+    ) -> None:
         """Initialize the hub WebSocket sensor."""
         super().__init__(coordinator)
         self._attr_unique_id = f"hub_{entry.entry_id}_websocket_connected"

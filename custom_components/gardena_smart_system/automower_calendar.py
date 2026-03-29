@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from typing import cast
 
 from homeassistant.components.calendar import CalendarEntity, CalendarEvent
 from homeassistant.core import HomeAssistant, callback
@@ -38,13 +39,13 @@ async def async_setup_entry(
     if entry.data.get(CONF_API_TYPE) != API_TYPE_AUTOMOWER:
         return
 
-    coordinator: AutomowerCoordinator = entry.runtime_data
+    coordinator = cast(AutomowerCoordinator, entry.runtime_data)
     known_ids: set[str] = set()
 
     @callback
     def _async_add_new_entities() -> None:
         if coordinator.data is None:
-            return
+            return  # type: ignore[unreachable]
         new_entities: list[AutomowerCalendarEntity] = []
         for device in coordinator.data.values():
             if device.mower_id not in known_ids:

@@ -1234,10 +1234,6 @@ class TestAutomowerCoordinator:
     async def test_rate_limit_backoff_sets_cooldown_interval(
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
     ) -> None:
-        from custom_components.gardena_smart_system.const import (
-            AUTOMOWER_RATE_LIMIT_COOLDOWN,
-        )
-
         device = make_mock_automower_device()
         devices = {device.mower_id: device}
 
@@ -1490,7 +1486,6 @@ class TestAutomowerCoordinatorErrors:
     ) -> None:
         """Lines 106-110: Restore normal interval after successful fetch."""
         from custom_components.gardena_smart_system.const import (
-            AUTOMOWER_RATE_LIMIT_COOLDOWN,
             AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED,
         )
 
@@ -3816,9 +3811,7 @@ class TestAutomowerScheduleOverride:
                 {"entity_id": SCHEDULE_OVERRIDE_ENTITY_ID, "value": 60},
                 blocking=True,
             )
-            mock_client.async_start.assert_called_once_with(
-                device.mower_id, duration=60
-            )
+            mock_client.async_start.assert_called_once_with(device.mower_id, duration=60)
 
     async def test_schedule_override_auth_error(
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
@@ -4116,9 +4109,7 @@ class TestAutomowerHeadlightSelect:
     async def test_select_entity_created(
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
     ) -> None:
-        device = make_mock_automower_device(
-            has_headlights=True, headlight_mode="ALWAYS_OFF"
-        )
+        device = make_mock_automower_device(has_headlights=True, headlight_mode="ALWAYS_OFF")
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
@@ -4129,9 +4120,7 @@ class TestAutomowerHeadlightSelect:
     async def test_select_always_on(
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
     ) -> None:
-        device = make_mock_automower_device(
-            has_headlights=True, headlight_mode="ALWAYS_ON"
-        )
+        device = make_mock_automower_device(has_headlights=True, headlight_mode="ALWAYS_ON")
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
@@ -4142,9 +4131,7 @@ class TestAutomowerHeadlightSelect:
     async def test_select_evening_only(
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
     ) -> None:
-        device = make_mock_automower_device(
-            has_headlights=True, headlight_mode="EVENING_ONLY"
-        )
+        device = make_mock_automower_device(has_headlights=True, headlight_mode="EVENING_ONLY")
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
@@ -4155,14 +4142,10 @@ class TestAutomowerHeadlightSelect:
     async def test_select_set_option_calls_api(
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
     ) -> None:
-        device = make_mock_automower_device(
-            has_headlights=True, headlight_mode="ALWAYS_OFF"
-        )
+        device = make_mock_automower_device(has_headlights=True, headlight_mode="ALWAYS_OFF")
         devices = {device.mower_id: device}
 
-        async with _setup_automower(
-            hass, automower_config_entry, devices
-        ) as mock_client:
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
             await hass.services.async_call(
                 "select",
                 "select_option",
@@ -4225,7 +4208,9 @@ class TestAutomowerHeadlightSelect:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
-            mock_client.async_set_headlight_mode.side_effect = AutomowerAuthenticationError("auth fail")
+            mock_client.async_set_headlight_mode.side_effect = AutomowerAuthenticationError(
+                "auth fail"
+            )
             with pytest.raises(HomeAssistantError):
                 await hass.services.async_call(
                     "select",
@@ -4260,8 +4245,10 @@ class TestAutomowerNoneGuards:
     ) -> None:
         """Confirm error button returns unavailable when device removed."""
         device = make_mock_automower_device(
-            is_error_confirmable=True, can_confirm_error=True,
-            mower_state=MowerState.ERROR, error_code=1,
+            is_error_confirmable=True,
+            can_confirm_error=True,
+            mower_state=MowerState.ERROR,
+            error_code=1,
         )
         devices = {device.mower_id: device}
 
@@ -4278,8 +4265,10 @@ class TestAutomowerNoneGuards:
     ) -> None:
         """Confirm error button is unavailable when device removed."""
         device = make_mock_automower_device(
-            is_error_confirmable=True, can_confirm_error=True,
-            mower_state=MowerState.ERROR, error_code=1,
+            is_error_confirmable=True,
+            can_confirm_error=True,
+            mower_state=MowerState.ERROR,
+            error_code=1,
         )
         devices = {device.mower_id: device}
 
@@ -4327,7 +4316,9 @@ class TestAutomowerNoneGuards:
         """Work area switch returns unavailable when device removed."""
         device = make_mock_automower_device(
             has_work_areas=True,
-            work_areas={1: WorkArea(work_area_id=1, name="Front Lawn", cutting_height=50, enabled=True)},
+            work_areas={
+                1: WorkArea(work_area_id=1, name="Front Lawn", cutting_height=50, enabled=True)
+            },
         )
         devices = {device.mower_id: device}
 
@@ -4345,14 +4336,17 @@ class TestAutomowerNoneGuards:
         """Work area switch returns None when work area removed from device."""
         device = make_mock_automower_device(
             has_work_areas=True,
-            work_areas={1: WorkArea(work_area_id=1, name="Front Lawn", cutting_height=50, enabled=True)},
+            work_areas={
+                1: WorkArea(work_area_id=1, name="Front Lawn", cutting_height=50, enabled=True)
+            },
         )
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
             # Update device with work_areas empty
             updated = make_mock_automower_device(
-                has_work_areas=True, work_areas={},
+                has_work_areas=True,
+                work_areas={},
             )
             coordinator = automower_config_entry.runtime_data
             coordinator.async_set_updated_data({device.mower_id: updated})
@@ -4368,7 +4362,9 @@ class TestAutomowerNoneGuards:
         """Work area switch is unavailable when device removed."""
         device = make_mock_automower_device(
             has_work_areas=True,
-            work_areas={1: WorkArea(work_area_id=1, name="Front Lawn", cutting_height=50, enabled=False)},
+            work_areas={
+                1: WorkArea(work_area_id=1, name="Front Lawn", cutting_height=50, enabled=False)
+            },
         )
         devices = {device.mower_id: device}
 
@@ -4386,12 +4382,16 @@ class TestAutomowerNoneGuards:
         """Work area switch raises on auth error."""
         device = make_mock_automower_device(
             has_work_areas=True,
-            work_areas={1: WorkArea(work_area_id=1, name="Front Lawn", cutting_height=50, enabled=False)},
+            work_areas={
+                1: WorkArea(work_area_id=1, name="Front Lawn", cutting_height=50, enabled=False)
+            },
         )
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
-            mock_client.async_set_work_area_enabled.side_effect = AutomowerAuthenticationError("auth")
+            mock_client.async_set_work_area_enabled.side_effect = AutomowerAuthenticationError(
+                "auth"
+            )
             with pytest.raises(HomeAssistantError):
                 await hass.services.async_call(
                     "switch",
@@ -4406,7 +4406,9 @@ class TestAutomowerNoneGuards:
         """Work area switch raises on generic error."""
         device = make_mock_automower_device(
             has_work_areas=True,
-            work_areas={1: WorkArea(work_area_id=1, name="Front Lawn", cutting_height=50, enabled=False)},
+            work_areas={
+                1: WorkArea(work_area_id=1, name="Front Lawn", cutting_height=50, enabled=False)
+            },
         )
         devices = {device.mower_id: device}
 

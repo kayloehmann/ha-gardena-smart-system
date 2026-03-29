@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import aiohttp
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -83,7 +85,12 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
         return await self._client.async_get_websocket_url(self._location_id)
 
     def _create_websocket(
-        self, auth, websession, devices, on_update, on_error,
+        self,
+        auth: Any,
+        websession: aiohttp.ClientSession,
+        devices: dict[str, Device],
+        on_update: Any,
+        on_error: Any,
     ) -> GardenaWebSocket:
         """Construct the Gardena WebSocket client."""
         return GardenaWebSocket(

@@ -5,7 +5,7 @@ Maps the POWER_SOCKET service to a HA switch entity.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import voluptuous as vol
 from aiogardenasmart.const import ControlType, PowerSocketActivity
@@ -44,13 +44,13 @@ async def async_setup_entry(
         await automower_setup(hass, entry, async_add_entities)
         return
 
-    coordinator = entry.runtime_data
+    coordinator = cast(GardenaCoordinator, entry.runtime_data)
     known_device_ids: set[str] = set()
 
     @callback
     def _async_add_new_entities() -> None:
         if coordinator.data is None:
-            return
+            return  # type: ignore[unreachable]
         new_entities: list[GardenaPowerSocketEntity] = []
         for device in coordinator.data.values():
             if device.power_socket is not None and device.device_id not in known_device_ids:

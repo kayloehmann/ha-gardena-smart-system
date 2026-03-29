@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 from aioautomower.exceptions import AutomowerAuthenticationError, AutomowerException
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.const import EntityCategory
@@ -28,13 +30,13 @@ async def async_setup_entry(
     if entry.data.get(CONF_API_TYPE) != API_TYPE_AUTOMOWER:
         return
 
-    coordinator: AutomowerCoordinator = entry.runtime_data
+    coordinator = cast(AutomowerCoordinator, entry.runtime_data)
     known_ids: set[str] = set()
 
     @callback
     def _async_add_new_entities() -> None:
         if coordinator.data is None:
-            return
+            return  # type: ignore[unreachable]
         new_entities: list[NumberEntity] = []
         for device in coordinator.data.values():
             # Global cutting height

@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import aiohttp
-from aioautomower import (
-    AutomowerClient,
-    AutomowerDevice,
-    AutomowerWebSocket,
-)
 from aioautomower.exceptions import (
     AutomowerAuthenticationError,
     AutomowerConnectionError,
@@ -16,6 +13,12 @@ from aioautomower.exceptions import (
 from aiogardenasmart.auth import GardenaAuth
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+
+from aioautomower import (
+    AutomowerClient,
+    AutomowerDevice,
+    AutomowerWebSocket,
+)
 
 from .base_coordinator import BaseSmartSystemCoordinator, CoordinatorConfig
 from .const import (
@@ -79,7 +82,12 @@ class AutomowerCoordinator(BaseSmartSystemCoordinator[AutomowerDevice]):
         return _AUTOMOWER_WS_URL
 
     def _create_websocket(
-        self, auth, websession, devices, on_update, on_error,
+        self,
+        auth: Any,
+        websession: aiohttp.ClientSession,
+        devices: dict[str, AutomowerDevice],
+        on_update: Any,
+        on_error: Any,
     ) -> AutomowerWebSocket:
         """Construct the Automower WebSocket client."""
         return AutomowerWebSocket(

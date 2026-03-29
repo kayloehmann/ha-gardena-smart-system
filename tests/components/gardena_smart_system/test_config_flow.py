@@ -89,9 +89,7 @@ class TestUserStep:
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "api_type"
 
-    async def test_token_revocation_failure_does_not_crash_flow(
-        self, hass: HomeAssistant
-    ) -> None:
+    async def test_token_revocation_failure_does_not_crash_flow(self, hass: HomeAssistant) -> None:
         """Token revocation errors during cleanup must not break the config flow."""
         mock_auth = AsyncMock()
         mock_auth.async_ensure_valid_token = AsyncMock()

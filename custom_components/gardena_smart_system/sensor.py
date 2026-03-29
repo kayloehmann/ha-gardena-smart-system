@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -60,13 +60,16 @@ COMMON_SENSORS: tuple[GardenaSensorDescription, ...] = (
         device_class=SensorDeviceClass.ENUM,
         entity_category=EntityCategory.DIAGNOSTIC,
         options=[
-            "ok", "low", "replace_now", "out_of_operation",
-            "charging", "no_battery", "unknown",
+            "ok",
+            "low",
+            "replace_now",
+            "out_of_operation",
+            "charging",
+            "no_battery",
+            "unknown",
         ],
         value_fn=lambda d: (
-            d.common.battery_state.lower()
-            if d.common and d.common.battery_state
-            else None
+            d.common.battery_state.lower() if d.common and d.common.battery_state else None
         ),
         exists_fn=lambda d: d.common is not None and d.common.battery_state is not None,
     ),
@@ -145,9 +148,7 @@ POWER_SOCKET_SENSORS: tuple[GardenaSensorDescription, ...] = (
         translation_key="power_socket_state",
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: (
-            d.power_socket.state.lower()
-            if d.power_socket and d.power_socket.state
-            else None
+            d.power_socket.state.lower() if d.power_socket and d.power_socket.state else None
         ),
         exists_fn=lambda d: d.power_socket is not None and d.power_socket.state is not None,
     ),
@@ -209,20 +210,22 @@ async def async_setup_entry(
         await automower_setup(hass, entry, async_add_entities)
         # Hub-level diagnostic sensors for Automower too
         coordinator = entry.runtime_data
-        async_add_entities([
-            HubDeviceCountSensor(coordinator, entry),
-            HubPollingIntervalSensor(coordinator, entry),
-        ])
+        async_add_entities(
+            [
+                HubDeviceCountSensor(coordinator, entry),
+                HubPollingIntervalSensor(coordinator, entry),
+            ]
+        )
         return
 
-    coordinator = entry.runtime_data
+    coordinator = cast(GardenaCoordinator, entry.runtime_data)
     known_keys: set[tuple[str, str]] = set()
 
     @callback
     def _async_add_new_entities() -> None:
         if coordinator.data is None:
-            return
-        new_entities: list[GardenaSensorEntity] = []
+            return  # type: ignore[unreachable]
+        new_entities: list[SensorEntity] = []
         for device in coordinator.data.values():
             for description in (
                 *COMMON_SENSORS,
@@ -236,9 +239,7 @@ async def async_setup_entry(
                     new_entities.append(GardenaSensorEntity(coordinator, device, description))
             # Per-valve remaining duration sensors
             for service_id in device.valves:
-                valve_suffix = (
-                    service_id.split(":")[-1] if ":" in service_id else service_id
-                )
+                valve_suffix = service_id.split(":")[-1] if ":" in service_id else service_id
                 dur_key = (
                     device.device_id,
                     f"valve_{valve_suffix}_remaining_duration",
@@ -246,9 +247,7 @@ async def async_setup_entry(
                 if dur_key not in known_keys:
                     known_keys.add(dur_key)
                     new_entities.append(
-                        GardenaValveRemainingDurationSensor(
-                            coordinator, device, service_id
-                        )
+                        GardenaValveRemainingDurationSensor(coordinator, device, service_id)
                     )
             # Per-valve error code sensors
             for service_id in device.valves:
@@ -277,10 +276,12 @@ async def async_setup_entry(
     _async_add_new_entities()
 
     # Hub-level diagnostic sensors (coordinator state)
-    async_add_entities([
-        HubDeviceCountSensor(coordinator, entry),
-        HubPollingIntervalSensor(coordinator, entry),
-    ])
+    async_add_entities(
+        [
+            HubDeviceCountSensor(coordinator, entry),
+            HubPollingIntervalSensor(coordinator, entry),
+        ]
+    )
 
 
 class GardenaSensorEntity(GardenaEntity, SensorEntity):
@@ -393,9 +394,7 @@ class GardenaValveStateSensor(GardenaEntity, SensorEntity):
     ) -> None:
         """Initialize the valve state sensor."""
         suffix = (
-            "valve_" + service_id.split(":")[-1] + "_state"
-            if ":" in service_id
-            else "valve_state"
+            "valve_" + service_id.split(":")[-1] + "_state" if ":" in service_id else "valve_state"
         )
         super().__init__(coordinator, device, suffix)
         self._service_id = service_id
@@ -469,7 +468,11 @@ class HubDeviceCountSensor(CoordinatorEntity, SensorEntity):
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 0
 
-    def __init__(self, coordinator: BaseSmartSystemCoordinator, entry: GardenaConfigEntry) -> None:
+    def __init__(
+        self,
+        coordinator: BaseSmartSystemCoordinator[Any],
+        entry: GardenaConfigEntry,
+    ) -> None:
         """Initialize the hub device count sensor."""
         super().__init__(coordinator)
         self._attr_unique_id = f"hub_{entry.entry_id}_device_count"
@@ -490,7 +493,11 @@ class HubPollingIntervalSensor(CoordinatorEntity, SensorEntity):
     _attr_native_unit_of_measurement = UnitOfTime.SECONDS
     _attr_suggested_display_precision = 0
 
-    def __init__(self, coordinator: BaseSmartSystemCoordinator, entry: GardenaConfigEntry) -> None:
+    def __init__(
+        self,
+        coordinator: BaseSmartSystemCoordinator[Any],
+        entry: GardenaConfigEntry,
+    ) -> None:
         """Initialize the hub polling interval sensor."""
         super().__init__(coordinator)
         self._attr_unique_id = f"hub_{entry.entry_id}_polling_interval"

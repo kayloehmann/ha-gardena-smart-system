@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 from aiogardenasmart.const import (
     MowerActivity,
     PowerSocketActivity,
@@ -73,13 +75,13 @@ async def async_setup_entry(
     if entry.data.get(CONF_API_TYPE) == API_TYPE_AUTOMOWER:
         return
 
-    coordinator: GardenaCoordinator = entry.runtime_data
+    coordinator = cast(GardenaCoordinator, entry.runtime_data)
     known_ids: set[str] = set()
 
     @callback
     def _async_add_new_entities() -> None:
         if coordinator.data is None:
-            return
+            return  # type: ignore[unreachable]
         new_entities: list[EventEntity] = []
         for device in coordinator.data.values():
             if device.mower is not None:
@@ -109,7 +111,6 @@ async def async_setup_entry(
 
 class GardenaMowerEventEntity(GardenaEntity, EventEntity):
     """Fires events on Gardena mower state transitions."""
-
 
     _attr_event_types = _MOWER_EVENT_TYPES
     _attr_translation_key = "gardena_mower_event"
@@ -170,7 +171,6 @@ class GardenaMowerEventEntity(GardenaEntity, EventEntity):
 
 class GardenaValveEventEntity(GardenaEntity, EventEntity):
     """Fires events on Gardena valve state transitions."""
-
 
     _attr_event_types = _VALVE_EVENT_TYPES
     _attr_translation_key = "gardena_valve_event"
@@ -233,7 +233,6 @@ class GardenaValveEventEntity(GardenaEntity, EventEntity):
 
 class GardenaPowerSocketEventEntity(GardenaEntity, EventEntity):
     """Fires events on Gardena power socket state transitions."""
-
 
     _attr_event_types = _POWER_SOCKET_EVENT_TYPES
     _attr_translation_key = "gardena_power_socket_event"

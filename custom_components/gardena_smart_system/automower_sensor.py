@@ -5,8 +5,15 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
+from typing import cast
 
-from aioautomower.const import MowerActivity, MowerMode, MowerState, OverrideAction, RestrictedReason
+from aioautomower.const import (
+    MowerActivity,
+    MowerMode,
+    MowerState,
+    OverrideAction,
+    RestrictedReason,
+)
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -303,13 +310,13 @@ async def async_setup_entry(
     if entry.data.get(CONF_API_TYPE) != API_TYPE_AUTOMOWER:
         return
 
-    coordinator: AutomowerCoordinator = entry.runtime_data
+    coordinator = cast(AutomowerCoordinator, entry.runtime_data)
     known_ids: set[str] = set()
 
     @callback
     def _async_add_new_entities() -> None:
         if coordinator.data is None:
-            return
+            return  # type: ignore[unreachable]
         new_entities: list[AutomowerSensorEntity] = []
         for device in coordinator.data.values():
             for desc in SENSOR_DESCRIPTIONS:

@@ -72,9 +72,7 @@ class TestGardenaMowerEvent:
         device = make_mock_device(has_sensor=False, has_mower=True)
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             entity_reg = er.async_get(hass)
             entries = [
@@ -95,9 +93,7 @@ class TestGardenaMowerEvent:
         device = make_mock_device(has_mower=False)
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             entity_reg = er.async_get(hass)
             entries = [
@@ -121,9 +117,7 @@ class TestGardenaMowerEvent:
         device.mower.state = "OK"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
 
@@ -152,18 +146,14 @@ class TestGardenaMowerEvent:
             for p in reversed(patches):
                 p.__exit__(None, None, None)
 
-    async def test_mower_event_error(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
+    async def test_mower_event_error(self, hass: HomeAssistant, mock_config_entry: object) -> None:
         """Mower event fires error when state transitions to ERROR."""
         device = make_mock_device(has_sensor=False, has_mower=True)
         device.mower.activity = "OK_CUTTING"
         device.mower.state = "OK"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
 
@@ -198,9 +188,7 @@ class TestGardenaMowerEvent:
         device.mower.state = "ERROR"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
 
@@ -226,18 +214,14 @@ class TestGardenaMowerEvent:
             for p in reversed(patches):
                 p.__exit__(None, None, None)
 
-    async def test_mower_event_parked(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
+    async def test_mower_event_parked(self, hass: HomeAssistant, mock_config_entry: object) -> None:
         """Mower event fires parked on parking activity."""
         device = make_mock_device(has_sensor=False, has_mower=True)
         device.mower.activity = "OK_CUTTING"
         device.mower.state = "OK"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
 
@@ -274,9 +258,7 @@ class TestGardenaValveEvent:
         device = make_mock_device(valve_count=2, has_sensor=False)
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             entity_reg = er.async_get(hass)
             valve_events = [
@@ -301,9 +283,7 @@ class TestGardenaValveEvent:
         device.valves[vid].state = "OK"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
 
@@ -345,9 +325,7 @@ class TestGardenaValveEvent:
         device.valves[vid].state = "OK"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
 
@@ -378,9 +356,7 @@ class TestGardenaValveEvent:
             for p in reversed(patches):
                 p.__exit__(None, None, None)
 
-    async def test_valve_event_error(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
+    async def test_valve_event_error(self, hass: HomeAssistant, mock_config_entry: object) -> None:
         """Valve event fires error on state transition to ERROR."""
         device = make_mock_device(valve_count=1, has_sensor=False)
         vid = f"{device.device_id}:1"
@@ -388,9 +364,7 @@ class TestGardenaValveEvent:
         device.valves[vid].state = "OK"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
 
@@ -432,9 +406,7 @@ class TestGardenaPowerSocketEvent:
         device = make_mock_device(has_sensor=False, has_power_socket=True)
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             entity_reg = er.async_get(hass)
             ps_events = [
@@ -458,9 +430,7 @@ class TestGardenaPowerSocketEvent:
         device.power_socket.state = "OK"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
 
@@ -497,9 +467,7 @@ class TestGardenaPowerSocketEvent:
         device.power_socket.state = "OK"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
 
@@ -534,9 +502,7 @@ class TestGardenaPowerSocketEvent:
         device = make_mock_device(has_power_socket=False)
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             entity_reg = er.async_get(hass)
             ps_events = [
@@ -560,9 +526,7 @@ class TestGardenaPowerSocketEvent:
         device.power_socket.state = "OK"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
 
@@ -599,9 +563,7 @@ class TestGardenaPowerSocketEvent:
         device.power_socket.state = "ERROR"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
 
@@ -642,9 +604,7 @@ class TestGardenaEventMowerTransitions:
         device.mower.state = "OK"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
             updated = _copy_device(device)
@@ -656,8 +616,10 @@ class TestGardenaEventMowerTransitions:
 
             entity_reg = er.async_get(hass)
             event_entries = [
-                e for e in entity_reg.entities.values()
-                if e.platform == "gardena_smart_system" and e.domain == "event"
+                e
+                for e in entity_reg.entities.values()
+                if e.platform == "gardena_smart_system"
+                and e.domain == "event"
                 and "mower_event" in (e.unique_id or "")
             ]
             state = hass.states.get(event_entries[0].entity_id)
@@ -676,9 +638,7 @@ class TestGardenaEventMowerTransitions:
         device.mower.state = "OK"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
             updated = _copy_device(device)
@@ -690,8 +650,10 @@ class TestGardenaEventMowerTransitions:
 
             entity_reg = er.async_get(hass)
             event_entries = [
-                e for e in entity_reg.entities.values()
-                if e.platform == "gardena_smart_system" and e.domain == "event"
+                e
+                for e in entity_reg.entities.values()
+                if e.platform == "gardena_smart_system"
+                and e.domain == "event"
                 and "mower_event" in (e.unique_id or "")
             ]
             state = hass.states.get(event_entries[0].entity_id)
@@ -710,9 +672,7 @@ class TestGardenaEventMowerTransitions:
         device.mower.state = "OK"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
             updated = _copy_device(device)
@@ -724,8 +684,10 @@ class TestGardenaEventMowerTransitions:
 
             entity_reg = er.async_get(hass)
             event_entries = [
-                e for e in entity_reg.entities.values()
-                if e.platform == "gardena_smart_system" and e.domain == "event"
+                e
+                for e in entity_reg.entities.values()
+                if e.platform == "gardena_smart_system"
+                and e.domain == "event"
                 and "mower_event" in (e.unique_id or "")
             ]
             state = hass.states.get(event_entries[0].entity_id)
@@ -735,18 +697,14 @@ class TestGardenaEventMowerTransitions:
             for p in reversed(patches):
                 p.__exit__(None, None, None)
 
-    async def test_mower_event_paused(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
+    async def test_mower_event_paused(self, hass: HomeAssistant, mock_config_entry: object) -> None:
         """Mower event fires paused on PAUSED activity."""
         device = make_mock_device(has_sensor=False, has_mower=True)
         device.mower.activity = "OK_CUTTING"
         device.mower.state = "OK"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
             updated = _copy_device(device)
@@ -758,8 +716,10 @@ class TestGardenaEventMowerTransitions:
 
             entity_reg = er.async_get(hass)
             event_entries = [
-                e for e in entity_reg.entities.values()
-                if e.platform == "gardena_smart_system" and e.domain == "event"
+                e
+                for e in entity_reg.entities.values()
+                if e.platform == "gardena_smart_system"
+                and e.domain == "event"
                 and "mower_event" in (e.unique_id or "")
             ]
             state = hass.states.get(event_entries[0].entity_id)
@@ -778,9 +738,7 @@ class TestGardenaEventMowerTransitions:
         device.mower.state = "OK"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
             updated = _copy_device(device)
@@ -792,8 +750,10 @@ class TestGardenaEventMowerTransitions:
 
             entity_reg = er.async_get(hass)
             event_entries = [
-                e for e in entity_reg.entities.values()
-                if e.platform == "gardena_smart_system" and e.domain == "event"
+                e
+                for e in entity_reg.entities.values()
+                if e.platform == "gardena_smart_system"
+                and e.domain == "event"
                 and "mower_event" in (e.unique_id or "")
             ]
             state = hass.states.get(event_entries[0].entity_id)
@@ -817,9 +777,7 @@ class TestGardenaValveEventErrorCleared:
         device.valves[vid].state = "ERROR"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
 
@@ -837,8 +795,10 @@ class TestGardenaValveEventErrorCleared:
 
             entity_reg = er.async_get(hass)
             valve_events = [
-                e for e in entity_reg.entities.values()
-                if e.platform == "gardena_smart_system" and e.domain == "event"
+                e
+                for e in entity_reg.entities.values()
+                if e.platform == "gardena_smart_system"
+                and e.domain == "event"
                 and "valve" in (e.unique_id or "")
             ]
             state = hass.states.get(valve_events[0].entity_id)
@@ -862,9 +822,7 @@ class TestGardenaEventDeviceNone:
         device.valves[vid].state = "OK"
         devices = {device.device_id: device}
 
-        _mock_client, patches = await _setup_with_devices_ctx(
-            hass, mock_config_entry, devices
-        )
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
         try:
             coordinator = mock_config_entry.runtime_data
             # Remove device from coordinator data
@@ -874,4 +832,3 @@ class TestGardenaEventDeviceNone:
         finally:
             for p in reversed(patches):
                 p.__exit__(None, None, None)
-

@@ -556,9 +556,7 @@ class TestValveErrorSensor:
             await _setup_integration(hass, mock_config_entry, mock_client)
 
             entity_reg = er.async_get(hass)
-            entity_reg.async_update_entity(
-                "sensor.my_sensor_valve_error_code", disabled_by=None
-            )
+            entity_reg.async_update_entity("sensor.my_sensor_valve_error_code", disabled_by=None)
             await hass.config_entries.async_reload(mock_config_entry.entry_id)
             await hass.async_block_till_done()
 
@@ -587,9 +585,7 @@ class TestValveErrorSensor:
             await _setup_integration(hass, mock_config_entry, mock_client)
 
             entity_reg = er.async_get(hass)
-            entity_reg.async_update_entity(
-                "sensor.my_sensor_valve_error_code", disabled_by=None
-            )
+            entity_reg.async_update_entity("sensor.my_sensor_valve_error_code", disabled_by=None)
             await hass.config_entries.async_reload(mock_config_entry.entry_id)
             await hass.async_block_till_done()
 
@@ -922,9 +918,7 @@ class TestPowerSocketRemainingDuration:
         devices = {device.device_id: device}
         await _setup_with_devices(hass, mock_config_entry, devices)
 
-        state = hass.states.get(
-            "sensor.my_sensor_remaining_power_time"
-        )
+        state = hass.states.get("sensor.my_sensor_remaining_power_time")
         assert state is not None
         assert state.state == "300"
 
@@ -936,9 +930,7 @@ class TestPowerSocketRemainingDuration:
         devices = {device.device_id: device}
         await _setup_with_devices(hass, mock_config_entry, devices)
 
-        state = hass.states.get(
-            "sensor.my_sensor_remaining_power_time"
-        )
+        state = hass.states.get("sensor.my_sensor_remaining_power_time")
         assert state is not None
         assert state.state == "unknown"
 
@@ -949,18 +941,14 @@ class TestPowerSocketRemainingDuration:
         devices = {device.device_id: device}
         await _setup_with_devices(hass, mock_config_entry, devices)
 
-        state = hass.states.get(
-            "sensor.my_sensor_remaining_power_time"
-        )
+        state = hass.states.get("sensor.my_sensor_remaining_power_time")
         assert state is None
 
 
 class TestBatteryStateSensor:
     """P4: Gardena battery state enum sensor."""
 
-    async def test_battery_state_ok(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
+    async def test_battery_state_ok(self, hass: HomeAssistant, mock_config_entry: object) -> None:
         device = make_mock_device()
         device.common.battery_state = "OK"
         devices = {device.device_id: device}
@@ -970,9 +958,7 @@ class TestBatteryStateSensor:
         assert state is not None
         assert state.state == "ok"
 
-    async def test_battery_state_low(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
+    async def test_battery_state_low(self, hass: HomeAssistant, mock_config_entry: object) -> None:
         device = make_mock_device()
         device.common.battery_state = "LOW"
         devices = {device.device_id: device}
@@ -982,9 +968,7 @@ class TestBatteryStateSensor:
         assert state is not None
         assert state.state == "low"
 
-    async def test_battery_state_none(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
+    async def test_battery_state_none(self, hass: HomeAssistant, mock_config_entry: object) -> None:
         device = make_mock_device()
         device.common.battery_state = None
         devices = {device.device_id: device}
@@ -992,10 +976,7 @@ class TestBatteryStateSensor:
 
         # No entity created when battery_state is None (exists_fn)
         entity_reg = er.async_get(hass)
-        found = [
-            e for e in entity_reg.entities.values()
-            if "battery_state" in (e.unique_id or "")
-        ]
+        found = [e for e in entity_reg.entities.values() if "battery_state" in (e.unique_id or "")]
         assert len(found) == 0
 
 
@@ -1037,7 +1018,8 @@ class TestSensorNoneGuards:
             # Entity becomes unavailable when device is gone
             entity_reg = er.async_get(hass)
             valve_sensors = [
-                e for e in entity_reg.entities.values()
+                e
+                for e in entity_reg.entities.values()
                 if "remaining_duration" in (e.unique_id or "")
             ]
             if valve_sensors:
@@ -1196,9 +1178,7 @@ class TestPowerSocketStateSensor:
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         """Power socket state sensor is created with correct value."""
-        device = make_mock_device(
-            "socket-dev", "SN-SOCKET", "My Socket", has_power_socket=True
-        )
+        device = make_mock_device("socket-dev", "SN-SOCKET", "My Socket", has_power_socket=True)
         devices = {device.device_id: device}
         await _setup_with_devices(hass, mock_config_entry, devices)
 
