@@ -22,6 +22,7 @@ from .const import DOMAIN, MIN_COMMAND_INTERVAL_SECONDS, OPT_POLL_INTERVAL_MINUT
 
 _LOGGER = logging.getLogger(__name__)
 
+
 @dataclass(frozen=True)
 class CoordinatorConfig:
     """Configuration that varies between Gardena and Automower coordinators."""

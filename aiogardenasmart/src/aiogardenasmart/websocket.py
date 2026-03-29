@@ -147,9 +147,7 @@ class GardenaWebSocket:
         try:
             message: dict[str, Any] = json.loads(raw)
         except json.JSONDecodeError:
-            _LOGGER.warning(
-                "Gardena WebSocket: received non-JSON message: %.200s", raw
-            )
+            _LOGGER.warning("Gardena WebSocket: received non-JSON message: %.200s", raw)
             return
 
         msg_type: str = str(message.get("type", ""))

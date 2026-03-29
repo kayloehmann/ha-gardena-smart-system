@@ -152,8 +152,6 @@ class AutomowerWebSocket:
         try:
             device.update_from_api(message)
         except Exception:
-            _LOGGER.exception(
-                "Automower WebSocket: error processing update for mower %s", mower_id
-            )
+            _LOGGER.exception("Automower WebSocket: error processing update for mower %s", mower_id)
             return
         self._on_update(mower_id, device)
