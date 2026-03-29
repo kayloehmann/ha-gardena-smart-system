@@ -319,6 +319,14 @@ class TestShutdown:
         # Should not raise
         await coordinator.async_shutdown()
 
+    async def test_shutdown_token_revocation_failure_does_not_raise(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        coordinator._ws = None
+        coordinator._auth.async_revoke_token = AsyncMock(side_effect=Exception("network down"))
+        # Should not raise
+        await coordinator.async_shutdown()
+
 
 class TestRateLimitBackoff:
     """Test rate limit handling in _async_update_data."""

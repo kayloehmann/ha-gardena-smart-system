@@ -310,7 +310,10 @@ class BaseSmartSystemCoordinator(DataUpdateCoordinator[dict[str, _DeviceT]], Gen
             await self._ws.async_disconnect()
             self._ws = None
         self._ws_connected = False
-        await self._auth.async_revoke_token()
+        try:
+            await self._auth.async_revoke_token()
+        except Exception:  # noqa: BLE001
+            _LOGGER.debug("Token revocation failed during shutdown")
 
     def check_command_throttle(self) -> None:
         """Raise if a command is sent too soon after the previous one."""
