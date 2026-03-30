@@ -116,6 +116,8 @@ If you installed via HACS, you can also uninstall the integration entirely:
 | Power socket remaining time | `duration` | s | -- | Enabled |
 | Power socket state | -- | -- | Diagnostic | Enabled |
 | Power socket last error | -- | -- | Diagnostic | **Disabled** |
+| Remaining watering time (per valve) | `duration` | s | -- | Enabled |
+| Valve error code (per valve) | -- | -- | Diagnostic | **Disabled** |
 | Valve state (per valve) | -- | -- | Diagnostic | Enabled |
 | Valve set error code | -- | -- | Diagnostic | **Disabled** |
 
@@ -124,7 +126,7 @@ If you installed via HACS, you can also uninstall the integration entirely:
 | Entity | Device Class | Category | Default |
 |--------|-------------|----------|---------|
 | Battery low | `battery` | Diagnostic | Enabled |
-| Valve error | `problem` | Diagnostic | **Disabled** |
+| Valve error | `problem` | Diagnostic | Enabled |
 | Mower error | `problem` | Diagnostic | Enabled |
 | RF link | `connectivity` | Diagnostic | Enabled |
 
@@ -134,7 +136,7 @@ If you installed via HACS, you can also uninstall the integration entirely:
 |--------|-------------|----------|
 | Valve | `water` | Open, Close |
 
-One valve entity is created per physical valve. Smart Water Control devices have a single valve, while Smart Irrigation Control devices create one valve entity per zone. Opening a valve starts watering for 60 minutes (default). Use the `start_watering` service for a custom duration.
+One valve entity is created per physical valve. Smart Water Control devices have a single valve, while Smart Irrigation Control devices create one valve entity per zone. Valve entities use the name configured in the Gardena app (e.g. "Rasen vorne"); if no name is set, they fall back to "Zone 1", "Zone 2", etc. Opening a valve starts watering for 60 minutes (default). Use the `start_watering` service for a custom duration.
 
 ### Gardena Switch
 
@@ -150,7 +152,7 @@ Created for Gardena Smart Power Adapter devices. Supports turn on (indefinitely)
 |--------|----------|
 | Mower | Start mowing, Dock, Pause |
 
-Created for Gardena SILENO robotic mowers. Reports current activity: mowing, docked, paused, or error. Exposes `activity`, `last_error_code`, and `battery_state` as extra state attributes for use in frontend cards and automations.
+Created for Gardena SILENO robotic mowers. Reports current activity: mowing, docked, paused, or error.
 
 ---
 
@@ -635,7 +637,7 @@ Key quality features:
 
 ## Translations
 
-The integration is fully translated into **30 languages** with 191 strings each:
+The integration is fully translated into **31 languages**:
 
 | Language | Code | Language | Code |
 |----------|------|----------|------|
