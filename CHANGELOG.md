@@ -1,0 +1,174 @@
+# Changelog
+
+All notable changes to the Gardena Smart System integration for Home Assistant.
+
+## [1.5.4] - 2026-03-30
+
+### Improved
+- Complete `strings.json` — added all missing translation keys (valve sensors, power socket error, hub sensors, event entities with event_type translations)
+- Icons for 16 previously icon-less entities (valve state, battery state, hub sensors, all event entities, and more)
+
+### Changed
+- Valve error binary sensor is now **enabled by default** (safety-relevant signal)
+
+## [1.5.3] - 2026-03-30
+
+### Improved
+- Per-valve sensors and events now display the actual valve name from the Gardena API (e.g. "Remaining watering time Rasen vorne") instead of generic "Zone 1" labels
+- Falls back to "Zone X" when no API name is available
+- Updated all 31 translation files to remove redundant localized "zone" word
+
+## [1.5.2] - 2026-03-29
+
+### Fixed
+- Per-zone valve sensors now include zone number in entity names ([#9](https://github.com/kayloehmann/ha-gardena-smart-system/issues/9))
+- Remaining duration sensors reset to unavailable when device is off/closed ([#10](https://github.com/kayloehmann/ha-gardena-smart-system/issues/10))
+- Bumped CI actions to Node.js 24 compatible versions
+- Fixed ruff format and mypy strict across all source files
+
+## [1.5.1] - 2026-03-29
+
+### Fixed
+- Guard `async_revoke_token` in coordinator shutdown to prevent crash if token is already expired
+
+## [1.5.0] - 2026-03-29
+
+### Added
+- Event entities for Gardena devices (mower, valve, power socket state transitions)
+- Graduated rate-limit backoff: 5 min → 10 → 20 → 40 → 60 min (replaces rigid 1h cooldown)
+
+### Changed
+- Typed `GardenaConfigEntry` with generic coordinator parameter
+- Hub entity constructors typed with `BaseSmartSystemCoordinator`
+- Removed `extra_state_attributes` from Gardena lawn mower and valve entities (replaced by dedicated sensor entities)
+
+## [1.4.0] - 2026-03-29
+
+### Added
+- Shared `BaseSmartSystemCoordinator` base class extracted from both coordinators (~200 lines of duplicated logic unified)
+- 5 new sensors: mower state, power socket state, valve state (per zone), valve set error code, Automower operating mode
+
+### Changed
+- `GardenaCoordinator` reduced from 294 to ~80 lines
+- `AutomowerCoordinator` reduced from 265 to ~70 lines
+- Public properties replace private attribute access (`ws_connected`, `last_command_time`, `stale_miss_counts`)
+
+## [1.3.1] - 2026-03-28
+
+### Fixed
+- Coordinator crash when data is None on first update
+- Translation diacritics in Czech, Slovak, and other languages
+- Added 27 coverage tests for edge cases
+
+## [1.3.0] - 2026-03-28
+
+### Added
+- 22 new translations for full European + Asian coverage (30 languages total)
+- Security hardening from STRIDE threat model audit (WebSocket error isolation, log truncation, OAuth token revocation)
+- 6 new features including battery state enum sensor, power socket remaining duration, and more
+
+## [1.2.0] - 2026-03-27
+
+### Added
+- Hub dashboard entities: device count and polling interval sensors per config entry
+- Virtual "hub" device in the device registry for integration-level diagnostics
+
+## [1.1.0] - 2026-03-27
+
+### Added
+- Automower schedule override number entity
+- Automower work area switches and cutting height per work area
+- Automower confirm error button
+- Translations for all 7 initially supported languages
+
+## [1.0.0] - 2026-03-26
+
+### Added
+- Automower event entities for state transition tracking
+- 99% test coverage (422 tests)
+- 5 new features completing the Automower platform
+
+### Changed
+- First stable release
+
+## [0.9.0] - 2026-03-26
+
+### Added
+- Automower event entities for mower state transitions (started_mowing, stopped, charging, parked, error, etc.)
+
+## [0.8.0] - 2026-03-26
+
+### Improved
+- Maximized test coverage to 99% (367 tests, 2 unreachable lines remaining)
+
+## [0.7.0] - 2026-03-25
+
+### Added
+- Comprehensive test coverage for repair flow, init, and entity guards
+- Translations for fr, nl, sv, it, es, da, pl + German
+
+## [0.6.0] - 2026-03-24
+
+### Added
+- 7 language translations (French, Dutch, Swedish, Italian, Spanish, Danish, Polish)
+- German translation
+
+## [0.5.0] - 2026-03-22
+
+### Added
+- Automower GPS device tracker (disabled by default for privacy)
+- Automower mowing schedule calendar (read-only)
+- Automower headlight mode select control
+- Automower cutting height number control
+- Automower stay-out zone switches
+
+## [0.4.0] - 2026-03-22
+
+### Added
+- Platinum quality scale compliance (strict typing, diagnostics, repair flows)
+- Gold quality scale features (stale device cleanup, reconfiguration flow)
+
+## [0.3.0] - 2026-03-22
+
+### Added
+- Improved UX with entity categories, device classes, and proper defaults
+- Additional sensors for Gardena devices
+- Entity hardening with availability checks
+
+## [0.2.0] - 2026-03-21
+
+### Added
+- **Automower Connect API** support — full-featured Husqvarna Automower integration
+- Lawn mower, sensor, binary sensor, and switch platforms for Automower
+- Dual-API architecture (Gardena + Automower through single integration)
+
+## [0.1.0] - 2026-03-18
+
+### Added
+- Initial release
+- Gardena Smart System API support (sensors, valves, power sockets, SILENO mowers)
+- OAuth2 authentication via Husqvarna Developer Portal
+- Real-time WebSocket updates with polling fallback
+- Adaptive polling, command throttling, and rate limit handling
+- Config flow with multi-location support
+
+[1.5.4]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.4
+[1.5.3]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.3
+[1.5.2]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.2
+[1.5.1]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.1
+[1.5.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.0
+[1.4.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.4.0
+[1.3.1]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.3.1
+[1.3.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.3.0
+[1.2.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.2.0
+[1.1.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.1.0
+[1.0.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.0.0
+[0.9.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v0.9.0
+[0.8.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v0.8.0
+[0.7.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v0.7.0
+[0.6.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v0.6.0
+[0.5.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v0.5.0
+[0.4.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v0.4.0
+[0.3.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v0.3.0
+[0.2.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v0.2.0
+[0.1.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v0.1.0
