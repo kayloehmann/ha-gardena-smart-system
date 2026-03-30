@@ -216,11 +216,26 @@
       "power_socket_remaining_duration": {
         "name": "Remaining power time"
       },
+      "power_socket_last_error_code": {
+        "name": "Last error code"
+      },
+      "valve_remaining_duration": {
+        "name": "Remaining watering time {zone}"
+      },
+      "valve_last_error_code": {
+        "name": "Valve error code {zone}"
+      },
       "valve_state": {
         "name": "Valve state {zone}"
       },
       "valve_set_last_error_code": {
         "name": "Valve set error code"
+      },
+      "hub_device_count": {
+        "name": "Device count"
+      },
+      "hub_polling_interval": {
+        "name": "Polling interval"
       }
     },
     "binary_sensor": {
@@ -238,6 +253,12 @@
       },
       "automower_connected": {
         "name": "Connected"
+      },
+      "rf_link_online": {
+        "name": "RF link"
+      },
+      "hub_websocket_connected": {
+        "name": "WebSocket connected"
       }
     },
     "switch": {
@@ -249,6 +270,9 @@
       },
       "automower_stay_out_zone": {
         "name": "Stay-out zone: {zone_name}"
+      },
+      "automower_work_area": {
+        "name": "Work area: {work_area}"
       }
     },
     "select": {
@@ -281,6 +305,9 @@
       },
       "automower_work_area_cutting_height": {
         "name": "Cutting height: {work_area}"
+      },
+      "automower_schedule_override": {
+        "name": "Schedule override"
       }
     },
     "device_tracker": {
@@ -291,6 +318,75 @@
     "calendar": {
       "automower_schedule": {
         "name": "Mowing schedule"
+      }
+    },
+    "button": {
+      "automower_confirm_error": {
+        "name": "Confirm error"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "name": "Mower event",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_cutting": "Started cutting",
+              "stopped": "Stopped",
+              "leaving": "Leaving",
+              "searching": "Searching",
+              "charging": "Charging",
+              "parked": "Parked",
+              "paused": "Paused",
+              "error": "Error",
+              "error_cleared": "Error cleared"
+            }
+          }
+        }
+      },
+      "gardena_valve_event": {
+        "name": "Valve event {zone}",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_watering": "Started watering",
+              "stopped_watering": "Stopped watering",
+              "error": "Error",
+              "error_cleared": "Error cleared"
+            }
+          }
+        }
+      },
+      "gardena_power_socket_event": {
+        "name": "Power socket event",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "turned_on": "Turned on",
+              "turned_off": "Turned off",
+              "error": "Error",
+              "error_cleared": "Error cleared"
+            }
+          }
+        }
+      },
+      "automower_event": {
+        "name": "Mower event",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "started_mowing": "Started mowing",
+              "stopped": "Stopped",
+              "going_home": "Going home",
+              "charging": "Charging",
+              "leaving": "Leaving station",
+              "parked": "Parked",
+              "paused": "Paused",
+              "error": "Error",
+              "error_cleared": "Error cleared"
+            }
+          }
+        }
       }
     }
   },

@@ -126,7 +126,7 @@ class TestBatteryLowUniqueId:
 class TestValveErrorBinarySensor:
     """Test the valve_error binary sensor."""
 
-    async def test_valve_error_created_and_disabled_by_default(
+    async def test_valve_error_created_and_enabled_by_default(
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
         device = make_mock_device(valve_count=1)
@@ -135,7 +135,7 @@ class TestValveErrorBinarySensor:
         entity_reg = er.async_get(hass)
         entry = entity_reg.async_get("binary_sensor.my_sensor_valve_error")
         assert entry is not None
-        assert entry.disabled_by is not None
+        assert entry.disabled_by is None
 
     async def test_valve_error_off_when_state_ok(
         self, hass: HomeAssistant, mock_config_entry: object
@@ -143,14 +143,7 @@ class TestValveErrorBinarySensor:
         device = make_mock_device(valve_count=1)
         await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
 
-        # Enable the entity
         entity_reg = er.async_get(hass)
-        entity_reg.async_update_entity("binary_sensor.my_sensor_valve_error", disabled_by=None)
-        await hass.config_entries.async_reload(mock_config_entry.entry_id)
-        await hass.async_block_till_done()
-
-        # Re-setup because the reload cleared everything
-        # Instead, let's verify via the registry that it was created correctly
         entry = entity_reg.async_get("binary_sensor.my_sensor_valve_error")
         assert entry is not None
         assert entry.unique_id == "SN001_valve_error"

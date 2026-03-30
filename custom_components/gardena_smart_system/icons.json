@@ -60,6 +60,54 @@
       },
       "automower_state": {
         "default": "mdi:information-outline"
+      },
+      "automower_last_seen": {
+        "default": "mdi:clock-check-outline"
+      },
+      "automower_mode": {
+        "default": "mdi:cog-outline"
+      },
+      "automower_planner_override": {
+        "default": "mdi:calendar-alert"
+      },
+      "automower_total_charging_time": {
+        "default": "mdi:battery-clock-outline"
+      },
+      "battery_level": {
+        "default": "mdi:battery"
+      },
+      "battery_state": {
+        "default": "mdi:battery-heart-variant"
+      },
+      "mower_state": {
+        "default": "mdi:information-outline"
+      },
+      "power_socket_remaining_duration": {
+        "default": "mdi:timer-outline"
+      },
+      "power_socket_state": {
+        "default": "mdi:power-socket-eu"
+      },
+      "power_socket_last_error_code": {
+        "default": "mdi:alert-circle"
+      },
+      "valve_remaining_duration": {
+        "default": "mdi:timer-outline"
+      },
+      "valve_last_error_code": {
+        "default": "mdi:alert-circle"
+      },
+      "valve_state": {
+        "default": "mdi:pipe-valve"
+      },
+      "valve_set_last_error_code": {
+        "default": "mdi:alert-circle"
+      },
+      "hub_device_count": {
+        "default": "mdi:devices"
+      },
+      "hub_polling_interval": {
+        "default": "mdi:update"
       }
     },
     "binary_sensor": {
@@ -148,6 +196,20 @@
     "calendar": {
       "automower_schedule": {
         "default": "mdi:calendar-clock"
+      }
+    },
+    "event": {
+      "gardena_mower_event": {
+        "default": "mdi:robot-mower"
+      },
+      "gardena_valve_event": {
+        "default": "mdi:sprinkler"
+      },
+      "gardena_power_socket_event": {
+        "default": "mdi:power-socket-eu"
+      },
+      "automower_event": {
+        "default": "mdi:robot-mower"
       }
     }
   },

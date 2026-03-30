@@ -55,7 +55,6 @@ BINARY_SENSORS: tuple[GardenaBinarySensorDescription, ...] = (
         translation_key="valve_error",
         device_class=BinarySensorDeviceClass.PROBLEM,
         entity_category=EntityCategory.DIAGNOSTIC,
-        entity_registry_enabled_default=False,
         is_on_fn=lambda d: (
             any(v.state in (ServiceState.WARNING, ServiceState.ERROR) for v in d.valves.values())
             if d.valves
