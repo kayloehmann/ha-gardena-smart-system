@@ -244,16 +244,16 @@
         "name": "Siste feilkode"
       },
       "valve_last_error_code": {
-        "name": "Ventilens feilkode sone {zone}"
+        "name": "Ventilens feilkode {zone}"
       },
       "valve_state": {
-        "name": "Ventiltilstand sone {zone}"
+        "name": "Ventiltilstand {zone}"
       },
       "valve_set_last_error_code": {
         "name": "Ventilgruppe feilkode"
       },
       "valve_remaining_duration": {
-        "name": "Gjenstående vanningstid sone {zone}"
+        "name": "Gjenstående vanningstid {zone}"
       },
       "hub_device_count": {
         "name": "Antall enheter"
@@ -369,7 +369,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Ventilhendelse sone {zone}",
+        "name": "Ventilhendelse {zone}",
         "state_attributes": {
           "event_type": {
             "state": {

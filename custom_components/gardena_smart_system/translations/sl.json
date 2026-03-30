@@ -244,16 +244,16 @@
         "name": "Zadnja koda napake"
       },
       "valve_last_error_code": {
-        "name": "Koda napake ventila cona {zone}"
+        "name": "Koda napake ventila {zone}"
       },
       "valve_state": {
-        "name": "Stanje ventila cona {zone}"
+        "name": "Stanje ventila {zone}"
       },
       "valve_set_last_error_code": {
         "name": "Koda napake skupine ventilov"
       },
       "valve_remaining_duration": {
-        "name": "Preostali čas zalivanja cona {zone}"
+        "name": "Preostali čas zalivanja {zone}"
       },
       "hub_device_count": {
         "name": "Število naprav"
@@ -369,7 +369,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Dogodek ventila cona {zone}",
+        "name": "Dogodek ventila {zone}",
         "state_attributes": {
           "event_type": {
             "state": {

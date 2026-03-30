@@ -181,9 +181,10 @@ class GardenaValveEventEntity(GardenaEntity, EventEntity):
         suffix = f"valve_{zone}_event" if zone else "valve_event"
         super().__init__(coordinator, device, suffix)
         self._service_id = service_id
-        if zone:
-            self._attr_translation_placeholders = {"zone": zone}
         valve = device.valves.get(service_id)
+        if zone:
+            name = valve.name if valve and valve.name else f"Zone {zone}"
+            self._attr_translation_placeholders = {"zone": name}
         self._prev_activity = valve.activity if valve else None
         self._prev_state = valve.state if valve else None
         self._prev_error = (valve.state in _ERROR_STATES) if valve else False

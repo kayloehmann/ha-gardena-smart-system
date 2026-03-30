@@ -244,16 +244,16 @@
         "name": "Senaste felkod"
       },
       "valve_last_error_code": {
-        "name": "Ventilfelkod zon {zone}"
+        "name": "Ventilfelkod {zone}"
       },
       "valve_state": {
-        "name": "Ventilstatus zon {zone}"
+        "name": "Ventilstatus {zone}"
       },
       "valve_set_last_error_code": {
         "name": "Ventilgrupp felkod"
       },
       "valve_remaining_duration": {
-        "name": "Återstående bevattningstid zon {zone}"
+        "name": "Återstående bevattningstid {zone}"
       },
       "hub_device_count": {
         "name": "Antal enheter"
@@ -353,7 +353,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Ventilhändelse zon {zone}",
+        "name": "Ventilhändelse {zone}",
         "state_attributes": {
           "event_type": {
             "state": {

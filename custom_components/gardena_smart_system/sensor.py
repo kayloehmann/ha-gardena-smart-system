@@ -333,7 +333,9 @@ class GardenaValveRemainingDurationSensor(GardenaEntity, SensorEntity):
         super().__init__(coordinator, device, suffix)
         self._service_id = service_id
         if zone:
-            self._attr_translation_placeholders = {"zone": zone}
+            valve = device.valves.get(service_id)
+            name = valve.name if valve and valve.name else f"Zone {zone}"
+            self._attr_translation_placeholders = {"zone": name}
 
     @property
     def native_value(self) -> int | None:
@@ -370,7 +372,9 @@ class GardenaValveErrorSensor(GardenaEntity, SensorEntity):
         super().__init__(coordinator, device, suffix)
         self._service_id = service_id
         if zone:
-            self._attr_translation_placeholders = {"zone": zone}
+            valve = device.valves.get(service_id)
+            name = valve.name if valve and valve.name else f"Zone {zone}"
+            self._attr_translation_placeholders = {"zone": name}
 
     @property
     def native_value(self) -> str | None:
@@ -402,7 +406,9 @@ class GardenaValveStateSensor(GardenaEntity, SensorEntity):
         super().__init__(coordinator, device, suffix)
         self._service_id = service_id
         if zone:
-            self._attr_translation_placeholders = {"zone": zone}
+            valve = device.valves.get(service_id)
+            name = valve.name if valve and valve.name else f"Zone {zone}"
+            self._attr_translation_placeholders = {"zone": name}
 
     @property
     def native_value(self) -> str | None:
