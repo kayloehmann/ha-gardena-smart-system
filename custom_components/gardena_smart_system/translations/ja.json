@@ -106,10 +106,10 @@
         "name": "稼働時間"
       },
       "mower_activity": {
-        "name": "芝刈り機の活動"
+        "name": "活動"
       },
       "mower_state": {
-        "name": "芝刈り機の状態"
+        "name": "状態"
       },
       "mower_last_error_code": {
         "name": "最後のエラーコード"
@@ -270,7 +270,7 @@
         "name": "バルブエラー"
       },
       "mower_error": {
-        "name": "芝刈り機エラー"
+        "name": "エラー"
       },
       "automower_error": {
         "name": "エラー"

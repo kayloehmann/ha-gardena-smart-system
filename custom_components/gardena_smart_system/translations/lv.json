@@ -106,10 +106,10 @@
         "name": "Darba stundas"
       },
       "mower_activity": {
-        "name": "Pļāvēja aktivitāte"
+        "name": "Aktivitāte"
       },
       "mower_state": {
-        "name": "Zāles pļāvēja stāvoklis"
+        "name": "Stāvoklis"
       },
       "mower_last_error_code": {
         "name": "Pēdējais kļūdas kods"
@@ -270,7 +270,7 @@
         "name": "Vārsta kļūda"
       },
       "mower_error": {
-        "name": "Pļāvēja kļūda"
+        "name": "Kļūda"
       },
       "automower_error": {
         "name": "Kļūda"

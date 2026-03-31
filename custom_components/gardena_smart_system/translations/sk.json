@@ -106,10 +106,10 @@
         "name": "Prevádzkové hodiny"
       },
       "mower_activity": {
-        "name": "Činnosť kosačky"
+        "name": "Činnosť"
       },
       "mower_state": {
-        "name": "Stav kosačky"
+        "name": "Stav"
       },
       "mower_last_error_code": {
         "name": "Posledný chybový kód"
@@ -270,7 +270,7 @@
         "name": "Chyba ventilu"
       },
       "mower_error": {
-        "name": "Chyba kosačky"
+        "name": "Chyba"
       },
       "automower_error": {
         "name": "Chyba"

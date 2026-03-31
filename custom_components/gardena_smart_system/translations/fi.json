@@ -106,10 +106,10 @@
         "name": "Käyttötunnit"
       },
       "mower_activity": {
-        "name": "Ruohonleikkurin toiminta"
+        "name": "Toiminta"
       },
       "mower_state": {
-        "name": "Ruohonleikkurin tila"
+        "name": "Tila"
       },
       "mower_last_error_code": {
         "name": "Viimeisin virhekoodi"
@@ -270,7 +270,7 @@
         "name": "Venttiilin virhe"
       },
       "mower_error": {
-        "name": "Ruohonleikkurin virhe"
+        "name": "Virhe"
       },
       "automower_error": {
         "name": "Virhe"

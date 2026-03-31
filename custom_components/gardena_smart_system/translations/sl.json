@@ -106,10 +106,10 @@
         "name": "Obratovalne ure"
       },
       "mower_activity": {
-        "name": "Aktivnost kosilnice"
+        "name": "Aktivnost"
       },
       "mower_state": {
-        "name": "Stanje kosilnice"
+        "name": "Stanje"
       },
       "mower_last_error_code": {
         "name": "Zadnja koda napake"
@@ -270,7 +270,7 @@
         "name": "Napaka ventila"
       },
       "mower_error": {
-        "name": "Napaka kosilnice"
+        "name": "Napaka"
       },
       "automower_error": {
         "name": "Napaka"

@@ -106,10 +106,10 @@
         "name": "Driftstimer"
       },
       "mower_activity": {
-        "name": "Plæneklipper-aktivitet"
+        "name": "Aktivitet"
       },
       "mower_state": {
-        "name": "Plæneklippertilstand"
+        "name": "Status"
       },
       "mower_last_error_code": {
         "name": "Sidste fejlkode"
@@ -270,7 +270,7 @@
         "name": "Ventilfejl"
       },
       "mower_error": {
-        "name": "Klipperfejl"
+        "name": "Fejl"
       },
       "automower_error": {
         "name": "Fejl"

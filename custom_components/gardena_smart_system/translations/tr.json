@@ -106,10 +106,10 @@
         "name": "Çalışma saatleri"
       },
       "mower_activity": {
-        "name": "Biçici etkinliği"
+        "name": "Etkinlik"
       },
       "mower_state": {
-        "name": "Çim biçme makinesi durumu"
+        "name": "Durum"
       },
       "mower_last_error_code": {
         "name": "Son hata kodu"
@@ -270,7 +270,7 @@
         "name": "Vana hatası"
       },
       "mower_error": {
-        "name": "Biçici hatası"
+        "name": "Hata"
       },
       "automower_error": {
         "name": "Hata"

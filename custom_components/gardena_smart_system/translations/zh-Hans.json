@@ -106,10 +106,10 @@
         "name": "运行时间"
       },
       "mower_activity": {
-        "name": "割草机活动"
+        "name": "活动"
       },
       "mower_state": {
-        "name": "割草机状态"
+        "name": "状态"
       },
       "mower_last_error_code": {
         "name": "最后错误代码"
@@ -270,7 +270,7 @@
         "name": "阀门错误"
       },
       "mower_error": {
-        "name": "割草机错误"
+        "name": "错误"
       },
       "automower_error": {
         "name": "错误"

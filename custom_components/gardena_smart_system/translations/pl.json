@@ -106,10 +106,10 @@
         "name": "Godziny pracy"
       },
       "mower_activity": {
-        "name": "Aktywność kosiarki"
+        "name": "Aktywność"
       },
       "mower_state": {
-        "name": "Stan kosiarki"
+        "name": "Stan"
       },
       "mower_last_error_code": {
         "name": "Ostatni kod błędu"
@@ -270,7 +270,7 @@
         "name": "Błąd zaworu"
       },
       "mower_error": {
-        "name": "Błąd kosiarki"
+        "name": "Błąd"
       },
       "automower_error": {
         "name": "Błąd"

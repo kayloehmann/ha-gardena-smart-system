@@ -106,10 +106,10 @@
         "name": "Üzemórák"
       },
       "mower_activity": {
-        "name": "Fűnyíró tevékenység"
+        "name": "Tevékenység"
       },
       "mower_state": {
-        "name": "Fűnyíró állapota"
+        "name": "Állapot"
       },
       "mower_last_error_code": {
         "name": "Utolsó hibakód"
@@ -270,7 +270,7 @@
         "name": "Szelep hiba"
       },
       "mower_error": {
-        "name": "Fűnyíró hiba"
+        "name": "Hiba"
       },
       "automower_error": {
         "name": "Hiba"

@@ -106,10 +106,10 @@
         "name": "Horas de operação"
       },
       "mower_activity": {
-        "name": "Atividade do cortador"
+        "name": "Atividade"
       },
       "mower_state": {
-        "name": "Estado do cortador"
+        "name": "Estado"
       },
       "mower_last_error_code": {
         "name": "Último código de erro"
@@ -270,7 +270,7 @@
         "name": "Erro da válvula"
       },
       "mower_error": {
-        "name": "Erro do cortador"
+        "name": "Erro"
       },
       "automower_error": {
         "name": "Erro"

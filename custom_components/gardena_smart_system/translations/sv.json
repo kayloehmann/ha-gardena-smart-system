@@ -106,10 +106,10 @@
         "name": "Drifttimmar"
       },
       "mower_activity": {
-        "name": "Klipparaktivitet"
+        "name": "Aktivitet"
       },
       "mower_state": {
-        "name": "Gräsklipparstatus"
+        "name": "Status"
       },
       "mower_last_error_code": {
         "name": "Senaste felkod"
@@ -270,7 +270,7 @@
         "name": "Ventilfel"
       },
       "mower_error": {
-        "name": "Klipparfel"
+        "name": "Fel"
       },
       "automower_error": {
         "name": "Fel"

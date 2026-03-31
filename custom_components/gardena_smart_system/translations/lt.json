@@ -106,10 +106,10 @@
         "name": "Darbo valandos"
       },
       "mower_activity": {
-        "name": "Vejapjovės veikla"
+        "name": "Veikla"
       },
       "mower_state": {
-        "name": "Vejapjovės būsena"
+        "name": "Būsena"
       },
       "mower_last_error_code": {
         "name": "Paskutinis klaidos kodas"
@@ -270,7 +270,7 @@
         "name": "Vožtuvo klaida"
       },
       "mower_error": {
-        "name": "Vejapjovės klaida"
+        "name": "Klaida"
       },
       "automower_error": {
         "name": "Klaida"

@@ -106,10 +106,10 @@
         "name": "Betriebsstunden"
       },
       "mower_activity": {
-        "name": "Mäher-Aktivität"
+        "name": "Aktivität"
       },
       "mower_state": {
-        "name": "Mäherstatus"
+        "name": "Status"
       },
       "mower_last_error_code": {
         "name": "Letzter Fehlercode"
@@ -270,7 +270,7 @@
         "name": "Ventilfehler"
       },
       "mower_error": {
-        "name": "Mäherfehler"
+        "name": "Fehler"
       },
       "automower_error": {
         "name": "Fehler"

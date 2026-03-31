@@ -106,10 +106,10 @@
         "name": "Töötunnid"
       },
       "mower_activity": {
-        "name": "Muruniiduki tegevus"
+        "name": "Tegevus"
       },
       "mower_state": {
-        "name": "Muruniiduki olek"
+        "name": "Olek"
       },
       "mower_last_error_code": {
         "name": "Viimane veakood"
@@ -270,7 +270,7 @@
         "name": "Klapi viga"
       },
       "mower_error": {
-        "name": "Muruniiduki viga"
+        "name": "Viga"
       },
       "automower_error": {
         "name": "Viga"

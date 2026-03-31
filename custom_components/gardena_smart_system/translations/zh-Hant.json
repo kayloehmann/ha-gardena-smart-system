@@ -106,10 +106,10 @@
         "name": "運作時數"
       },
       "mower_activity": {
-        "name": "割草機活動"
+        "name": "活動"
       },
       "mower_state": {
-        "name": "割草機狀態"
+        "name": "狀態"
       },
       "mower_last_error_code": {
         "name": "最後錯誤代碼"
@@ -270,7 +270,7 @@
         "name": "閥門錯誤"
       },
       "mower_error": {
-        "name": "割草機錯誤"
+        "name": "錯誤"
       },
       "automower_error": {
         "name": "錯誤"

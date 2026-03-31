@@ -106,10 +106,10 @@
         "name": "Ore di funzionamento"
       },
       "mower_activity": {
-        "name": "Attività tosaerba"
+        "name": "Attività"
       },
       "mower_state": {
-        "name": "Stato del tosaerba"
+        "name": "Stato"
       },
       "mower_last_error_code": {
         "name": "Ultimo codice errore"
@@ -270,7 +270,7 @@
         "name": "Errore valvola"
       },
       "mower_error": {
-        "name": "Errore tosaerba"
+        "name": "Errore"
       },
       "automower_error": {
         "name": "Errore"

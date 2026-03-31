@@ -106,10 +106,10 @@
         "name": "Ore de funcționare"
       },
       "mower_activity": {
-        "name": "Activitate mașină de tuns"
+        "name": "Activitate"
       },
       "mower_state": {
-        "name": "Starea mașinii de tuns"
+        "name": "Stare"
       },
       "mower_last_error_code": {
         "name": "Ultimul cod de eroare"
@@ -270,7 +270,7 @@
         "name": "Eroare supapă"
       },
       "mower_error": {
-        "name": "Eroare mașină de tuns"
+        "name": "Eroare"
       },
       "automower_error": {
         "name": "Eroare"

@@ -106,10 +106,10 @@
         "name": "Driftstimer"
       },
       "mower_activity": {
-        "name": "Klipperaktivitet"
+        "name": "Aktivitet"
       },
       "mower_state": {
-        "name": "Gressklippertilstand"
+        "name": "Tilstand"
       },
       "mower_last_error_code": {
         "name": "Siste feilkode"
@@ -270,7 +270,7 @@
         "name": "Ventilfeil"
       },
       "mower_error": {
-        "name": "Klipperfeil"
+        "name": "Feil"
       },
       "automower_error": {
         "name": "Feil"

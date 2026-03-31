@@ -106,10 +106,10 @@
         "name": "Heures de fonctionnement"
       },
       "mower_activity": {
-        "name": "Activité de la tondeuse"
+        "name": "Activité"
       },
       "mower_state": {
-        "name": "État de la tondeuse"
+        "name": "État"
       },
       "mower_last_error_code": {
         "name": "Dernier code d'erreur"
@@ -270,7 +270,7 @@
         "name": "Erreur de vanne"
       },
       "mower_error": {
-        "name": "Erreur de tondeuse"
+        "name": "Erreur"
       },
       "automower_error": {
         "name": "Erreur"

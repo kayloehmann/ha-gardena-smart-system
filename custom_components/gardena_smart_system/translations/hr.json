@@ -106,10 +106,10 @@
         "name": "Radni sati"
       },
       "mower_activity": {
-        "name": "Aktivnost kosilice"
+        "name": "Aktivnost"
       },
       "mower_state": {
-        "name": "Stanje kosilice"
+        "name": "Stanje"
       },
       "mower_last_error_code": {
         "name": "Posljednji kod pogreške"
@@ -270,7 +270,7 @@
         "name": "Pogreška ventila"
       },
       "mower_error": {
-        "name": "Pogreška kosilice"
+        "name": "Pogreška"
       },
       "automower_error": {
         "name": "Pogreška"

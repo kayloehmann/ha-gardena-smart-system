@@ -106,10 +106,10 @@
         "name": "Hores de funcionament"
       },
       "mower_activity": {
-        "name": "Activitat de la segadora"
+        "name": "Activitat"
       },
       "mower_state": {
-        "name": "Estat de la segadora"
+        "name": "Estat"
       },
       "mower_last_error_code": {
         "name": "Últim codi d'error"
@@ -270,7 +270,7 @@
         "name": "Error de vàlvula"
       },
       "mower_error": {
-        "name": "Error de la segadora"
+        "name": "Error"
       },
       "automower_error": {
         "name": "Error"

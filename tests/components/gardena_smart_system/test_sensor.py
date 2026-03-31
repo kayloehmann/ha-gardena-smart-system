@@ -166,7 +166,7 @@ class TestSensorEntityCreation:
 
             await _setup_integration(hass, mock_config_entry, mock_client)
 
-        state = hass.states.get("sensor.my_mower_mower_activity")
+        state = hass.states.get("sensor.my_mower_activity")
         assert state is not None
         assert state.state == "PARKED_PARK_SELECTED"
 
@@ -234,7 +234,7 @@ class TestSensorEntityCreation:
         await _setup_integration(hass, mock_config_entry, mock_sensor_api)
 
         # Default mock device has no mower
-        assert hass.states.get("sensor.my_sensor_mower_activity") is None
+        assert hass.states.get("sensor.my_sensor_activity") is None
 
     async def test_no_sensor_entities_for_device_without_sensor_service(
         self, hass: HomeAssistant, mock_config_entry: object
@@ -1196,7 +1196,7 @@ class TestMowerStateSensor:
         devices = {device.device_id: device}
         await _setup_with_devices(hass, mock_config_entry, devices)
 
-        state = hass.states.get("sensor.my_mower_mower_state")
+        state = hass.states.get("sensor.my_mower_state")
         assert state is not None
         assert state.state == "ok"
 
@@ -1205,7 +1205,7 @@ class TestMowerStateSensor:
     ) -> None:
         """Mower state sensor not created when device has no mower."""
         await _setup_integration(hass, mock_config_entry, mock_sensor_api)
-        assert hass.states.get("sensor.my_sensor_mower_state") is None
+        assert hass.states.get("sensor.my_sensor_state") is None
 
 
 class TestPowerSocketStateSensor:

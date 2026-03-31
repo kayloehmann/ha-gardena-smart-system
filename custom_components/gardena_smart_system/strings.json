@@ -106,10 +106,10 @@
         "name": "Operating hours"
       },
       "mower_activity": {
-        "name": "Mower activity"
+        "name": "Activity"
       },
       "mower_state": {
-        "name": "Mower state"
+        "name": "State"
       },
       "mower_last_error_code": {
         "name": "Last error code"
@@ -246,7 +246,7 @@
         "name": "Valve error"
       },
       "mower_error": {
-        "name": "Mower error"
+        "name": "Error"
       },
       "automower_error": {
         "name": "Error"

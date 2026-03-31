@@ -106,10 +106,10 @@
         "name": "Bedrijfsuren"
       },
       "mower_activity": {
-        "name": "Maaiactiviteit"
+        "name": "Activiteit"
       },
       "mower_state": {
-        "name": "Maaier status"
+        "name": "Status"
       },
       "mower_last_error_code": {
         "name": "Laatste foutcode"
@@ -270,7 +270,7 @@
         "name": "Klepfout"
       },
       "mower_error": {
-        "name": "Maaierfout"
+        "name": "Fout"
       },
       "automower_error": {
         "name": "Fout"

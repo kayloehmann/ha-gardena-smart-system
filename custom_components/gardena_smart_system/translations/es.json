@@ -106,10 +106,10 @@
         "name": "Horas de funcionamiento"
       },
       "mower_activity": {
-        "name": "Actividad del cortacesped"
+        "name": "Actividad"
       },
       "mower_state": {
-        "name": "Estado del cortacésped"
+        "name": "Estado"
       },
       "mower_last_error_code": {
         "name": "Ultimo codigo de error"
@@ -270,7 +270,7 @@
         "name": "Error de valvula"
       },
       "mower_error": {
-        "name": "Error del cortacesped"
+        "name": "Error"
       },
       "automower_error": {
         "name": "Error"
