@@ -97,17 +97,6 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
             PowerSocketActivity.SCHEDULED_ON,
         )
 
-    @property
-    def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Return the power socket activity and remaining duration as extra attributes."""
-        device = self._device
-        if device is None or device.power_socket is None:
-            return None
-        attrs: dict[str, Any] = {"activity": device.power_socket.activity}
-        if device.power_socket.duration is not None and device.power_socket.duration > 0:
-            attrs["duration"] = device.power_socket.duration
-        return attrs
-
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the socket on for the configured default duration."""
         duration_minutes: int = self.coordinator.config_entry.options.get(

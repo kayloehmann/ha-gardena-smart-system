@@ -171,17 +171,6 @@ Created for Husqvarna Automower robotic mowers. Reports current activity mapped 
 | (state = PAUSED) | Paused |
 | STOPPED_IN_GARDEN, (state = ERROR/FATAL_ERROR) | Error |
 
-**Extra state attributes** exposed on the lawn mower entity:
-
-| Attribute | Description | Always present |
-|-----------|-------------|---------------|
-| `activity` | Raw Automower activity (e.g., `MOWING`, `CHARGING`, `PARKED_IN_CS`) | Yes |
-| `state` | Raw Automower state (e.g., `IN_OPERATION`, `PAUSED`, `ERROR`) | Yes |
-| `mode` | Mower mode (e.g., `MAIN_AREA`, `SECONDARY_AREA`) | Yes |
-| `error_code` | Numeric error code | Only when non-zero |
-| `restricted_reason` | Why the mower is restricted (e.g., `WEEK_TIMER`, `PARK_OVERRIDE`) | Only when active |
-| `override_action` | Active override (e.g., `FORCE_PARK`, `FORCE_MOW`) | Only when active |
-
 ### Automower Sensors
 
 | Entity | Device Class | Unit | Category | Default |

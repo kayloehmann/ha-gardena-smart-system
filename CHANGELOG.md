@@ -2,6 +2,12 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.5.5] - 2026-03-31
+
+### Removed
+- **Breaking:** Power socket switch no longer exposes `activity` and `duration` as state attributes — use the dedicated `power_socket_state` and `power_socket_remaining_duration` sensor entities instead
+- **Breaking:** Automower lawn mower no longer exposes `activity`, `state`, `mode`, `error_code`, `restricted_reason`, and `override_action` as state attributes — use the dedicated sensor entities instead
+
 ## [1.5.4] - 2026-03-30
 
 ### Improved
@@ -152,6 +158,7 @@ All notable changes to the Gardena Smart System integration for Home Assistant.
 - Adaptive polling, command throttling, and rate limit handling
 - Config flow with multi-location support
 
+[1.5.5]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.5
 [1.5.4]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.4
 [1.5.3]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.3
 [1.5.2]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.2

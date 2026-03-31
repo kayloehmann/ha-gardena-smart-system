@@ -106,25 +106,6 @@ class AutomowerLawnMowerEntity(AutomowerEntity, LawnMowerEntity):
             return LawnMowerActivity.PAUSED
         return _ACTIVITY_MAP.get(device.mower.activity, LawnMowerActivity.DOCKED)
 
-    @property
-    def extra_state_attributes(self) -> dict[str, Any] | None:
-        """Expose detailed Automower API fields for frontend cards."""
-        device = self._device
-        if device is None:
-            return None
-        attrs: dict[str, Any] = {
-            "activity": device.mower.activity,
-            "state": device.mower.state,
-            "mode": device.mower.mode,
-        }
-        if device.mower.error_code != 0:
-            attrs["error_code"] = device.mower.error_code
-        if device.planner.restricted_reason != "NONE":
-            attrs["restricted_reason"] = device.planner.restricted_reason
-        if device.planner.override.action != "NOT_ACTIVE":
-            attrs["override_action"] = device.planner.override.action
-        return attrs
-
     async def async_start_mowing(self) -> None:
         """Start mowing (resume schedule)."""
         await self._async_send_command("start")

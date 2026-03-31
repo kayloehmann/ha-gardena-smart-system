@@ -597,51 +597,6 @@ class TestAutomowerLawnMower:
             assert state is not None
             assert state.state == "error"
 
-    async def test_extra_state_attributes_include_activity_state_mode(
-        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
-    ) -> None:
-        device = make_mock_automower_device(
-            mower_activity=MowerActivity.MOWING,
-            mower_state=MowerState.IN_OPERATION,
-            mower_mode="MAIN_AREA",
-        )
-        devices = {device.mower_id: device}
-
-        async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower_mower")
-            assert state is not None
-            assert "activity" in state.attributes
-            assert "state" in state.attributes
-            assert "mode" in state.attributes
-            assert state.attributes["activity"] == MowerActivity.MOWING
-            assert state.attributes["state"] == MowerState.IN_OPERATION
-
-    async def test_extra_state_attributes_include_error_code_when_nonzero(
-        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
-    ) -> None:
-        device = make_mock_automower_device(
-            mower_state=MowerState.ERROR,
-            error_code=18,
-        )
-        devices = {device.mower_id: device}
-
-        async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower_mower")
-            assert state is not None
-            assert state.attributes["error_code"] == 18
-
-    async def test_extra_state_attributes_no_error_code_when_zero(
-        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
-    ) -> None:
-        device = make_mock_automower_device(error_code=0)
-        devices = {device.mower_id: device}
-
-        async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower_mower")
-            assert state is not None
-            assert "error_code" not in state.attributes
-
-
 class TestAutomowerLawnMowerCommands:
     """Test Automower lawn mower commands."""
 
@@ -2170,51 +2125,6 @@ class TestAutomowerLawnMowerAdditional:
             assert state is not None
             assert state.state == STATE_UNAVAILABLE
 
-    async def test_extra_state_attributes_none_when_device_unavailable(
-        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
-    ) -> None:
-        """Line 98: extra_state_attributes returns None when device is None."""
-        device = make_mock_automower_device()
-        devices = {device.mower_id: device}
-
-        async with _setup_automower(hass, automower_config_entry, devices):
-            coordinator = automower_config_entry.runtime_data
-            coordinator.async_set_updated_data({})
-            await hass.async_block_till_done()
-
-            state = hass.states.get("lawn_mower.test_mower_mower")
-            assert state is not None
-            # When unavailable, no extra attributes
-            assert "activity" not in state.attributes
-
-    async def test_extra_state_attributes_restricted_reason(
-        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
-    ) -> None:
-        """Lines 107: restricted_reason included when not NONE."""
-        device = make_mock_automower_device(
-            restricted_reason="WEEK_SCHEDULE",
-        )
-        devices = {device.mower_id: device}
-
-        async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower_mower")
-            assert state is not None
-            assert state.attributes["restricted_reason"] == "WEEK_SCHEDULE"
-
-    async def test_extra_state_attributes_override_action(
-        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
-    ) -> None:
-        """Lines 109: override_action included when not NOT_ACTIVE."""
-        device = make_mock_automower_device(
-            override_action="FORCE_MOW",
-        )
-        devices = {device.mower_id: device}
-
-        async with _setup_automower(hass, automower_config_entry, devices):
-            state = hass.states.get("lawn_mower.test_mower_mower")
-            assert state is not None
-            assert state.attributes["override_action"] == "FORCE_MOW"
-
     async def test_fatal_error_state_maps_to_error(
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
     ) -> None:
@@ -2288,26 +2198,6 @@ class TestAutomowerLawnMowerAdditional:
             entity = AutomowerLawnMowerEntity(coordinator, device)
             entity.hass = hass
             assert entity.activity is None
-
-    async def test_extra_state_attributes_returns_none_when_device_gone(
-        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
-    ) -> None:
-        """Line 98: extra_state_attributes returns None when _device is None."""
-        from custom_components.gardena_smart_system.automower_lawn_mower import (
-            AutomowerLawnMowerEntity,
-        )
-
-        device = make_mock_automower_device()
-        devices = {device.mower_id: device}
-
-        async with _setup_automower(hass, automower_config_entry, devices):
-            coordinator = automower_config_entry.runtime_data
-            coordinator.async_set_updated_data({})
-            await hass.async_block_till_done()
-
-            entity = AutomowerLawnMowerEntity(coordinator, device)
-            entity.hass = hass
-            assert entity.extra_state_attributes is None
 
 
 # ──────────────────────────────────────────────────────────────────────
