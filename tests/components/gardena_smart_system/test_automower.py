@@ -597,6 +597,7 @@ class TestAutomowerLawnMower:
             assert state is not None
             assert state.state == "error"
 
+
 class TestAutomowerLawnMowerCommands:
     """Test Automower lawn mower commands."""
 

@@ -169,7 +169,6 @@ class TestSwitchStateMapping:
         assert state.state == STATE_ON
 
 
-
 class TestSwitchCommands:
     """Test switch turn_on/turn_off/turn_on_for commands."""
 
