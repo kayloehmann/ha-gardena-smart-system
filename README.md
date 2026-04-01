@@ -113,10 +113,10 @@ If you installed via HACS, you can also uninstall the integration entirely:
 | Activity (mower) | -- | -- | Diagnostic | Enabled |
 | State (mower) | -- | -- | Diagnostic | Enabled |
 | Last error code | -- | -- | Diagnostic | **Disabled** |
-| Power socket remaining time | `duration` | s | -- | Enabled |
+| Power socket remaining time | `timestamp` | -- | -- | Enabled |
 | Power socket state | -- | -- | Diagnostic | Enabled |
 | Power socket last error | -- | -- | Diagnostic | **Disabled** |
-| Remaining watering time (per valve) | `duration` | s | -- | Enabled |
+| Remaining watering time (per valve) | `timestamp` | -- | -- | Enabled |
 | Valve error code (per valve) | -- | -- | Diagnostic | **Disabled** |
 | Valve state (per valve) | -- | -- | Diagnostic | Enabled |
 | Valve set error code | -- | -- | Diagnostic | **Disabled** |
@@ -138,7 +138,7 @@ If you installed via HACS, you can also uninstall the integration entirely:
 
 One valve entity is created per physical valve. Smart Water Control devices have a single valve, while Smart Irrigation Control devices create one valve entity per zone. Valve entities use the name configured in the Gardena app (e.g. "Rasen vorne"); if no name is set, they fall back to "Zone 1", "Zone 2", etc. Opening a valve starts watering for 60 minutes (default). Use the `start_watering` service for a custom duration.
 
-Remaining duration sensors (valve and power socket) show **0** when the device is inactive, rather than "Unknown".
+Remaining duration sensors (valve and power socket) display a **live countdown** in the HA frontend. When inactive, they show no value.
 
 ### Gardena Switch
 

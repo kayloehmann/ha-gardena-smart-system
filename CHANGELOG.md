@@ -2,6 +2,11 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.5.8] - 2026-04-01
+
+### Changed
+- **Breaking:** Remaining duration sensors (valve and power socket) now use `SensorDeviceClass.TIMESTAMP` instead of `DURATION` — the HA frontend displays a **live countdown** that ticks down in real time between API updates
+
 ## [1.5.7] - 2026-04-01
 
 ### Changed

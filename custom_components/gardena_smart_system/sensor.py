@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from typing import Any, cast
 
 from aiogardenasmart.const import PowerSocketActivity, ValveActivity
@@ -20,6 +21,7 @@ from homeassistant.const import (
     UnitOfTime,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.util import dt as dt_util
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -133,17 +135,14 @@ POWER_SOCKET_SENSORS: tuple[GardenaSensorDescription, ...] = (
     GardenaSensorDescription(
         key="power_socket_remaining_duration",
         translation_key="power_socket_remaining_duration",
-        device_class=SensorDeviceClass.DURATION,
-        native_unit_of_measurement=UnitOfTime.SECONDS,
-        state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=0,
+        device_class=SensorDeviceClass.TIMESTAMP,
         value_fn=lambda d: (
-            d.power_socket.duration
+            dt_util.utcnow() + timedelta(seconds=d.power_socket.duration)
             if d.power_socket
             and d.power_socket.activity != PowerSocketActivity.OFF
             and d.power_socket.duration
             and d.power_socket.duration > 0
-            else 0
+            else None
         ),
         exists_fn=lambda d: d.power_socket is not None,
     ),
@@ -315,10 +314,7 @@ class GardenaSensorEntity(GardenaEntity, SensorEntity):
 class GardenaValveRemainingDurationSensor(GardenaEntity, SensorEntity):
     """Remaining watering duration sensor for a specific Gardena valve."""
 
-    _attr_device_class = SensorDeviceClass.DURATION
-    _attr_native_unit_of_measurement = UnitOfTime.SECONDS
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_suggested_display_precision = 0
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_translation_key = "valve_remaining_duration"
 
     def __init__(
@@ -338,8 +334,8 @@ class GardenaValveRemainingDurationSensor(GardenaEntity, SensorEntity):
             self._attr_translation_placeholders = {"zone": name}
 
     @property
-    def native_value(self) -> int | None:
-        """Return the valve's remaining duration in seconds."""
+    def native_value(self) -> datetime | None:
+        """Return the estimated end time of the current watering cycle."""
         device = self._device
         if device is None:
             return None
@@ -347,10 +343,10 @@ class GardenaValveRemainingDurationSensor(GardenaEntity, SensorEntity):
         if valve is None:
             return None
         if valve.activity == ValveActivity.CLOSED:
-            return 0
+            return None
         if valve.duration is not None and valve.duration > 0:
-            return valve.duration
-        return 0
+            return dt_util.utcnow() + timedelta(seconds=valve.duration)
+        return None
 
 
 class GardenaValveErrorSensor(GardenaEntity, SensorEntity):
