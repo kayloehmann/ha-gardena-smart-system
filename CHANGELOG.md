@@ -2,7 +2,15 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.5.6] - 2026-04-01
+
+### Changed
+- Remaining duration sensors (valve and power socket) now show **0** instead of "Unknown" when the device is inactive — clearer state for dashboards and automations
+
 ## [1.5.5] - 2026-03-31
+
+### Changed
+- **Breaking:** Gardena mower sensors renamed for consistency: "Mower activity" → "Activity", "Mower state" → "State", "Mower error" → "Error" (entity IDs change accordingly)
 
 ### Removed
 - **Breaking:** Power socket switch no longer exposes `activity` and `duration` as state attributes — use the dedicated `power_socket_state` and `power_socket_remaining_duration` sensor entities instead
