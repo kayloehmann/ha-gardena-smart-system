@@ -110,8 +110,8 @@ If you installed via HACS, you can also uninstall the integration entirely:
 | Ambient temperature | `temperature` | °C | -- | Enabled |
 | Light intensity | `illuminance` | lx | -- | Enabled |
 | Operating hours (mower) | -- | h | Diagnostic | **Disabled** |
-| Mower activity | -- | -- | Diagnostic | Enabled |
-| Mower state | -- | -- | Diagnostic | Enabled |
+| Activity (mower) | -- | -- | Diagnostic | Enabled |
+| State (mower) | -- | -- | Diagnostic | Enabled |
 | Last error code | -- | -- | Diagnostic | **Disabled** |
 | Power socket remaining time | `duration` | s | -- | Enabled |
 | Power socket state | -- | -- | Diagnostic | Enabled |
@@ -127,7 +127,7 @@ If you installed via HACS, you can also uninstall the integration entirely:
 |--------|-------------|----------|---------|
 | Battery low | `battery` | Diagnostic | Enabled |
 | Valve error | `problem` | Diagnostic | Enabled |
-| Mower error | `problem` | Diagnostic | Enabled |
+| Error (mower) | `problem` | Diagnostic | Enabled |
 | RF link | `connectivity` | Diagnostic | Enabled |
 
 ### Gardena Valve
@@ -137,6 +137,8 @@ If you installed via HACS, you can also uninstall the integration entirely:
 | Valve | `water` | Open, Close |
 
 One valve entity is created per physical valve. Smart Water Control devices have a single valve, while Smart Irrigation Control devices create one valve entity per zone. Valve entities use the name configured in the Gardena app (e.g. "Rasen vorne"); if no name is set, they fall back to "Zone 1", "Zone 2", etc. Opening a valve starts watering for 60 minutes (default). Use the `start_watering` service for a custom duration.
+
+Remaining duration sensors (valve and power socket) show **0** when the device is inactive, rather than "Unknown".
 
 ### Gardena Switch
 
@@ -397,8 +399,8 @@ automation:
           title: "Automower Error"
           message: >
             The mower reported an error.
-            State: {{ state_attr('lawn_mower.automower_450x_mower', 'state') }}
-            Error code: {{ state_attr('lawn_mower.automower_450x_mower', 'error_code') }}
+            State: {{ states('sensor.automower_450x_state') }}
+            Error code: {{ states('sensor.automower_450x_error_code') }}
 ```
 
 ### Park the mower when rain is expected
@@ -613,7 +615,7 @@ This integration targets the [Home Assistant Integration Quality Scale](https://
 
 Key quality features:
 
-- **99% test coverage** across 497 automated tests
+- **99% test coverage** across 486 automated tests
 - **mypy --strict** passes with zero errors on all 23 source files
 - **PEP 561** compliant (`py.typed` markers on both client libraries)
 - **Full async** codebase — no blocking I/O in the event loop
