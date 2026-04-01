@@ -143,7 +143,7 @@ POWER_SOCKET_SENSORS: tuple[GardenaSensorDescription, ...] = (
             and d.power_socket.activity != PowerSocketActivity.OFF
             and d.power_socket.duration
             and d.power_socket.duration > 0
-            else None
+            else 0
         ),
         exists_fn=lambda d: d.power_socket is not None,
     ),
@@ -347,10 +347,10 @@ class GardenaValveRemainingDurationSensor(GardenaEntity, SensorEntity):
         if valve is None:
             return None
         if valve.activity == ValveActivity.CLOSED:
-            return None
+            return 0
         if valve.duration is not None and valve.duration > 0:
             return valve.duration
-        return None
+        return 0
 
 
 class GardenaValveErrorSensor(GardenaEntity, SensorEntity):
