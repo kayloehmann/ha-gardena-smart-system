@@ -2,6 +2,11 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.5.7] - 2026-04-01
+
+### Changed
+- Valve entities now show a **single toggle** instead of two separate open/close buttons — the actual valve state is known via WebSocket, so `assumed_state` is no longer needed
+
 ## [1.5.6] - 2026-04-01
 
 ### Changed

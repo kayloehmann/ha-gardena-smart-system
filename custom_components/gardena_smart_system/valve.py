@@ -78,7 +78,6 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
     _attr_device_class = ValveDeviceClass.WATER
     _attr_supported_features = ValveEntityFeature.OPEN | ValveEntityFeature.CLOSE
     _attr_reports_position = False
-    _attr_assumed_state = True
 
     def __init__(
         self,
