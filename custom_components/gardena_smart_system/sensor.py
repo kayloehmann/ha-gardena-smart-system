@@ -133,20 +133,6 @@ SENSOR_SENSORS: tuple[GardenaSensorDescription, ...] = (
 
 POWER_SOCKET_SENSORS: tuple[GardenaSensorDescription, ...] = (
     GardenaSensorDescription(
-        key="power_socket_remaining_duration",
-        translation_key="power_socket_remaining_duration",
-        device_class=SensorDeviceClass.TIMESTAMP,
-        value_fn=lambda d: (
-            dt_util.utcnow() + timedelta(seconds=d.power_socket.duration)
-            if d.power_socket
-            and d.power_socket.activity != PowerSocketActivity.OFF
-            and d.power_socket.duration
-            and d.power_socket.duration > 0
-            else None
-        ),
-        exists_fn=lambda d: d.power_socket is not None,
-    ),
-    GardenaSensorDescription(
         key="power_socket_state",
         translation_key="power_socket_state",
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -266,6 +252,14 @@ async def async_setup_entry(
                 if key not in known_keys:
                     known_keys.add(key)
                     new_entities.append(GardenaValveStateSensor(coordinator, device, service_id))
+            # Power socket remaining duration sensor
+            if device.power_socket is not None:
+                ps_key = (device.device_id, "power_socket_remaining_duration")
+                if ps_key not in known_keys:
+                    known_keys.add(ps_key)
+                    new_entities.append(
+                        GardenaPowerSocketRemainingDurationSensor(coordinator, device)
+                    )
             # ValveSet error sensor
             if device.valve_set is not None:
                 vs_key = (device.device_id, "valve_set_last_error_code")
@@ -328,6 +322,8 @@ class GardenaValveRemainingDurationSensor(GardenaEntity, SensorEntity):
         suffix = f"valve_{zone}_remaining_duration" if zone else "valve_remaining_duration"
         super().__init__(coordinator, device, suffix)
         self._service_id = service_id
+        self._end_time: datetime | None = None
+        self._was_active = False
         if zone:
             valve = device.valves.get(service_id)
             name = valve.name if valve and valve.name else f"Zone {zone}"
@@ -335,18 +331,64 @@ class GardenaValveRemainingDurationSensor(GardenaEntity, SensorEntity):
 
     @property
     def native_value(self) -> datetime | None:
-        """Return the estimated end time of the current watering cycle."""
+        """Return the estimated end time of the current watering cycle.
+
+        The Gardena API sends the initial set duration (not remaining),
+        so we compute the end time once on the CLOSED→active transition
+        and keep it stable until the valve closes again.
+        """
         device = self._device
         if device is None:
             return None
         valve = device.valves.get(self._service_id)
         if valve is None:
             return None
-        if valve.activity == ValveActivity.CLOSED:
+        is_active = valve.activity != ValveActivity.CLOSED
+        if not is_active:
+            self._end_time = None
+            self._was_active = False
             return None
-        if valve.duration is not None and valve.duration > 0:
-            return dt_util.utcnow() + timedelta(seconds=valve.duration)
-        return None
+        if not self._was_active and valve.duration and valve.duration > 0:
+            # Transition from closed to active: compute end time once
+            self._end_time = dt_util.utcnow() + timedelta(seconds=valve.duration)
+            self._was_active = True
+        return self._end_time
+
+
+class GardenaPowerSocketRemainingDurationSensor(GardenaEntity, SensorEntity):
+    """Remaining on-time sensor for the Gardena power socket."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_translation_key = "power_socket_remaining_duration"
+
+    def __init__(
+        self,
+        coordinator: GardenaCoordinator,
+        device: Device,
+    ) -> None:
+        """Initialize the power socket remaining duration sensor."""
+        super().__init__(coordinator, device, "power_socket_remaining_duration")
+        self._end_time: datetime | None = None
+        self._was_active = False
+
+    @property
+    def native_value(self) -> datetime | None:
+        """Return the estimated end time of the current on-cycle."""
+        device = self._device
+        if device is None:
+            return None
+        ps = device.power_socket
+        if ps is None:
+            return None
+        is_active = ps.activity != PowerSocketActivity.OFF
+        if not is_active:
+            self._end_time = None
+            self._was_active = False
+            return None
+        if not self._was_active and ps.duration and ps.duration > 0:
+            self._end_time = dt_util.utcnow() + timedelta(seconds=ps.duration)
+            self._was_active = True
+        return self._end_time
 
 
 class GardenaValveErrorSensor(GardenaEntity, SensorEntity):

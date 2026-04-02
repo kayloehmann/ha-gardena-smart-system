@@ -2,6 +2,11 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.5.10] - 2026-04-02
+
+### Fixed
+- **Remaining duration countdown now shows correct end time** — the Gardena API sends the initial set duration (not remaining), so the end time is now computed once when the valve/socket opens and kept stable until it closes
+
 ## [1.5.9] - 2026-04-02
 
 ### Fixed
