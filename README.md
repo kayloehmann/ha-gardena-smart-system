@@ -523,7 +523,7 @@ Each button press or automation action is one API call. The 5-second throttle pr
 
 | Strategy | Detail |
 |----------|--------|
-| **WebSocket-first architecture** | Device state updates arrive in real time via persistent WebSocket connections. REST API polling is only a fallback. |
+| **WebSocket-first architecture** | Device state updates arrive in real time via persistent WebSocket connections. REST API polling is only a fallback. If the WebSocket drops, auto-reconnect with exponential backoff kicks in (30s → 30m). |
 | **Adaptive polling interval** | When WebSocket is connected: **6-hour** health-check only. When WebSocket drops: **30 min** (Gardena) / **15 min** (Automower). |
 | **Graduated rate limit backoff** | If the API returns HTTP 429, polling backs off exponentially (5 min → 10 → 20 → 40 → 60 min max) and resets after a successful response. |
 | **Command throttling** | A minimum **5-second interval** is enforced between consecutive commands to prevent automations from rapid-firing API calls. |
@@ -581,9 +581,9 @@ Each button press or automation action is one API call. The 5-second throttle pr
 
 This indicates the WebSocket connection to the Husqvarna cloud has failed. The integration continues to work via polling but updates will be delayed.
 
-- Check your Home Assistant host's internet connection.
-- Check the [Husqvarna service status](https://status.husqvarnagroup.cloud) for outages.
-- The connection is retried automatically. The repair issue resolves itself once reconnected.
+- The integration **automatically reconnects** with exponential backoff (30s → 1m → 2m → 5m → 10m → 30m). No manual action is required.
+- The repair issue resolves itself once reconnected.
+- If it persists, check your Home Assistant host's internet connection or the [Husqvarna service status](https://status.husqvarnagroup.cloud) for outages.
 
 ### Commands fail with "Failed to send command"
 
@@ -615,7 +615,7 @@ This integration targets the [Home Assistant Integration Quality Scale](https://
 
 Key quality features:
 
-- **99% test coverage** across 486 automated tests
+- **99% test coverage** across 494 automated tests
 - **mypy --strict** passes with zero errors on all 23 source files
 - **PEP 561** compliant (`py.typed` markers on both client libraries)
 - **Full async** codebase — no blocking I/O in the event loop
