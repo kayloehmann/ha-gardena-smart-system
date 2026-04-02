@@ -498,6 +498,111 @@ class TestWebSocketAuthReauth:
         assert issue_reg.async_get_issue(DOMAIN, "websocket_connection_failed") is not None
 
 
+class TestWebSocketAutoReconnect:
+    """Test automatic WebSocket reconnection with exponential backoff."""
+
+    def test_ws_error_schedules_reconnect_task(
+        self, hass: HomeAssistant, coordinator: GardenaCoordinator
+    ) -> None:
+        coordinator._on_ws_error(RuntimeError("connection lost"))
+        assert coordinator._ws_reconnect_task is not None
+        assert not coordinator._ws_reconnect_task.done()
+        coordinator._cancel_ws_reconnect()
+
+    def test_ws_error_does_not_duplicate_reconnect_task(
+        self, hass: HomeAssistant, coordinator: GardenaCoordinator
+    ) -> None:
+        coordinator._on_ws_error(RuntimeError("lost"))
+        first_task = coordinator._ws_reconnect_task
+        coordinator._schedule_ws_reconnect()  # should not replace
+        assert coordinator._ws_reconnect_task is first_task
+        coordinator._cancel_ws_reconnect()
+
+    def test_ws_auth_error_does_not_schedule_reconnect(
+        self, hass: HomeAssistant, coordinator: GardenaCoordinator
+    ) -> None:
+        from aiogardenasmart.exceptions import GardenaAuthenticationError
+
+        with patch.object(coordinator.config_entry, "async_start_reauth"):
+            coordinator._on_ws_error(GardenaAuthenticationError("expired"))
+        assert coordinator._ws_reconnect_task is None
+
+    async def test_reconnect_loop_succeeds(
+        self, hass: HomeAssistant, coordinator: GardenaCoordinator
+    ) -> None:
+        coordinator.data = {"dev-1": MagicMock()}
+
+        with (
+            patch.object(
+                coordinator, "_async_start_websocket", new_callable=AsyncMock
+            ) as mock_start,
+            patch("custom_components.gardena_smart_system.base_coordinator.asyncio.sleep", new_callable=AsyncMock),
+        ):
+            # Simulate: first attempt fails, second succeeds
+            call_count = 0
+
+            async def _side_effect(devices):
+                nonlocal call_count
+                call_count += 1
+                if call_count >= 2:
+                    coordinator._ws_connected = True
+
+            mock_start.side_effect = _side_effect
+            await coordinator._async_ws_reconnect_loop()
+
+        assert coordinator._ws_connected is True
+        assert mock_start.call_count == 2
+
+    async def test_reconnect_loop_gives_up_after_max_attempts(
+        self, hass: HomeAssistant, coordinator: GardenaCoordinator
+    ) -> None:
+        coordinator.data = {"dev-1": MagicMock()}
+
+        with (
+            patch.object(
+                coordinator, "_async_start_websocket", new_callable=AsyncMock
+            ) as mock_start,
+            patch("custom_components.gardena_smart_system.base_coordinator.asyncio.sleep", new_callable=AsyncMock),
+        ):
+            await coordinator._async_ws_reconnect_loop()
+
+        assert coordinator._ws_connected is False
+        assert mock_start.call_count == len(coordinator._WS_RECONNECT_DELAYS)
+
+    def test_cancel_ws_reconnect(
+        self, hass: HomeAssistant, coordinator: GardenaCoordinator
+    ) -> None:
+        coordinator._on_ws_error(RuntimeError("lost"))
+        assert coordinator._ws_reconnect_task is not None
+        coordinator._cancel_ws_reconnect()
+        assert coordinator._ws_reconnect_task is None
+
+    async def test_shutdown_cancels_reconnect_task(
+        self, hass: HomeAssistant, coordinator: GardenaCoordinator
+    ) -> None:
+        coordinator._on_ws_error(RuntimeError("lost"))
+        assert coordinator._ws_reconnect_task is not None
+        await coordinator.async_shutdown()
+        assert coordinator._ws_reconnect_task is None
+
+    async def test_successful_ws_start_cancels_reconnect(
+        self, hass: HomeAssistant, coordinator: GardenaCoordinator
+    ) -> None:
+        coordinator._on_ws_error(RuntimeError("lost"))
+        assert coordinator._ws_reconnect_task is not None
+
+        coordinator._client = AsyncMock()
+        coordinator._client.async_get_websocket_url = AsyncMock(
+            return_value="wss://gardena.example/ws"
+        )
+        with patch(_PATCH_WS) as mock_ws_cls:
+            mock_ws_cls.return_value = AsyncMock()
+            await coordinator._async_start_websocket({})
+
+        assert coordinator._ws_connected is True
+        assert coordinator._ws_reconnect_task is None
+
+
 class TestRepairFlow:
     """Test the WebSocketReconnectRepairFlow."""
 

@@ -2,6 +2,11 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.5.9] - 2026-04-02
+
+### Fixed
+- WebSocket now **auto-reconnects** with exponential backoff (30s → 1m → 2m → 5m → 10m → 30m) when the connection drops — no manual restart or repair action needed
+
 ## [1.5.8] - 2026-04-01
 
 ### Changed

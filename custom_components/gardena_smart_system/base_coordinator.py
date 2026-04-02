@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from abc import abstractmethod
@@ -86,6 +87,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             else None
         )
         self._rate_limit_hits: int = 0
+        self._ws_reconnect_task: asyncio.Task[None] | None = None
 
     # ── Public properties ──────────────────────────────────────────────
 
@@ -261,6 +263,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             return
 
         self._ws_connected = True
+        self._cancel_ws_reconnect()
         ws_interval = self._custom_poll_interval or cfg.scan_interval_ws
         self.update_interval = ws_interval
         ir.async_delete_issue(self.hass, DOMAIN, cfg.ws_issue_key)
@@ -281,6 +284,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         cfg = self._config
         _LOGGER.error("%s WebSocket connection lost: %s", cfg.api_label, err)
         self._ws_connected = False
+        self._ws = None
         self.update_interval = self._custom_poll_interval or cfg.scan_interval
 
         if isinstance(err, cfg.auth_error_type):
@@ -301,9 +305,60 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             cfg.api_label,
             err,
         )
+        self._schedule_ws_reconnect()
+
+    # ── WebSocket auto-reconnect ────────────────────────────────────────
+
+    _WS_RECONNECT_DELAYS = (30, 60, 120, 300, 600, 1800)  # seconds
+
+    def _schedule_ws_reconnect(self) -> None:
+        """Start the background reconnect task if not already running."""
+        if self._ws_reconnect_task and not self._ws_reconnect_task.done():
+            return
+        self._ws_reconnect_task = self.hass.async_create_background_task(
+            self._async_ws_reconnect_loop(),
+            name=f"{self._config.coordinator_name}_ws_reconnect",
+        )
+
+    def _cancel_ws_reconnect(self) -> None:
+        """Cancel any pending reconnect task."""
+        if self._ws_reconnect_task and not self._ws_reconnect_task.done():
+            self._ws_reconnect_task.cancel()
+            self._ws_reconnect_task = None
+
+    async def _async_ws_reconnect_loop(self) -> None:
+        """Repeatedly attempt WebSocket reconnection with exponential backoff."""
+        cfg = self._config
+        for attempt, delay in enumerate(self._WS_RECONNECT_DELAYS, 1):
+            await asyncio.sleep(delay)
+            if self._ws_connected:
+                return  # reconnected by a poll cycle
+            _LOGGER.debug(
+                "%s WebSocket reconnect attempt %d (after %ds)",
+                cfg.api_label,
+                attempt,
+                delay,
+            )
+            devices = self.data
+            if not devices:
+                continue
+            await self._async_start_websocket(devices)
+            if self._ws_connected:
+                _LOGGER.info(
+                    "%s WebSocket reconnected after %d attempt(s)",
+                    cfg.api_label,
+                    attempt,
+                )
+                return
+        _LOGGER.warning(
+            "%s WebSocket reconnect failed after %d attempts, relying on polling",
+            cfg.api_label,
+            len(self._WS_RECONNECT_DELAYS),
+        )
 
     async def async_shutdown(self) -> None:
         """Disconnect the WebSocket, revoke token, and clean up resources."""
+        self._cancel_ws_reconnect()
         if self._ws:
             await self._ws.async_disconnect()
             self._ws = None
