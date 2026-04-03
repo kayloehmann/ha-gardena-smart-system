@@ -18,6 +18,10 @@ from custom_components.gardena_smart_system.const import (
     DOMAIN,
     OPT_DEFAULT_SOCKET_MINUTES,
     OPT_DEFAULT_WATERING_MINUTES,
+    OPT_MQTT_ENABLE,
+    OPT_MQTT_PUBLISH_STATES,
+    OPT_MQTT_SUBSCRIBE_COMMANDS,
+    OPT_MQTT_TOPIC_PREFIX,
     OPT_POLL_INTERVAL_MINUTES,
 )
 
@@ -386,6 +390,10 @@ class TestOptionsFlow:
                 OPT_DEFAULT_WATERING_MINUTES: 30,
                 OPT_DEFAULT_SOCKET_MINUTES: 120,
                 OPT_POLL_INTERVAL_MINUTES: 15,
+                OPT_MQTT_ENABLE: False,
+                OPT_MQTT_TOPIC_PREFIX: "gardena",
+                OPT_MQTT_PUBLISH_STATES: True,
+                OPT_MQTT_SUBSCRIBE_COMMANDS: True,
             },
         )
 
@@ -425,6 +433,10 @@ class TestOptionsFlow:
                 OPT_DEFAULT_WATERING_MINUTES: 45,
                 OPT_DEFAULT_SOCKET_MINUTES: 90,
                 OPT_POLL_INTERVAL_MINUTES: 20,
+                OPT_MQTT_ENABLE: False,
+                OPT_MQTT_TOPIC_PREFIX: "gardena",
+                OPT_MQTT_PUBLISH_STATES: True,
+                OPT_MQTT_SUBSCRIBE_COMMANDS: True,
             },
         )
 

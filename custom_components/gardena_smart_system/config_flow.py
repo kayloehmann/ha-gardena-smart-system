@@ -21,6 +21,7 @@ from homeassistant.config_entries import (
 )
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
+    BooleanSelector,
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
@@ -41,6 +42,7 @@ from .const import (
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
     CONF_LOCATION_ID,
+    DEFAULT_MQTT_TOPIC_PREFIX,
     DEFAULT_POLL_INTERVAL_AUTOMOWER,
     DEFAULT_POLL_INTERVAL_GARDENA,
     DEFAULT_SOCKET_MINUTES,
@@ -50,6 +52,10 @@ from .const import (
     MIN_POLL_INTERVAL,
     OPT_DEFAULT_SOCKET_MINUTES,
     OPT_DEFAULT_WATERING_MINUTES,
+    OPT_MQTT_ENABLE,
+    OPT_MQTT_PUBLISH_STATES,
+    OPT_MQTT_SUBSCRIBE_COMMANDS,
+    OPT_MQTT_TOPIC_PREFIX,
     OPT_POLL_INTERVAL_MINUTES,
 )
 
@@ -520,8 +526,27 @@ class GardenaOptionsFlowHandler(OptionsFlow):
             )
         )
 
-        suggested_values: dict[str, int] = {
+        # MQTT bridge options
+        current_mqtt = self.config_entry.options.get(OPT_MQTT_ENABLE, False)
+        current_mqtt_prefix = self.config_entry.options.get(
+            OPT_MQTT_TOPIC_PREFIX, DEFAULT_MQTT_TOPIC_PREFIX
+        )
+        current_mqtt_publish = self.config_entry.options.get(OPT_MQTT_PUBLISH_STATES, True)
+        current_mqtt_commands = self.config_entry.options.get(OPT_MQTT_SUBSCRIBE_COMMANDS, True)
+
+        schema_dict[vol.Required(OPT_MQTT_ENABLE)] = BooleanSelector()
+        schema_dict[vol.Required(OPT_MQTT_TOPIC_PREFIX)] = TextSelector(
+            TextSelectorConfig(type=TextSelectorType.TEXT)
+        )
+        schema_dict[vol.Required(OPT_MQTT_PUBLISH_STATES)] = BooleanSelector()
+        schema_dict[vol.Required(OPT_MQTT_SUBSCRIBE_COMMANDS)] = BooleanSelector()
+
+        suggested_values: dict[str, Any] = {
             OPT_POLL_INTERVAL_MINUTES: current_poll,
+            OPT_MQTT_ENABLE: current_mqtt,
+            OPT_MQTT_TOPIC_PREFIX: current_mqtt_prefix,
+            OPT_MQTT_PUBLISH_STATES: current_mqtt_publish,
+            OPT_MQTT_SUBSCRIBE_COMMANDS: current_mqtt_commands,
         }
         if not is_automower:
             suggested_values[OPT_DEFAULT_WATERING_MINUTES] = current_watering

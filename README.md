@@ -545,6 +545,43 @@ Each button press or automation action is one API call. The 5-second throttle pr
 4. Commands may fail until the rate limit resets.
 5. After a successful API response, the backoff counter resets and the normal polling interval is restored automatically.
 
+## MQTT State Bridge
+
+The integration can optionally mirror all device states to a local MQTT broker. This is useful for local automations (Node-RED), cross-system integrations, or offline state caching.
+
+### Setup
+
+1. Ensure the [MQTT integration](https://www.home-assistant.io/integrations/mqtt/) is configured in Home Assistant.
+2. Go to **Settings → Devices & Services → Gardena Smart System → Configure**.
+3. Enable **MQTT bridge** and configure the topic prefix.
+
+### Topics
+
+| Topic | Direction | Description |
+|-------|-----------|-------------|
+| `{prefix}/{device_id}/state` | Outbound | Full device state as JSON (retained) |
+| `{prefix}/{device_id}/availability` | Outbound | `online` or `offline` (retained) |
+| `{prefix}/{device_id}/command` | Inbound | JSON command payload |
+
+### Inbound Commands
+
+Publish a JSON payload to `{prefix}/{device_id}/command`:
+
+```json
+{"action": "start_watering", "duration": 30, "service_id": "device-uuid:1"}
+```
+
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `start_watering` | `duration` (minutes, default 60), `service_id` | Start valve watering |
+| `stop_watering` | `service_id` | Stop valve |
+| `turn_on` | `duration` (minutes, default 60), `service_id` | Turn on power socket |
+| `turn_off` | `service_id` | Turn off power socket |
+| `park` | `service_id` | Park mower until further notice |
+| `resume` | `service_id` | Resume mower schedule |
+
+> **Note:** The MQTT bridge does not eliminate the cloud dependency. Device commands are still forwarded through the Husqvarna API. The bridge provides a local event bus for consuming state updates and triggering commands from external systems.
+
 ## Known Limitations
 
 - **Cloud-only**: Both APIs communicate through the Husqvarna cloud. An active internet connection is required.
@@ -615,7 +652,7 @@ This integration targets the [Home Assistant Integration Quality Scale](https://
 
 Key quality features:
 
-- **99% test coverage** across 502 automated tests
+- **99% test coverage** across 520 automated tests
 - **mypy --strict** passes with zero errors on all 23 source files
 - **PEP 561** compliant (`py.typed` markers on both client libraries)
 - **Full async** codebase — no blocking I/O in the event loop

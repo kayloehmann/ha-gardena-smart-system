@@ -4,11 +4,12 @@
   "codeowners": ["@kayloehmann"],
   "config_flow": true,
   "documentation": "https://github.com/kayloehmann/ha-gardena-smart-system",
+  "after_dependencies": ["mqtt"],
   "integration_type": "hub",
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/kayloehmann/ha-gardena-smart-system/issues",
   "loggers": ["aiogardenasmart"],
   "requirements": ["aiogardenasmart==0.1.2"],
   "single_config_entry": false,
-  "version": "1.5.12"
+  "version": "1.6.0"
 }

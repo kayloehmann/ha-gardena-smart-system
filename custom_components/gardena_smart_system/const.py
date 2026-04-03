@@ -38,6 +38,13 @@ OPT_DEFAULT_SOCKET_MINUTES = "default_socket_minutes"
 OPT_POLL_INTERVAL_MINUTES = "poll_interval_minutes"
 DEFAULT_WATERING_MINUTES = 60
 DEFAULT_SOCKET_MINUTES = 60
+
+# ── MQTT bridge options ──────────────────────────────────────────
+OPT_MQTT_ENABLE = "mqtt_enable"
+OPT_MQTT_TOPIC_PREFIX = "mqtt_topic_prefix"
+OPT_MQTT_PUBLISH_STATES = "mqtt_publish_states"
+OPT_MQTT_SUBSCRIBE_COMMANDS = "mqtt_subscribe_commands"
+DEFAULT_MQTT_TOPIC_PREFIX = "gardena"
 DEFAULT_POLL_INTERVAL_GARDENA = 30
 DEFAULT_POLL_INTERVAL_AUTOMOWER = 15
 MIN_POLL_INTERVAL = 5

@@ -3042,10 +3042,16 @@ class TestAutomowerMiscCoverage:
         result = await hass.config_entries.options.async_init(entry.entry_id)
         assert result["type"] == "form"
 
-        # Submit poll interval only (no watering/socket for automower)
+        # Submit poll interval + MQTT options (no watering/socket for automower)
         result = await hass.config_entries.options.async_configure(
             result["flow_id"],
-            user_input={"poll_interval_minutes": 20},
+            user_input={
+                "poll_interval_minutes": 20,
+                "mqtt_enable": False,
+                "mqtt_topic_prefix": "gardena",
+                "mqtt_publish_states": True,
+                "mqtt_subscribe_commands": True,
+            },
         )
         assert result["type"] == "create_entry"
         assert entry.options["poll_interval_minutes"] == 20

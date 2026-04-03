@@ -2,6 +2,18 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.6.0] - 2026-04-03
+
+### Added
+- **MQTT state bridge** — optionally mirrors all Gardena device states to a local MQTT broker in real time
+  - Enable via Options Flow (Settings → Devices & Services → Gardena → Configure)
+  - Configurable topic prefix (default: `gardena`)
+  - Publishes full device state as JSON on every WebSocket push and poll update
+  - Publishes device availability (`online`/`offline`) with retain flag
+  - Accepts inbound commands via MQTT (`start_watering`, `stop_watering`, `turn_on`, `turn_off`, `park`, `resume`)
+  - Requires the Home Assistant MQTT integration to be configured (soft dependency)
+- 18 new tests for MQTT bridge (520 tests total)
+
 ## [1.5.12] - 2026-04-03
 
 ### Changed
@@ -207,6 +219,7 @@ All notable changes to the Gardena Smart System integration for Home Assistant.
 - Adaptive polling, command throttling, and rate limit handling
 - Config flow with multi-location support
 
+[1.6.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.6.0
 [1.5.12]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.12
 [1.5.11]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.11
 [1.5.10]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.10

@@ -19,7 +19,16 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DOMAIN, MIN_COMMAND_INTERVAL_SECONDS, OPT_POLL_INTERVAL_MINUTES
+from .const import (
+    DEFAULT_MQTT_TOPIC_PREFIX,
+    DOMAIN,
+    MIN_COMMAND_INTERVAL_SECONDS,
+    OPT_MQTT_ENABLE,
+    OPT_MQTT_PUBLISH_STATES,
+    OPT_MQTT_SUBSCRIBE_COMMANDS,
+    OPT_MQTT_TOPIC_PREFIX,
+    OPT_POLL_INTERVAL_MINUTES,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -88,6 +97,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         )
         self._rate_limit_hits: int = 0
         self._ws_reconnect_task: asyncio.Task[None] | None = None
+        self._mqtt_bridge: Any = None
 
     # ── Public properties ──────────────────────────────────────────────
 
@@ -174,6 +184,14 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         # Start WebSocket on first successful fetch
         if not self._ws_connected:
             await self._async_start_websocket(devices)
+
+        # Start MQTT bridge on first successful fetch
+        if self._mqtt_bridge is None:
+            await self._async_start_mqtt_bridge()
+        if self._mqtt_bridge and self._mqtt_bridge.is_active:
+            self.hass.async_create_task(
+                self._mqtt_bridge.async_publish_all_devices(devices)
+            )
 
         # Remove devices that disappeared from the API (stale-devices rule)
         self._async_remove_stale_devices(devices)
@@ -277,6 +295,10 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         """Called by the WebSocket client when a device state changes."""
         if self.data is not None:
             self.data[device_id] = device
+        if self._mqtt_bridge and self._mqtt_bridge.is_active:
+            self.hass.async_create_task(
+                self._mqtt_bridge.async_publish_device_state(device_id, device)
+            )
         self.async_set_updated_data(self.data or {})
 
     def _on_ws_error(self, err: Exception) -> None:
@@ -356,9 +378,43 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             len(self._WS_RECONNECT_DELAYS),
         )
 
+    # ── MQTT bridge ──────────────────────────────────────────────────────
+
+    async def _async_start_mqtt_bridge(self) -> None:
+        """Initialize and start the MQTT bridge if enabled in options."""
+        opts = self.config_entry.options
+        if not opts.get(OPT_MQTT_ENABLE, False):
+            self._mqtt_bridge = False  # sentinel: checked, not enabled
+            return
+
+        from .mqtt_bridge import MqttBridge
+
+        prefix = opts.get(OPT_MQTT_TOPIC_PREFIX, DEFAULT_MQTT_TOPIC_PREFIX)
+        publish = opts.get(OPT_MQTT_PUBLISH_STATES, True)
+        subscribe = opts.get(OPT_MQTT_SUBSCRIBE_COMMANDS, True)
+
+        bridge = MqttBridge(
+            self.hass,
+            topic_prefix=prefix,
+            publish_states=publish,
+            subscribe_commands=subscribe,
+        )
+        started = await bridge.async_start(
+            command_handler=self._async_handle_mqtt_command if subscribe else None,
+        )
+        self._mqtt_bridge = bridge if started else False
+
+    async def _async_handle_mqtt_command(
+        self, device_id: str, payload: dict[str, Any]
+    ) -> None:
+        """Handle an inbound MQTT command (subclasses can override)."""
+        _LOGGER.debug("MQTT command received for %s: %s (no handler)", device_id, payload)
+
     async def async_shutdown(self) -> None:
         """Disconnect the WebSocket, revoke token, and clean up resources."""
         self._cancel_ws_reconnect()
+        if self._mqtt_bridge and hasattr(self._mqtt_bridge, "async_stop"):
+            await self._mqtt_bridge.async_stop()
         if self._ws:
             await self._ws.async_disconnect()
             self._ws = None
