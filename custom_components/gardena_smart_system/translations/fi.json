@@ -72,12 +72,20 @@
         "data": {
           "default_watering_minutes": "Oletuskastelun kesto",
           "default_socket_minutes": "Pistorasian oletuskesto",
-          "poll_interval_minutes": "Kyselyväli"
+          "poll_interval_minutes": "Kyselyväli",
+          "mqtt_enable": "Enable MQTT bridge",
+          "mqtt_topic_prefix": "MQTT topic prefix",
+          "mqtt_publish_states": "Publish device states to MQTT",
+          "mqtt_subscribe_commands": "Accept commands via MQTT"
         },
         "data_description": {
           "default_watering_minutes": "Kesto minuutteina, kun venttiili avataan ilman keston määritystä (1–1440).",
           "default_socket_minutes": "Kesto minuutteina, kun pistorasia kytketään päälle (1–1440). Aseta 1440 (24 h) lähes jatkuvaa käyttöä varten.",
-          "poll_interval_minutes": "Kuinka usein API:sta haetaan päivityksiä minuutteina (5–1440). Pienempi arvo tarjoaa tuoreemmat tiedot, mutta kuluttaa enemmän API-kiintiötä. Oletus: 30 (Gardena) / 15 (Automower)."
+          "poll_interval_minutes": "Kuinka usein API:sta haetaan päivityksiä minuutteina (5–1440). Pienempi arvo tarjoaa tuoreemmat tiedot, mutta kuluttaa enemmän API-kiintiötä. Oletus: 30 (Gardena) / 15 (Automower).",
+          "mqtt_enable": "Mirror device states to a local MQTT broker and optionally accept commands. Requires the MQTT integration to be configured.",
+          "mqtt_topic_prefix": "Base topic for all MQTT messages (e.g. 'gardena' → gardena/{device_id}/state).",
+          "mqtt_publish_states": "Publish full device state as JSON on every update (WebSocket push or poll).",
+          "mqtt_subscribe_commands": "Subscribe to {prefix}/{device_id}/command for inbound commands (start_watering, stop_watering, turn_on, turn_off, park, resume)."
         }
       }
     }

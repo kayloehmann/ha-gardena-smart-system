@@ -72,12 +72,20 @@
         "data": {
           "default_watering_minutes": "デフォルト散水時間",
           "default_socket_minutes": "デフォルトソケット時間",
-          "poll_interval_minutes": "ポーリング間隔"
+          "poll_interval_minutes": "ポーリング間隔",
+          "mqtt_enable": "MQTTブリッジを有効化",
+          "mqtt_topic_prefix": "MQTTトピックプレフィックス",
+          "mqtt_publish_states": "MQTTでデバイス状態を配信",
+          "mqtt_subscribe_commands": "MQTTでコマンドを受信"
         },
         "data_description": {
           "default_watering_minutes": "時間を指定せずにバルブを開く場合の分単位の時間（1-1440）。",
           "default_socket_minutes": "ソケットをオンにする場合の分単位の時間（1-1440）。ほぼ無期限の動作には1440（24時間）に設定してください。",
-          "poll_interval_minutes": "更新のためにAPIをポーリングする頻度（分単位、5-1440）。低い値はより新しいデータを提供しますが、APIクォータをより多く消費します。デフォルト: 30（Gardena）/ 15（Automower）。"
+          "poll_interval_minutes": "更新のためにAPIをポーリングする頻度（分単位、5-1440）。低い値はより新しいデータを提供しますが、APIクォータをより多く消費します。デフォルト: 30（Gardena）/ 15（Automower）。",
+          "mqtt_enable": "Mirror device states to a local MQTT broker and optionally accept commands. Requires the MQTT integration to be configured.",
+          "mqtt_topic_prefix": "Base topic for all MQTT messages (e.g. 'gardena' → gardena/{device_id}/state).",
+          "mqtt_publish_states": "Publish full device state as JSON on every update (WebSocket push or poll).",
+          "mqtt_subscribe_commands": "Subscribe to {prefix}/{device_id}/command for inbound commands (start_watering, stop_watering, turn_on, turn_off, park, resume)."
         }
       }
     }

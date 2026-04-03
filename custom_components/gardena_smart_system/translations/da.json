@@ -72,12 +72,20 @@
         "data": {
           "default_watering_minutes": "Standard vandingsvarighed",
           "default_socket_minutes": "Standard stikkontaktvarighed",
-          "poll_interval_minutes": "Opdateringsinterval"
+          "poll_interval_minutes": "Opdateringsinterval",
+          "mqtt_enable": "Aktivér MQTT-bro",
+          "mqtt_topic_prefix": "MQTT-emne-præfiks",
+          "mqtt_publish_states": "Publicer enhedsstatus via MQTT",
+          "mqtt_subscribe_commands": "Modtag kommandoer via MQTT"
         },
         "data_description": {
           "default_watering_minutes": "Varighed i minutter, når en ventil åbnes uden angivelse af varighed (1–1440).",
           "default_socket_minutes": "Varighed i minutter, når en stikkontakt tændes (1–1440). Sæt til 1440 (24 timer) for næsten ubegrænset drift.",
-          "poll_interval_minutes": "Hvor ofte API'en forespørges om opdateringer, i minutter (5–1440). Lavere værdier giver mere aktuelle data, men bruger mere API-kvote. Standard: 30 (Gardena) / 15 (Automower)."
+          "poll_interval_minutes": "Hvor ofte API'en forespørges om opdateringer, i minutter (5–1440). Lavere værdier giver mere aktuelle data, men bruger mere API-kvote. Standard: 30 (Gardena) / 15 (Automower).",
+          "mqtt_enable": "Mirror device states to a local MQTT broker and optionally accept commands. Requires the MQTT integration to be configured.",
+          "mqtt_topic_prefix": "Base topic for all MQTT messages (e.g. 'gardena' → gardena/{device_id}/state).",
+          "mqtt_publish_states": "Publish full device state as JSON on every update (WebSocket push or poll).",
+          "mqtt_subscribe_commands": "Subscribe to {prefix}/{device_id}/command for inbound commands (start_watering, stop_watering, turn_on, turn_off, park, resume)."
         }
       }
     }

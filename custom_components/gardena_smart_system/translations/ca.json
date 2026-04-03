@@ -72,12 +72,20 @@
         "data": {
           "default_watering_minutes": "Durada de reg predeterminada",
           "default_socket_minutes": "Durada d'endoll intel·ligent predeterminada",
-          "poll_interval_minutes": "Interval de consulta"
+          "poll_interval_minutes": "Interval de consulta",
+          "mqtt_enable": "Enable MQTT bridge",
+          "mqtt_topic_prefix": "MQTT topic prefix",
+          "mqtt_publish_states": "Publish device states to MQTT",
+          "mqtt_subscribe_commands": "Accept commands via MQTT"
         },
         "data_description": {
           "default_watering_minutes": "Durada en minuts quan s'obre una vàlvula sense especificar una durada (1-1440).",
           "default_socket_minutes": "Durada en minuts quan s'encén un endoll intel·ligent (1-1440). Establiu-lo a 1440 (24h) per a un funcionament gairebé indefinit.",
-          "poll_interval_minutes": "Amb quina freqüència consultar l'API per obtenir actualitzacions, en minuts (5-1440). Valors més baixos proporcionen dades més recents però consumeixen més quota d'API. Predeterminat: 30 (Gardena) / 15 (Automower)."
+          "poll_interval_minutes": "Amb quina freqüència consultar l'API per obtenir actualitzacions, en minuts (5-1440). Valors més baixos proporcionen dades més recents però consumeixen més quota d'API. Predeterminat: 30 (Gardena) / 15 (Automower).",
+          "mqtt_enable": "Mirror device states to a local MQTT broker and optionally accept commands. Requires the MQTT integration to be configured.",
+          "mqtt_topic_prefix": "Base topic for all MQTT messages (e.g. 'gardena' → gardena/{device_id}/state).",
+          "mqtt_publish_states": "Publish full device state as JSON on every update (WebSocket push or poll).",
+          "mqtt_subscribe_commands": "Subscribe to {prefix}/{device_id}/command for inbound commands (start_watering, stop_watering, turn_on, turn_off, park, resume)."
         }
       }
     }

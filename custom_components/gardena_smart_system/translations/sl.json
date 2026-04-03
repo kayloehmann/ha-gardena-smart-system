@@ -72,12 +72,20 @@
         "data": {
           "default_watering_minutes": "Privzeto trajanje zalivanja",
           "default_socket_minutes": "Privzeto trajanje vtičnice",
-          "poll_interval_minutes": "Interval poizvedovanja"
+          "poll_interval_minutes": "Interval poizvedovanja",
+          "mqtt_enable": "Enable MQTT bridge",
+          "mqtt_topic_prefix": "MQTT topic prefix",
+          "mqtt_publish_states": "Publish device states to MQTT",
+          "mqtt_subscribe_commands": "Accept commands via MQTT"
         },
         "data_description": {
           "default_watering_minutes": "Trajanje v minutah pri odpiranju ventila brez navedbe trajanja (1-1440).",
           "default_socket_minutes": "Trajanje v minutah pri vklopu vtičnice (1-1440). Nastavite na 1440 (24 ur) za skoraj neskončno delovanje.",
-          "poll_interval_minutes": "Kako pogosto poizvedovati API za posodobitve v minutah (5-1440). Nižje vrednosti zagotavljajo svežejše podatke, vendar porabijo več API kvote. Privzeto: 30 (Gardena) / 15 (Automower)."
+          "poll_interval_minutes": "Kako pogosto poizvedovati API za posodobitve v minutah (5-1440). Nižje vrednosti zagotavljajo svežejše podatke, vendar porabijo več API kvote. Privzeto: 30 (Gardena) / 15 (Automower).",
+          "mqtt_enable": "Mirror device states to a local MQTT broker and optionally accept commands. Requires the MQTT integration to be configured.",
+          "mqtt_topic_prefix": "Base topic for all MQTT messages (e.g. 'gardena' → gardena/{device_id}/state).",
+          "mqtt_publish_states": "Publish full device state as JSON on every update (WebSocket push or poll).",
+          "mqtt_subscribe_commands": "Subscribe to {prefix}/{device_id}/command for inbound commands (start_watering, stop_watering, turn_on, turn_off, park, resume)."
         }
       }
     }

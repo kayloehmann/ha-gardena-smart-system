@@ -72,12 +72,20 @@
         "data": {
           "default_watering_minutes": "Duracion de riego predeterminada",
           "default_socket_minutes": "Duracion de enchufe predeterminada",
-          "poll_interval_minutes": "Intervalo de consulta"
+          "poll_interval_minutes": "Intervalo de consulta",
+          "mqtt_enable": "Activar puente MQTT",
+          "mqtt_topic_prefix": "Prefijo de tema MQTT",
+          "mqtt_publish_states": "Publicar estados en MQTT",
+          "mqtt_subscribe_commands": "Aceptar comandos por MQTT"
         },
         "data_description": {
           "default_watering_minutes": "Duracion en minutos al abrir una valvula sin especificar duracion (1-1440).",
           "default_socket_minutes": "Duracion en minutos al encender un enchufe (1-1440). Establece 1440 (24 h) para funcionamiento practicamente ilimitado.",
-          "poll_interval_minutes": "Frecuencia con la que se consulta la API en busca de actualizaciones, en minutos (5-1440). Valores mas bajos proporcionan datos mas recientes, pero consumen mas cuota de la API. Predeterminado: 30 (Gardena) / 15 (Automower)."
+          "poll_interval_minutes": "Frecuencia con la que se consulta la API en busca de actualizaciones, en minutos (5-1440). Valores mas bajos proporcionan datos mas recientes, pero consumen mas cuota de la API. Predeterminado: 30 (Gardena) / 15 (Automower).",
+          "mqtt_enable": "Mirror device states to a local MQTT broker and optionally accept commands. Requires the MQTT integration to be configured.",
+          "mqtt_topic_prefix": "Base topic for all MQTT messages (e.g. 'gardena' → gardena/{device_id}/state).",
+          "mqtt_publish_states": "Publish full device state as JSON on every update (WebSocket push or poll).",
+          "mqtt_subscribe_commands": "Subscribe to {prefix}/{device_id}/command for inbound commands (start_watering, stop_watering, turn_on, turn_off, park, resume)."
         }
       }
     }

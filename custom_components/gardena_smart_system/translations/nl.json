@@ -72,12 +72,20 @@
         "data": {
           "default_watering_minutes": "Standaard bewateringsduur",
           "default_socket_minutes": "Standaard stopcontactduur",
-          "poll_interval_minutes": "Polling-interval"
+          "poll_interval_minutes": "Polling-interval",
+          "mqtt_enable": "MQTT-bridge inschakelen",
+          "mqtt_topic_prefix": "MQTT-topic-prefix",
+          "mqtt_publish_states": "Apparaatstatus publiceren via MQTT",
+          "mqtt_subscribe_commands": "Opdrachten via MQTT accepteren"
         },
         "data_description": {
           "default_watering_minutes": "Duur in minuten bij het openen van een klep zonder opgegeven duur (1–1440).",
           "default_socket_minutes": "Duur in minuten bij het inschakelen van een stopcontact (1–1440). Stel in op 1440 (24 uur) voor vrijwel onbeperkt gebruik.",
-          "poll_interval_minutes": "Hoe vaak de API wordt bevraagd voor updates, in minuten (5–1440). Lagere waarden geven actuelere gegevens, maar verbruiken meer API-tegoed. Standaard: 30 (Gardena) / 15 (Automower)."
+          "poll_interval_minutes": "Hoe vaak de API wordt bevraagd voor updates, in minuten (5–1440). Lagere waarden geven actuelere gegevens, maar verbruiken meer API-tegoed. Standaard: 30 (Gardena) / 15 (Automower).",
+          "mqtt_enable": "Mirror device states to a local MQTT broker and optionally accept commands. Requires the MQTT integration to be configured.",
+          "mqtt_topic_prefix": "Base topic for all MQTT messages (e.g. 'gardena' → gardena/{device_id}/state).",
+          "mqtt_publish_states": "Publish full device state as JSON on every update (WebSocket push or poll).",
+          "mqtt_subscribe_commands": "Subscribe to {prefix}/{device_id}/command for inbound commands (start_watering, stop_watering, turn_on, turn_off, park, resume)."
         }
       }
     }

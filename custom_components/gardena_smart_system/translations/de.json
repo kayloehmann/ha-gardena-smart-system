@@ -72,12 +72,20 @@
         "data": {
           "default_watering_minutes": "Standard-Bewässerungsdauer",
           "default_socket_minutes": "Standard-Steckdosendauer",
-          "poll_interval_minutes": "Abfrageintervall"
+          "poll_interval_minutes": "Abfrageintervall",
+          "mqtt_enable": "MQTT-Bridge aktivieren",
+          "mqtt_topic_prefix": "MQTT-Topic-Präfix",
+          "mqtt_publish_states": "Gerätezustände per MQTT veröffentlichen",
+          "mqtt_subscribe_commands": "Befehle per MQTT empfangen"
         },
         "data_description": {
           "default_watering_minutes": "Dauer in Minuten beim Öffnen eines Ventils ohne Angabe einer Dauer (1–1440).",
           "default_socket_minutes": "Dauer in Minuten beim Einschalten einer Steckdose (1–1440). Setze auf 1440 (24 Std.) für nahezu unbegrenzten Betrieb.",
-          "poll_interval_minutes": "Wie oft die API nach Aktualisierungen abgefragt wird, in Minuten (5–1440). Niedrigere Werte liefern aktuellere Daten, verbrauchen aber mehr API-Kontingent. Standard: 30 (Gardena) / 15 (Automower)."
+          "poll_interval_minutes": "Wie oft die API nach Aktualisierungen abgefragt wird, in Minuten (5–1440). Niedrigere Werte liefern aktuellere Daten, verbrauchen aber mehr API-Kontingent. Standard: 30 (Gardena) / 15 (Automower).",
+          "mqtt_enable": "Spiegelt Gerätezustände auf einen lokalen MQTT-Broker und empfängt optional Befehle. Die MQTT-Integration muss konfiguriert sein.",
+          "mqtt_topic_prefix": "Basis-Topic für alle MQTT-Nachrichten (z.B. ‘gardena’ → gardena/{device_id}/state).",
+          "mqtt_publish_states": "Veröffentlicht den vollständigen Gerätezustand als JSON bei jeder Aktualisierung (WebSocket-Push oder Abfrage).",
+          "mqtt_subscribe_commands": "Abonniert {prefix}/{device_id}/command für eingehende Befehle (start_watering, stop_watering, turn_on, turn_off, park, resume)."
         }
       }
     }

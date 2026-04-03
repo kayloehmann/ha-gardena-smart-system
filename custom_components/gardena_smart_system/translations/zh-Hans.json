@@ -72,12 +72,20 @@
         "data": {
           "default_watering_minutes": "默认浇水时长",
           "default_socket_minutes": "默认电源插座时长",
-          "poll_interval_minutes": "轮询间隔"
+          "poll_interval_minutes": "轮询间隔",
+          "mqtt_enable": "启用 MQTT 桥接",
+          "mqtt_topic_prefix": "MQTT 主题前缀",
+          "mqtt_publish_states": "通过 MQTT 发布设备状态",
+          "mqtt_subscribe_commands": "通过 MQTT 接收命令"
         },
         "data_description": {
           "default_watering_minutes": "未指定时长时打开阀门的默认时长（分钟，1-1440）。",
           "default_socket_minutes": "打开电源插座的时长（分钟，1-1440）。设为 1440（24小时）可实现近乎无限期运行。",
-          "poll_interval_minutes": "轮询 API 获取更新的间隔（分钟，5-1440）。较低的值提供更新的数据，但会消耗更多的 API 配额。默认值：30（Gardena）/ 15（Automower）。"
+          "poll_interval_minutes": "轮询 API 获取更新的间隔（分钟，5-1440）。较低的值提供更新的数据，但会消耗更多的 API 配额。默认值：30（Gardena）/ 15（Automower）。",
+          "mqtt_enable": "Mirror device states to a local MQTT broker and optionally accept commands. Requires the MQTT integration to be configured.",
+          "mqtt_topic_prefix": "Base topic for all MQTT messages (e.g. 'gardena' → gardena/{device_id}/state).",
+          "mqtt_publish_states": "Publish full device state as JSON on every update (WebSocket push or poll).",
+          "mqtt_subscribe_commands": "Subscribe to {prefix}/{device_id}/command for inbound commands (start_watering, stop_watering, turn_on, turn_off, park, resume)."
         }
       }
     }
