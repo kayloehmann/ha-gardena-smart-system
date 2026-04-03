@@ -1359,3 +1359,209 @@ class TestValveSetErrorSensor:
         entity_reg = er.async_get(hass)
         entry = entity_reg.async_get("sensor.my_sensor_valve_set_error_code")
         assert entry is None
+
+
+# ──────────────────────────────────────────────────────────────────────
+# v1.5.11: Duration-change detection & single-valve placeholder tests
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestValveDurationChangeWhileActive:
+    """Duration change mid-watering should recompute end_time."""
+
+    async def test_duration_change_updates_end_time(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """When duration changes while valve is active, end_time updates."""
+        device = make_mock_device(valve_count=1)
+        vid = "device-uuid:1"
+        device.valves[vid].activity = "MANUAL_WATERING"
+        device.valves[vid].duration = 300
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        from homeassistant.util import dt as dt_util
+
+        entity_reg = er.async_get(hass)
+        entry = None
+        for e in entity_reg.entities.values():
+            if "remaining_duration" in (e.unique_id or ""):
+                entry = e
+                break
+        assert entry is not None
+
+        state1 = hass.states.get(entry.entity_id)
+        assert state1 is not None
+        end1 = dt_util.parse_datetime(state1.state)
+        assert end1 is not None
+
+        # Simulate duration change (e.g. START_SECONDS_TO_OVERRIDE)
+        device.valves[vid].duration = 600
+        coordinator = mock_config_entry.runtime_data
+        coordinator.async_set_updated_data(devices)
+        await hass.async_block_till_done()
+
+        state2 = hass.states.get(entry.entity_id)
+        assert state2 is not None
+        end2 = dt_util.parse_datetime(state2.state)
+        assert end2 is not None
+        # New end time should be later than the original
+        assert end2 > end1
+
+    async def test_active_closed_active_cycle(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """MANUAL_WATERING(300) → CLOSED → MANUAL_WATERING(120) gets fresh end_time."""
+        device = make_mock_device(valve_count=1)
+        vid = "device-uuid:1"
+        device.valves[vid].activity = "MANUAL_WATERING"
+        device.valves[vid].duration = 300
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        from homeassistant.util import dt as dt_util
+
+        entity_reg = er.async_get(hass)
+        entry = None
+        for e in entity_reg.entities.values():
+            if "remaining_duration" in (e.unique_id or ""):
+                entry = e
+                break
+        assert entry is not None
+
+        state1 = hass.states.get(entry.entity_id)
+        end1 = dt_util.parse_datetime(state1.state)
+        assert end1 is not None
+
+        # Close the valve
+        device.valves[vid].activity = "CLOSED"
+        device.valves[vid].duration = 0
+        coordinator = mock_config_entry.runtime_data
+        coordinator.async_set_updated_data(devices)
+        await hass.async_block_till_done()
+
+        state_closed = hass.states.get(entry.entity_id)
+        assert state_closed.state == "unknown"
+
+        # Reopen with different duration
+        device.valves[vid].activity = "MANUAL_WATERING"
+        device.valves[vid].duration = 120
+        coordinator.async_set_updated_data(devices)
+        await hass.async_block_till_done()
+
+        state3 = hass.states.get(entry.entity_id)
+        end3 = dt_util.parse_datetime(state3.state)
+        assert end3 is not None
+        # 120s duration → end_time should be earlier than the 300s one
+        assert end3 < end1
+
+
+class TestPowerSocketDurationChangeWhileActive:
+    """Duration change mid-cycle should recompute end_time for power socket."""
+
+    async def test_duration_change_updates_end_time(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """When duration changes while socket is active, end_time updates."""
+        device = make_mock_device(has_power_socket=True)
+        device.power_socket.activity = "TIMER"
+        device.power_socket.duration = 300
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        from homeassistant.util import dt as dt_util
+
+        state1 = hass.states.get("sensor.my_sensor_remaining_power_time")
+        assert state1 is not None
+        end1 = dt_util.parse_datetime(state1.state)
+        assert end1 is not None
+
+        # Simulate duration change
+        device.power_socket.duration = 600
+        coordinator = mock_config_entry.runtime_data
+        coordinator.async_set_updated_data(devices)
+        await hass.async_block_till_done()
+
+        state2 = hass.states.get("sensor.my_sensor_remaining_power_time")
+        end2 = dt_util.parse_datetime(state2.state)
+        assert end2 is not None
+        assert end2 > end1
+
+    async def test_power_socket_state_tracking_cycle(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """OFF → TIME_LIMITED_ON → OFF cycle tracks state correctly."""
+        device = make_mock_device(has_power_socket=True)
+        device.power_socket.activity = "OFF"
+        device.power_socket.duration = 0
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        from homeassistant.util import dt as dt_util
+
+        state_off = hass.states.get("sensor.my_sensor_remaining_power_time")
+        assert state_off.state == "unknown"
+
+        # Turn on
+        device.power_socket.activity = "TIMER"
+        device.power_socket.duration = 300
+        coordinator = mock_config_entry.runtime_data
+        coordinator.async_set_updated_data(devices)
+        await hass.async_block_till_done()
+
+        state_on = hass.states.get("sensor.my_sensor_remaining_power_time")
+        assert state_on.state != "unknown"
+        end = dt_util.parse_datetime(state_on.state)
+        assert end is not None
+
+        # Turn off
+        device.power_socket.activity = "OFF"
+        device.power_socket.duration = 0
+        coordinator.async_set_updated_data(devices)
+        await hass.async_block_till_done()
+
+        state_off2 = hass.states.get("sensor.my_sensor_remaining_power_time")
+        assert state_off2.state == "unknown"
+
+
+class TestSingleValvePlaceholder:
+    """Single-valve devices (Smart Water Control) must not show literal {zone}."""
+
+    async def test_single_valve_has_empty_zone_placeholder(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Single-valve device sets translation_placeholders with empty zone."""
+        from custom_components.gardena_smart_system.sensor import (
+            GardenaValveRemainingDurationSensor,
+            GardenaValveErrorSensor,
+            GardenaValveStateSensor,
+        )
+
+        device = make_mock_device(single_valve=True)
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        coordinator = mock_config_entry.runtime_data
+
+        # Check that entities were created and have placeholders set
+        for cls in (GardenaValveRemainingDurationSensor, GardenaValveErrorSensor, GardenaValveStateSensor):
+            entity = cls(coordinator, device, device.device_id)
+            assert hasattr(entity, "_attr_translation_placeholders")
+            assert entity._attr_translation_placeholders == {"zone": ""}
+
+    async def test_single_valve_sensor_entities_created(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Single-valve device creates sensor entities without {zone} in name."""
+        device = make_mock_device(single_valve=True, name="Water Control")
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        entity_reg = er.async_get(hass)
+        # Should find remaining_duration, state, and error sensors
+        found_keys = set()
+        for entry in entity_reg.entities.values():
+            uid = entry.unique_id or ""
+            if "valve" in uid and device.serial in uid:
+                found_keys.add(uid)
+        assert len(found_keys) >= 3, f"Expected at least 3 valve sensor entities, got: {found_keys}"

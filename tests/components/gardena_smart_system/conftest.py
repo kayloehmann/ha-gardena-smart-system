@@ -41,6 +41,7 @@ def make_mock_device(
     has_mower: bool = False,
     has_power_socket: bool = False,
     valve_count: int = 0,
+    single_valve: bool = False,
 ) -> MagicMock:
     """Build a Device mock with the requested services populated."""
     device = MagicMock()
@@ -94,15 +95,24 @@ def make_mock_device(
         device.power_socket = None
 
     valves: dict[str, MagicMock] = {}
-    for i in range(1, valve_count + 1):
-        vid = f"{device_id}:{i}"
+    if single_valve:
         valve = MagicMock()
-        valve.service_id = vid
-        valve.name = f"Valve {i}"
+        valve.service_id = device_id
+        valve.name = ""
         valve.activity = "CLOSED"
         valve.state = "OK"
         valve.duration = None
-        valves[vid] = valve
+        valves[device_id] = valve
+    else:
+        for i in range(1, valve_count + 1):
+            vid = f"{device_id}:{i}"
+            valve = MagicMock()
+            valve.service_id = vid
+            valve.name = f"Valve {i}"
+            valve.activity = "CLOSED"
+            valve.state = "OK"
+            valve.duration = None
+            valves[vid] = valve
     device.valves = valves
     device.valve_set = None
 

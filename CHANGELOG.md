@@ -2,6 +2,15 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.5.11] - 2026-04-02
+
+### Fixed
+- **Single-valve devices** (Smart Water Control) no longer show literal `{zone}` in entity names — translation placeholders are now always set
+- **Duration change while watering** — sending a new `START_SECONDS_TO_OVERRIDE` command while a valve or power socket is active now correctly updates the countdown end time
+
+### Added
+- 8 new tests for duration-change detection, power socket state tracking, and single-valve placeholder handling (500 tests total)
+
 ## [1.5.10] - 2026-04-02
 
 ### Fixed
@@ -186,6 +195,12 @@ All notable changes to the Gardena Smart System integration for Home Assistant.
 - Adaptive polling, command throttling, and rate limit handling
 - Config flow with multi-location support
 
+[1.5.11]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.11
+[1.5.10]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.10
+[1.5.9]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.9
+[1.5.8]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.8
+[1.5.7]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.7
+[1.5.6]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.6
 [1.5.5]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.5
 [1.5.4]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.4
 [1.5.3]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.3

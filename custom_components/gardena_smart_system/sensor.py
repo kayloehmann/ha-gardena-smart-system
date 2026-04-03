@@ -323,11 +323,13 @@ class GardenaValveRemainingDurationSensor(GardenaEntity, SensorEntity):
         super().__init__(coordinator, device, suffix)
         self._service_id = service_id
         self._end_time: datetime | None = None
-        self._was_active = False
+        self._last_duration: int | None = None
+        valve = device.valves.get(service_id)
         if zone:
-            valve = device.valves.get(service_id)
             name = valve.name if valve and valve.name else f"Zone {zone}"
-            self._attr_translation_placeholders = {"zone": name}
+        else:
+            name = ""
+        self._attr_translation_placeholders = {"zone": name}
 
     @property
     def native_value(self) -> datetime | None:
@@ -335,7 +337,7 @@ class GardenaValveRemainingDurationSensor(GardenaEntity, SensorEntity):
 
         The Gardena API sends the initial set duration (not remaining),
         so we compute the end time once on the CLOSED→active transition
-        and keep it stable until the valve closes again.
+        and recompute if the duration changes (e.g. START_SECONDS_TO_OVERRIDE).
         """
         device = self._device
         if device is None:
@@ -346,12 +348,11 @@ class GardenaValveRemainingDurationSensor(GardenaEntity, SensorEntity):
         is_active = valve.activity != ValveActivity.CLOSED
         if not is_active:
             self._end_time = None
-            self._was_active = False
+            self._last_duration = None
             return None
-        if not self._was_active and valve.duration and valve.duration > 0:
-            # Transition from closed to active: compute end time once
+        if valve.duration and valve.duration > 0 and valve.duration != self._last_duration:
             self._end_time = dt_util.utcnow() + timedelta(seconds=valve.duration)
-            self._was_active = True
+            self._last_duration = valve.duration
         return self._end_time
 
 
@@ -369,7 +370,7 @@ class GardenaPowerSocketRemainingDurationSensor(GardenaEntity, SensorEntity):
         """Initialize the power socket remaining duration sensor."""
         super().__init__(coordinator, device, "power_socket_remaining_duration")
         self._end_time: datetime | None = None
-        self._was_active = False
+        self._last_duration: int | None = None
 
     @property
     def native_value(self) -> datetime | None:
@@ -383,11 +384,11 @@ class GardenaPowerSocketRemainingDurationSensor(GardenaEntity, SensorEntity):
         is_active = ps.activity != PowerSocketActivity.OFF
         if not is_active:
             self._end_time = None
-            self._was_active = False
+            self._last_duration = None
             return None
-        if not self._was_active and ps.duration and ps.duration > 0:
+        if ps.duration and ps.duration > 0 and ps.duration != self._last_duration:
             self._end_time = dt_util.utcnow() + timedelta(seconds=ps.duration)
-            self._was_active = True
+            self._last_duration = ps.duration
         return self._end_time
 
 
@@ -409,10 +410,12 @@ class GardenaValveErrorSensor(GardenaEntity, SensorEntity):
         suffix = f"valve_{zone}_last_error_code" if zone else "valve_last_error_code"
         super().__init__(coordinator, device, suffix)
         self._service_id = service_id
+        valve = device.valves.get(service_id)
         if zone:
-            valve = device.valves.get(service_id)
             name = valve.name if valve and valve.name else f"Zone {zone}"
-            self._attr_translation_placeholders = {"zone": name}
+        else:
+            name = ""
+        self._attr_translation_placeholders = {"zone": name}
 
     @property
     def native_value(self) -> str | None:
@@ -443,10 +446,12 @@ class GardenaValveStateSensor(GardenaEntity, SensorEntity):
         suffix = f"valve_{zone}_state" if zone else "valve_state"
         super().__init__(coordinator, device, suffix)
         self._service_id = service_id
+        valve = device.valves.get(service_id)
         if zone:
-            valve = device.valves.get(service_id)
             name = valve.name if valve and valve.name else f"Zone {zone}"
-            self._attr_translation_placeholders = {"zone": name}
+        else:
+            name = ""
+        self._attr_translation_placeholders = {"zone": name}
 
     @property
     def native_value(self) -> str | None:
