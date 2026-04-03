@@ -1,10 +1,10 @@
 {
   "domain": "gardena_smart_system",
   "name": "Gardena Smart System",
+  "after_dependencies": ["mqtt"],
   "codeowners": ["@kayloehmann"],
   "config_flow": true,
   "documentation": "https://github.com/kayloehmann/ha-gardena-smart-system",
-  "after_dependencies": ["mqtt"],
   "integration_type": "hub",
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/kayloehmann/ha-gardena-smart-system/issues",
