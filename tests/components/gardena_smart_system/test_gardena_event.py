@@ -832,3 +832,82 @@ class TestGardenaEventDeviceNone:
         finally:
             for p in reversed(patches):
                 p.__exit__(None, None, None)
+
+
+class TestValveEventDurationChange:
+    """Ensure duration changes do not fire spurious events."""
+
+    async def test_no_duplicate_event_on_duration_change(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Duration change while MANUAL_WATERING must not fire started_watering again."""
+        device = make_mock_device(valve_count=1, has_sensor=False)
+        vid = f"{device.device_id}:1"
+        device.valves[vid].activity = "MANUAL_WATERING"
+        device.valves[vid].state = "OK"
+        device.valves[vid].duration = 300
+        devices = {device.device_id: device}
+
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
+        try:
+            coordinator = mock_config_entry.runtime_data
+
+            entity_reg = er.async_get(hass)
+            valve_events = [
+                e
+                for e in entity_reg.entities.values()
+                if e.platform == "gardena_smart_system"
+                and e.domain == "event"
+                and "valve" in (e.unique_id or "")
+            ]
+            assert len(valve_events) == 1
+            entity_id = valve_events[0].entity_id
+
+            # Record current event_type (initial state, no transition yet)
+            state_before = hass.states.get(entity_id)
+
+            # Simulate duration change (START_SECONDS_TO_OVERRIDE) — same activity
+            updated = _copy_device(device)
+            new_valve = MagicMock()
+            new_valve.activity = "MANUAL_WATERING"
+            new_valve.state = "OK"
+            new_valve.service_id = vid
+            new_valve.name = "Valve 1"
+            new_valve.duration = 600
+            new_valve.last_error_code = None
+            updated.valves = {vid: new_valve}
+            coordinator.async_set_updated_data({device.device_id: updated})
+            await hass.async_block_till_done()
+
+            state_after = hass.states.get(entity_id)
+            # event_type should NOT have changed — activity didn't change
+            assert state_after.attributes.get("event_type") == state_before.attributes.get(
+                "event_type"
+            )
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+
+class TestValveEventSingleValvePlaceholder:
+    """Single-valve devices must have zone placeholder set."""
+
+    async def test_single_valve_event_has_empty_zone_placeholder(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Single-valve event entity has zone="" in translation_placeholders."""
+        from custom_components.gardena_smart_system.gardena_event import (
+            GardenaValveEventEntity,
+        )
+
+        device = make_mock_device(single_valve=True, has_sensor=False)
+        devices = {device.device_id: device}
+
+        _mock_client, patches = await _setup_with_devices_ctx(hass, mock_config_entry, devices)
+        try:
+            coordinator = mock_config_entry.runtime_data
+            entity = GardenaValveEventEntity(coordinator, device, device.device_id)
+            assert entity._attr_translation_placeholders == {"zone": ""}
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)

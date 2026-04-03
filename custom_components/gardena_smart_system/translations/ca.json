@@ -244,16 +244,16 @@
         "name": "Últim codi d'error"
       },
       "valve_last_error_code": {
-        "name": "Codi d'error de la vàlvula {zone}"
+        "name": "Codi d'error de la vàlvula{zone}"
       },
       "valve_state": {
-        "name": "Estat de la vàlvula {zone}"
+        "name": "Estat de la vàlvula{zone}"
       },
       "valve_set_last_error_code": {
         "name": "Codi d'error del grup de vàlvules"
       },
       "valve_remaining_duration": {
-        "name": "Temps de reg restant {zone}"
+        "name": "Temps de reg restant{zone}"
       },
       "hub_device_count": {
         "name": "Nombre de dispositius"
@@ -369,7 +369,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Esdeveniment de la vàlvula {zone}",
+        "name": "Esdeveniment de la vàlvula{zone}",
         "state_attributes": {
           "event_type": {
             "state": {

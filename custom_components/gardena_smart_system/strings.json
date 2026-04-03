@@ -220,13 +220,13 @@
         "name": "Last error code"
       },
       "valve_remaining_duration": {
-        "name": "Remaining watering time {zone}"
+        "name": "Remaining watering time{zone}"
       },
       "valve_last_error_code": {
-        "name": "Valve error code {zone}"
+        "name": "Valve error code{zone}"
       },
       "valve_state": {
-        "name": "Valve state {zone}"
+        "name": "Valve state{zone}"
       },
       "valve_set_last_error_code": {
         "name": "Valve set error code"
@@ -345,7 +345,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Valve event {zone}",
+        "name": "Valve event{zone}",
         "state_attributes": {
           "event_type": {
             "state": {

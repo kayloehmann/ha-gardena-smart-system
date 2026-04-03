@@ -244,16 +244,16 @@
         "name": "Pēdējais kļūdas kods"
       },
       "valve_last_error_code": {
-        "name": "Vārsta kļūdas kods {zone}"
+        "name": "Vārsta kļūdas kods{zone}"
       },
       "valve_state": {
-        "name": "Vārsta stāvoklis {zone}"
+        "name": "Vārsta stāvoklis{zone}"
       },
       "valve_set_last_error_code": {
         "name": "Vārstu grupas kļūdas kods"
       },
       "valve_remaining_duration": {
-        "name": "Atlikušais laistīšanas laiks {zone}"
+        "name": "Atlikušais laistīšanas laiks{zone}"
       },
       "hub_device_count": {
         "name": "Ierīču skaits"
@@ -369,7 +369,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Vārsta notikums {zone}",
+        "name": "Vārsta notikums{zone}",
         "state_attributes": {
           "event_type": {
             "state": {

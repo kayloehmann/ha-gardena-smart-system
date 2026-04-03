@@ -244,16 +244,16 @@
         "name": "Τελευταίος κωδικός σφάλματος"
       },
       "valve_last_error_code": {
-        "name": "Κωδικός σφάλματος βαλβίδας {zone}"
+        "name": "Κωδικός σφάλματος βαλβίδας{zone}"
       },
       "valve_state": {
-        "name": "Κατάσταση βαλβίδας {zone}"
+        "name": "Κατάσταση βαλβίδας{zone}"
       },
       "valve_set_last_error_code": {
         "name": "Κωδικός σφάλματος ομάδας βαλβίδων"
       },
       "valve_remaining_duration": {
-        "name": "Υπολειπόμενος χρόνος ποτίσματος {zone}"
+        "name": "Υπολειπόμενος χρόνος ποτίσματος{zone}"
       },
       "hub_device_count": {
         "name": "Αριθμός συσκευών"
@@ -369,7 +369,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Συμβάν βαλβίδας {zone}",
+        "name": "Συμβάν βαλβίδας{zone}",
         "state_attributes": {
           "event_type": {
             "state": {

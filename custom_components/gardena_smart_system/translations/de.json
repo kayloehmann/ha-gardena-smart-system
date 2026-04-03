@@ -244,16 +244,16 @@
         "name": "Letzter Fehlercode"
       },
       "valve_last_error_code": {
-        "name": "Ventil-Fehlercode {zone}"
+        "name": "Ventil-Fehlercode{zone}"
       },
       "valve_state": {
-        "name": "Ventilstatus {zone}"
+        "name": "Ventilstatus{zone}"
       },
       "valve_set_last_error_code": {
         "name": "Ventilgruppe Fehlercode"
       },
       "valve_remaining_duration": {
-        "name": "Verbleibende Bewässerungszeit {zone}"
+        "name": "Verbleibende Bewässerungszeit{zone}"
       },
       "hub_device_count": {
         "name": "Geräteanzahl"
@@ -358,7 +358,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Ventil-Ereignis {zone}",
+        "name": "Ventil-Ereignis{zone}",
         "state_attributes": {
           "event_type": {
             "state": {

@@ -244,16 +244,16 @@
         "name": "Paskutinis klaidos kodas"
       },
       "valve_last_error_code": {
-        "name": "Vožtuvo klaidos kodas {zone}"
+        "name": "Vožtuvo klaidos kodas{zone}"
       },
       "valve_state": {
-        "name": "Vožtuvo būsena {zone}"
+        "name": "Vožtuvo būsena{zone}"
       },
       "valve_set_last_error_code": {
         "name": "Vožtuvų grupės klaidos kodas"
       },
       "valve_remaining_duration": {
-        "name": "Likęs laistymo laikas {zone}"
+        "name": "Likęs laistymo laikas{zone}"
       },
       "hub_device_count": {
         "name": "Įrenginių skaičius"
@@ -369,7 +369,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Vožtuvo įvykis {zone}",
+        "name": "Vožtuvo įvykis{zone}",
         "state_attributes": {
           "event_type": {
             "state": {

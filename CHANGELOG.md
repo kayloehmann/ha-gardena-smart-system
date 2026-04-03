@@ -2,6 +2,18 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.5.12] - 2026-04-03
+
+### Changed
+- **No more trailing space** in single-valve entity names — translation strings now use `"Name{zone}"` with the space moved into the placeholder value (` Rasen vorne` for multi-valve, `""` for single-valve)
+- **DRY refactoring:** Zone name resolution extracted into shared `resolve_zone_placeholder()` helper in `entity.py` — replaces 4 identical code blocks across `sensor.py` and `gardena_event.py`
+
+### Added
+- 2 new tests: valve event no-duplicate on duration change, single-valve event placeholder (502 tests total)
+
+### Updated
+- All 31 translation files + `strings.json` updated to remove space before `{zone}` placeholder
+
 ## [1.5.11] - 2026-04-02
 
 ### Fixed
@@ -195,6 +207,7 @@ All notable changes to the Gardena Smart System integration for Home Assistant.
 - Adaptive polling, command throttling, and rate limit handling
 - Config flow with multi-location support
 
+[1.5.12]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.12
 [1.5.11]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.11
 [1.5.10]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.10
 [1.5.9]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.9

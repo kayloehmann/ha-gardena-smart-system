@@ -19,7 +19,7 @@ from aiogardenasmart import Device
 from . import GardenaConfigEntry
 from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
 from .coordinator import GardenaCoordinator
-from .entity import GardenaEntity
+from .entity import GardenaEntity, resolve_zone_placeholder
 
 PARALLEL_UPDATES = 0
 
@@ -182,11 +182,7 @@ class GardenaValveEventEntity(GardenaEntity, EventEntity):
         super().__init__(coordinator, device, suffix)
         self._service_id = service_id
         valve = device.valves.get(service_id)
-        if zone:
-            name = valve.name if valve and valve.name else f"Zone {zone}"
-        else:
-            name = ""
-        self._attr_translation_placeholders = {"zone": name}
+        self._attr_translation_placeholders = {"zone": resolve_zone_placeholder(device, service_id)}
         self._prev_activity = valve.activity if valve else None
         self._prev_state = valve.state if valve else None
         self._prev_error = (valve.state in _ERROR_STATES) if valve else False

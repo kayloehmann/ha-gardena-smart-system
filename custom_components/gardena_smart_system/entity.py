@@ -15,6 +15,21 @@ from .coordinator import GardenaCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 
+def resolve_zone_placeholder(device: Device, service_id: str) -> str:
+    """Return the zone display name for translation placeholders.
+
+    Multi-valve devices (Irrigation Control) return " Rasen vorne" or " Zone 1".
+    Single-valve devices (Smart Water Control) return "" so the name has no suffix.
+    The leading space is intentional — translation strings use "Name{zone}".
+    """
+    zone = service_id.split(":")[-1] if ":" in service_id else ""
+    if not zone:
+        return ""
+    valve = device.valves.get(service_id)
+    name = valve.name if valve and valve.name else f"Zone {zone}"
+    return f" {name}"
+
+
 class GardenaEntity(CoordinatorEntity[GardenaCoordinator]):
     """Base class for all Gardena Smart System entities.
 

@@ -244,16 +244,16 @@
         "name": "Останній код помилки"
       },
       "valve_last_error_code": {
-        "name": "Код помилки клапана {zone}"
+        "name": "Код помилки клапана{zone}"
       },
       "valve_state": {
-        "name": "Стан клапана {zone}"
+        "name": "Стан клапана{zone}"
       },
       "valve_set_last_error_code": {
         "name": "Код помилки групи клапанів"
       },
       "valve_remaining_duration": {
-        "name": "Залишковий час поливу {zone}"
+        "name": "Залишковий час поливу{zone}"
       },
       "hub_device_count": {
         "name": "Кількість пристроїв"
@@ -369,7 +369,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Подія клапана {zone}",
+        "name": "Подія клапана{zone}",
         "state_attributes": {
           "event_type": {
             "state": {

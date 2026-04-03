@@ -244,16 +244,16 @@
         "name": "Laatste foutcode"
       },
       "valve_last_error_code": {
-        "name": "Klepfoutcode {zone}"
+        "name": "Klepfoutcode{zone}"
       },
       "valve_state": {
-        "name": "Klep status {zone}"
+        "name": "Klep status{zone}"
       },
       "valve_set_last_error_code": {
         "name": "Klepgroep foutcode"
       },
       "valve_remaining_duration": {
-        "name": "Resterende bewateringstijd {zone}"
+        "name": "Resterende bewateringstijd{zone}"
       },
       "hub_device_count": {
         "name": "Aantal apparaten"
@@ -353,7 +353,7 @@
         }
       },
       "gardena_valve_event": {
-        "name": "Klepgebeurtenis {zone}",
+        "name": "Klepgebeurtenis{zone}",
         "state_attributes": {
           "event_type": {
             "state": {
