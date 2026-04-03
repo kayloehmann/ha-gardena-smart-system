@@ -138,7 +138,7 @@ If you installed via HACS, you can also uninstall the integration entirely:
 
 One valve entity is created per physical valve. Smart Water Control devices have a single valve, while Smart Irrigation Control devices create one valve entity per zone. Valve entities use the name configured in the Gardena app (e.g. "Rasen vorne"); if no name is set, they fall back to "Zone 1", "Zone 2", etc. Opening a valve starts watering for 60 minutes (default). Use the `start_watering` service for a custom duration.
 
-Remaining duration sensors (valve and power socket) display a **live countdown** in the HA frontend. When inactive, they show no value.
+Remaining duration sensors (valve and power socket) display a **live countdown** in the HA frontend. When inactive, they show no value. If a new watering command is sent while the valve is already active (e.g. via `start_watering`), the countdown automatically adjusts to the new duration.
 
 ### Gardena Switch
 
