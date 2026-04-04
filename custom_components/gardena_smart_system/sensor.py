@@ -362,9 +362,10 @@ class GardenaValveRemainingDurationSensor(GardenaEntity, SensorEntity):
             self._cached_end_time = None
             self._cached_key = (None, None)
             return None
-        key = (valve.duration, valve.duration_timestamp)
+        dur_ts = getattr(valve, "duration_timestamp", None)
+        key = (valve.duration, dur_ts)
         if key != self._cached_key:
-            self._cached_end_time = _compute_end_time(valve.duration, valve.duration_timestamp)
+            self._cached_end_time = _compute_end_time(valve.duration, dur_ts)
             self._cached_key = key
         return self._cached_end_time
 
@@ -398,9 +399,10 @@ class GardenaPowerSocketRemainingDurationSensor(GardenaEntity, SensorEntity):
             self._cached_end_time = None
             self._cached_key = (None, None)
             return None
-        key = (ps.duration, ps.duration_timestamp)
+        dur_ts = getattr(ps, "duration_timestamp", None)
+        key = (ps.duration, dur_ts)
         if key != self._cached_key:
-            self._cached_end_time = _compute_end_time(ps.duration, ps.duration_timestamp)
+            self._cached_end_time = _compute_end_time(ps.duration, dur_ts)
             self._cached_key = key
         return self._cached_end_time
 

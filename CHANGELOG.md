@@ -2,6 +2,12 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.7.1] - 2026-04-04
+
+### Fixed
+- **Remaining duration sensor crash on upgrade** — accessing `duration_timestamp` on a `ValveService` from the old `aiogardenasmart==0.1.2` library caused an `AttributeError`, preventing the sensor entity from being created (showed `restored: True` / `unavailable`). Sensor code now uses defensive `getattr()` for backward compatibility.
+- **Bumped `aiogardenasmart` to 0.1.3** — ensures HA reinstalls the library with the new `duration_timestamp` field after a HACS update
+
 ## [1.7.0] - 2026-04-04
 
 ### Fixed
@@ -230,6 +236,8 @@ All notable changes to the Gardena Smart System integration for Home Assistant.
 - Adaptive polling, command throttling, and rate limit handling
 - Config flow with multi-location support
 
+[1.7.1]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.7.1
+[1.7.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.7.0
 [1.6.0]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.6.0
 [1.5.12]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.12
 [1.5.11]: https://github.com/kayloehmann/ha-gardena-smart-system/releases/tag/v1.5.11
