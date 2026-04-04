@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json as json_mod
 import uuid
 from typing import Any, cast
 
@@ -76,7 +77,7 @@ class GardenaClient:
         Args:
             method: HTTP method (GET, POST, PUT).
             path: API path relative to the base URL.
-            json: Optional JSON body (sets Content-Type automatically via aiohttp).
+            json: Optional JSON body.
             include_content_type: Pass True for POST/PUT to add the JSON:API
                 Content-Type header explicitly.
 
@@ -88,12 +89,16 @@ class GardenaClient:
         """
         headers = await self._async_headers(include_content_type=include_content_type)
         url = f"{API_BASE_URL}{path}"
+        # Serialize JSON body manually and pass as data= to avoid aiohttp's
+        # json= parameter overriding our Content-Type header with
+        # 'application/json' — the Gardena API requires 'application/vnd.api+json'.
+        body = json_mod.dumps(json) if json is not None else None
         try:
             async with self._websession.request(
                 method,
                 url,
                 headers=headers,
-                json=json,
+                data=body,
                 timeout=aiohttp.ClientTimeout(total=REQUEST_TIMEOUT),
             ) as resp:
                 if resp.status == 401:

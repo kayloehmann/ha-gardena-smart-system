@@ -2,6 +2,12 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.7.2] - 2026-04-04
+
+### Fixed
+- **Command sending (HTTP 400)** — aiohttp's `json=` parameter silently overrode our `Content-Type: application/vnd.api+json` header with `application/json`, causing the Gardena API to reject commands with "No schema matches". Now uses `data=json.dumps()` with explicit headers, matching the [py-smart-gardena](https://github.com/py-smart-gardena/py-smart-gardena) reference implementation.
+- Bumped `aiogardenasmart` to 0.1.4
+
 ## [1.7.1] - 2026-04-04
 
 ### Fixed
