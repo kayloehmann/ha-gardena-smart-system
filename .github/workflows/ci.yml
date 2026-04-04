@@ -54,6 +54,42 @@ jobs:
           files: coverage.xml
           fail_ci_if_error: false
 
+  lib-version-check:
+    name: Library version sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check aiogardenasmart version is in sync
+        run: |
+          python3 - <<'PYEOF'
+          import json, pathlib, sys
+          try:
+              import tomllib
+          except ImportError:
+              import tomli as tomllib
+
+          lib_version = tomllib.loads(
+              pathlib.Path("aiogardenasmart/pyproject.toml").read_text()
+          )["project"]["version"]
+
+          manifest = json.loads(
+              pathlib.Path("custom_components/gardena_smart_system/manifest.json").read_text()
+          )
+          reqs = [r for r in manifest["requirements"] if r.startswith("aiogardenasmart")]
+          manifest_version = reqs[0].split("==")[1] if reqs else ""
+
+          print(f"Library version:  {lib_version}")
+          print(f"Manifest requires: {manifest_version}")
+          if lib_version != manifest_version:
+              print(f"::error::aiogardenasmart version mismatch: "
+                    f"pyproject.toml={lib_version}, manifest.json={manifest_version}")
+              sys.exit(1)
+          print("OK — versions match")
+          PYEOF
+
   mypy:
     name: mypy
     runs-on: ubuntu-latest
