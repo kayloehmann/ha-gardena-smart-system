@@ -487,7 +487,7 @@ class GardenaOptionsFlowHandler(OptionsFlow):
         current_poll = self.config_entry.options.get(OPT_POLL_INTERVAL_MINUTES, default_poll)
 
         if is_automower:
-            schema_dict: dict[vol.Required, NumberSelector] = {}
+            schema_dict: dict[vol.Required, Any] = {}
         else:
             current_watering = self.config_entry.options.get(
                 OPT_DEFAULT_WATERING_MINUTES, DEFAULT_WATERING_MINUTES

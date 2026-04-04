@@ -365,7 +365,8 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             if not devices:
                 continue
             await self._async_start_websocket(devices)
-            if self._ws_connected:
+            connected: bool = self._ws_connected
+            if connected:
                 _LOGGER.info(
                     "%s WebSocket reconnected after %d attempt(s)",
                     cfg.api_label,

@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from homeassistant.core import HomeAssistant
 
 from custom_components.gardena_smart_system.mqtt_bridge import (
@@ -161,7 +160,7 @@ class TestMqttBridgePublish:
             dev2 = make_mock_device("d2", "SN2", "Sensor 2")
             await bridge.async_publish_all_devices({"d1": dev1, "d2": dev2})
 
-            # 2 devices × 2 calls each (state + availability) = 4
+            # 2 devices x 2 calls each (state + availability) = 4
             assert mock_mqtt.async_publish.call_count == 4
 
     async def test_no_publish_when_disabled(self, hass: HomeAssistant) -> None:

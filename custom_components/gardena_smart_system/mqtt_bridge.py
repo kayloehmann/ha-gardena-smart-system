@@ -10,17 +10,10 @@ import json
 import logging
 from typing import Any
 
+from homeassistant.components import mqtt
 from homeassistant.core import HomeAssistant, callback
 
-from homeassistant.components import mqtt
-
-from .const import (
-    DEFAULT_MQTT_TOPIC_PREFIX,
-    DOMAIN,
-    OPT_MQTT_PUBLISH_STATES,
-    OPT_MQTT_SUBSCRIBE_COMMANDS,
-    OPT_MQTT_TOPIC_PREFIX,
-)
+from .const import DEFAULT_MQTT_TOPIC_PREFIX
 
 _LOGGER = logging.getLogger(__name__)
 

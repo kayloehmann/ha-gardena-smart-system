@@ -1532,8 +1532,8 @@ class TestSingleValvePlaceholder:
     ) -> None:
         """Single-valve device sets translation_placeholders with empty zone."""
         from custom_components.gardena_smart_system.sensor import (
-            GardenaValveRemainingDurationSensor,
             GardenaValveErrorSensor,
+            GardenaValveRemainingDurationSensor,
             GardenaValveStateSensor,
         )
 
@@ -1544,7 +1544,11 @@ class TestSingleValvePlaceholder:
         coordinator = mock_config_entry.runtime_data
 
         # Check that entities were created and have placeholders set
-        for cls in (GardenaValveRemainingDurationSensor, GardenaValveErrorSensor, GardenaValveStateSensor):
+        for cls in (
+            GardenaValveRemainingDurationSensor,
+            GardenaValveErrorSensor,
+            GardenaValveStateSensor,
+        ):
             entity = cls(coordinator, device, device.device_id)
             assert hasattr(entity, "_attr_translation_placeholders")
             assert entity._attr_translation_placeholders == {"zone": ""}

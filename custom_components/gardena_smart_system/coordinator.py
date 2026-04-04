@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, ClassVar
 
 import aiohttp
 from homeassistant.config_entries import ConfigEntry
@@ -30,6 +30,8 @@ from .const import (
     SCAN_INTERVAL,
     SCAN_INTERVAL_WS_CONNECTED,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 _GARDENA_CONFIG = CoordinatorConfig(
     coordinator_name=DOMAIN,
@@ -102,8 +104,10 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
             on_error=on_error,
         )
 
-    _MQTT_ACTIONS = {"start_watering", "stop_watering", "park", "resume", "turn_on", "turn_off"}
-    _logger = logging.getLogger(__name__)
+    _MQTT_ACTIONS: ClassVar[set[str]] = {
+        "start_watering", "stop_watering", "park",
+        "resume", "turn_on", "turn_off",
+    }
 
     async def _async_handle_mqtt_command(
         self, device_id: str, payload: dict[str, Any]
@@ -114,7 +118,9 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
         """
         action = payload.get("action", "")
         if action not in self._MQTT_ACTIONS:
-            self._logger.warning("Unknown MQTT action '%s' for device %s", action, device_id)
+            _LOGGER.warning(
+                "Unknown MQTT action '%s' for device %s", action, device_id,
+            )
             return
 
         service_id = payload.get("service_id", device_id)
@@ -123,36 +129,48 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
         try:
             self.check_command_throttle()
         except Exception:
-            self._logger.warning("MQTT command throttled for %s", device_id)
+            _LOGGER.warning("MQTT command throttled for %s", device_id)
             return
 
         try:
             if action == "start_watering":
                 minutes = int(duration) if duration else 60
                 await self._client.async_send_command(
-                    service_id, "VALVE_CONTROL", {"command": "START_SECONDS_TO_OVERRIDE", "seconds": minutes * 60}
+                    service_id, "VALVE_CONTROL",
+                    "START_SECONDS_TO_OVERRIDE",
+                    seconds=minutes * 60,
                 )
             elif action == "stop_watering":
                 await self._client.async_send_command(
-                    service_id, "VALVE_CONTROL", {"command": "STOP_UNTIL_NEXT_TASK"}
+                    service_id, "VALVE_CONTROL",
+                    "STOP_UNTIL_NEXT_TASK",
                 )
             elif action == "turn_on":
                 minutes = int(duration) if duration else 60
                 await self._client.async_send_command(
-                    service_id, "POWER_SOCKET_CONTROL", {"command": "START_SECONDS_TO_OVERRIDE", "seconds": minutes * 60}
+                    service_id, "POWER_SOCKET_CONTROL",
+                    "START_SECONDS_TO_OVERRIDE",
+                    seconds=minutes * 60,
                 )
             elif action == "turn_off":
                 await self._client.async_send_command(
-                    service_id, "POWER_SOCKET_CONTROL", {"command": "STOP_UNTIL_NEXT_TASK"}
+                    service_id, "POWER_SOCKET_CONTROL",
+                    "STOP_UNTIL_NEXT_TASK",
                 )
             elif action == "park":
                 await self._client.async_send_command(
-                    service_id, "MOWER_CONTROL", {"command": "PARK_UNTIL_FURTHER_NOTICE"}
+                    service_id, "MOWER_CONTROL",
+                    "PARK_UNTIL_FURTHER_NOTICE",
                 )
             elif action == "resume":
                 await self._client.async_send_command(
-                    service_id, "MOWER_CONTROL", {"command": "START_DONT_OVERRIDE"}
+                    service_id, "MOWER_CONTROL",
+                    "START_DONT_OVERRIDE",
                 )
-            self._logger.info("MQTT command '%s' executed for %s", action, device_id)
+            _LOGGER.info(
+                "MQTT command '%s' executed for %s", action, device_id,
+            )
         except Exception:
-            self._logger.exception("MQTT command '%s' failed for %s", action, device_id)
+            _LOGGER.exception(
+                "MQTT command '%s' failed for %s", action, device_id,
+            )

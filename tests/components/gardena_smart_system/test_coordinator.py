@@ -536,7 +536,11 @@ class TestWebSocketAutoReconnect:
             patch.object(
                 coordinator, "_async_start_websocket", new_callable=AsyncMock
             ) as mock_start,
-            patch("custom_components.gardena_smart_system.base_coordinator.asyncio.sleep", new_callable=AsyncMock),
+            patch(
+                "custom_components.gardena_smart_system"
+                ".base_coordinator.asyncio.sleep",
+                new_callable=AsyncMock,
+            ),
         ):
             # Simulate: first attempt fails, second succeeds
             call_count = 0
@@ -562,7 +566,11 @@ class TestWebSocketAutoReconnect:
             patch.object(
                 coordinator, "_async_start_websocket", new_callable=AsyncMock
             ) as mock_start,
-            patch("custom_components.gardena_smart_system.base_coordinator.asyncio.sleep", new_callable=AsyncMock),
+            patch(
+                "custom_components.gardena_smart_system"
+                ".base_coordinator.asyncio.sleep",
+                new_callable=AsyncMock,
+            ),
         ):
             await coordinator._async_ws_reconnect_loop()
 
