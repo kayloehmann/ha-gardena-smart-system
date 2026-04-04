@@ -14,6 +14,14 @@ def _attr(data: dict[str, Any], key: str) -> Any:
     return obj.get("value")
 
 
+def _attr_timestamp(data: dict[str, Any], key: str) -> str | None:
+    """Extract the `timestamp` from a Gardena attribute object, or None if absent."""
+    obj = data.get(key)
+    if obj is None:
+        return None
+    return obj.get("timestamp")
+
+
 @dataclass
 class Location:
     """A Gardena location (garden)."""
@@ -123,6 +131,7 @@ class ValveService:
     activity: str | None
     state: str | None
     duration: int | None
+    duration_timestamp: str | None
     last_error_code: str | None
 
     @classmethod
@@ -138,6 +147,7 @@ class ValveService:
             activity=_attr(attrs, "activity"),
             state=_attr(attrs, "state"),
             duration=_attr(attrs, "duration"),
+            duration_timestamp=_attr_timestamp(attrs, "duration"),
             last_error_code=_attr(attrs, "lastErrorCode"),
         )
 
@@ -152,6 +162,7 @@ class ValveService:
             self.state = _attr(attrs, "state")
         if "duration" in attrs:
             self.duration = _attr(attrs, "duration")
+            self.duration_timestamp = _attr_timestamp(attrs, "duration")
         if "lastErrorCode" in attrs:
             self.last_error_code = _attr(attrs, "lastErrorCode")
 
@@ -233,6 +244,7 @@ class PowerSocketService:
     activity: str | None
     state: str | None
     duration: int | None
+    duration_timestamp: str | None
     last_error_code: str | None
 
     @classmethod
@@ -246,6 +258,7 @@ class PowerSocketService:
             activity=_attr(attrs, "activity"),
             state=_attr(attrs, "state"),
             duration=_attr(attrs, "duration"),
+            duration_timestamp=_attr_timestamp(attrs, "duration"),
             last_error_code=_attr(attrs, "lastErrorCode"),
         )
 
@@ -258,6 +271,7 @@ class PowerSocketService:
             self.state = _attr(attrs, "state")
         if "duration" in attrs:
             self.duration = _attr(attrs, "duration")
+            self.duration_timestamp = _attr_timestamp(attrs, "duration")
         if "lastErrorCode" in attrs:
             self.last_error_code = _attr(attrs, "lastErrorCode")
 

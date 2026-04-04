@@ -666,3 +666,62 @@ class TestCommandThrottle:
 
         # Should not raise
         coordinator.check_command_throttle()
+
+
+class TestWebSocketWatchdog:
+    """Test the WebSocket watchdog that detects stale connections."""
+
+    async def test_watchdog_ignores_healthy_connection(
+        self, hass: HomeAssistant, coordinator: GardenaCoordinator
+    ) -> None:
+        """Watchdog does nothing when WS recently received messages."""
+        ws = MagicMock()
+        ws.last_message_time = time.monotonic()  # just now
+        coordinator._ws = ws
+        coordinator._ws_connected = True
+
+        await coordinator._async_ws_watchdog_check()
+
+        # Should still be connected
+        assert coordinator._ws_connected is True
+        ws.async_disconnect.assert_not_called()
+
+    async def test_watchdog_disconnects_stale_connection(
+        self, hass: HomeAssistant, coordinator: GardenaCoordinator
+    ) -> None:
+        """Watchdog forces disconnect when no message received for too long."""
+        ws = AsyncMock()
+        ws.last_message_time = time.monotonic() - 600  # 10 min ago
+        coordinator._ws = ws
+        coordinator._ws_connected = True
+
+        with patch.object(coordinator, "async_request_refresh", new_callable=AsyncMock):
+            await coordinator._async_ws_watchdog_check()
+
+        assert coordinator._ws_connected is False
+        assert coordinator._ws is None
+        ws.async_disconnect.assert_called_once()
+
+    async def test_watchdog_skips_when_not_connected(self, coordinator: GardenaCoordinator) -> None:
+        """Watchdog is a no-op when WS is not connected."""
+        coordinator._ws = None
+        coordinator._ws_connected = False
+
+        # Should not raise
+        await coordinator._async_ws_watchdog_check()
+
+    async def test_watchdog_triggers_refresh_after_disconnect(
+        self, hass: HomeAssistant, coordinator: GardenaCoordinator
+    ) -> None:
+        """After watchdog disconnect, an immediate data refresh is requested."""
+        ws = AsyncMock()
+        ws.last_message_time = time.monotonic() - 600
+        coordinator._ws = ws
+        coordinator._ws_connected = True
+
+        with patch.object(
+            coordinator, "async_request_refresh", new_callable=AsyncMock
+        ) as mock_refresh:
+            await coordinator._async_ws_watchdog_check()
+
+        mock_refresh.assert_called_once()

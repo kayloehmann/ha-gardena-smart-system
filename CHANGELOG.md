@@ -2,6 +2,17 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.7.0] - 2026-04-04
+
+### Fixed
+- **Remaining duration survives restart** — valve and power socket countdown sensors now use the API-provided `duration_timestamp` to compute the correct end time (`timestamp + duration`) instead of `now + duration`. Previously, a HA restart or integration reload would reset the countdown as if watering had just started.
+
+### Added
+- **WebSocket watchdog** — a periodic health check (every 60s) detects silently-dead WebSocket connections. If no message is received for 5 minutes, the connection is forcibly closed and a reconnect + immediate data refresh is triggered. This prevents the integration from appearing "frozen" when the WS dies without triggering an error.
+- `duration_timestamp` field on `ValveService` and `PowerSocketService` in the `aiogardenasmart` client library
+- `last_message_time` property on `GardenaWebSocket` for watchdog monitoring
+- 4 new WebSocket watchdog tests (524 tests total)
+
 ## [1.6.0] - 2026-04-03
 
 ### Added

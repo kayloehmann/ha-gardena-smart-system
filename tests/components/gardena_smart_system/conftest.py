@@ -90,6 +90,7 @@ def make_mock_device(
         ps.activity = "OFF"
         ps.state = "OK"
         ps.duration = None
+        ps.duration_timestamp = None
         device.power_socket = ps
     else:
         device.power_socket = None
@@ -102,6 +103,7 @@ def make_mock_device(
         valve.activity = "CLOSED"
         valve.state = "OK"
         valve.duration = None
+        valve.duration_timestamp = None
         valves[device_id] = valve
     else:
         for i in range(1, valve_count + 1):
@@ -112,6 +114,7 @@ def make_mock_device(
             valve.activity = "CLOSED"
             valve.state = "OK"
             valve.duration = None
+            valve.duration_timestamp = None
             valves[vid] = valve
     device.valves = valves
     device.valve_set = None

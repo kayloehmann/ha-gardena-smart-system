@@ -32,6 +32,13 @@ AUTOMOWER_RATE_LIMIT_COOLDOWN = timedelta(hours=1)
 # to avoid burning through the API quota with rapid-fire automations.
 MIN_COMMAND_INTERVAL_SECONDS = 5
 
+# WebSocket watchdog: if no message received for this long, consider the
+# connection dead and trigger a reconnect.  The Gardena API sends periodic
+# WEBSOCKET_PING messages (~every 2 min), so 5 min without any message is
+# a reliable indicator of a stale connection.
+WS_WATCHDOG_TIMEOUT_SECONDS = 300
+WS_WATCHDOG_CHECK_INTERVAL = timedelta(seconds=60)
+
 # ── Options flow defaults ─────────────────────────────────────────
 OPT_DEFAULT_WATERING_MINUTES = "default_watering_minutes"
 OPT_DEFAULT_SOCKET_MINUTES = "default_socket_minutes"

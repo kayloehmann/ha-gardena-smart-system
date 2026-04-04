@@ -6,6 +6,7 @@ import asyncio
 import contextlib
 import json
 import logging
+import time
 from collections.abc import Callable
 from typing import Any
 
@@ -62,6 +63,12 @@ class GardenaWebSocket:
         self._ws: aiohttp.ClientWebSocketResponse | None = None
         self._listen_task: asyncio.Task[None] | None = None
         self._running = False
+        self._last_message_time: float = 0.0
+
+    @property
+    def last_message_time(self) -> float:
+        """Monotonic timestamp of the last received WebSocket message."""
+        return self._last_message_time
 
     async def async_connect(self, ws_url: str) -> None:
         """Establish the WebSocket connection and begin listening.
@@ -128,8 +135,10 @@ class GardenaWebSocket:
             heartbeat=WEBSOCKET_PING_INTERVAL,
         ) as ws:
             self._ws = ws
+            self._last_message_time = time.monotonic()
             _LOGGER.debug("Gardena WebSocket connected")
             async for msg in ws:
+                self._last_message_time = time.monotonic()
                 if msg.type == aiohttp.WSMsgType.TEXT:
                     await self._async_handle_message(msg.data)
                 elif msg.type == aiohttp.WSMsgType.ERROR:

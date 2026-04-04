@@ -13,10 +13,11 @@ from typing import Any
 
 import aiohttp
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
@@ -28,6 +29,8 @@ from .const import (
     OPT_MQTT_SUBSCRIBE_COMMANDS,
     OPT_MQTT_TOPIC_PREFIX,
     OPT_POLL_INTERVAL_MINUTES,
+    WS_WATCHDOG_CHECK_INTERVAL,
+    WS_WATCHDOG_TIMEOUT_SECONDS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -98,6 +101,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         self._rate_limit_hits: int = 0
         self._ws_reconnect_task: asyncio.Task[None] | None = None
         self._mqtt_bridge: Any = None
+        self._ws_watchdog_unsub: CALLBACK_TYPE | None = None
 
     # ── Public properties ──────────────────────────────────────────────
 
@@ -280,6 +284,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
 
         self._ws_connected = True
         self._cancel_ws_reconnect()
+        self._start_ws_watchdog()
         ws_interval = self._custom_poll_interval or cfg.scan_interval_ws
         self.update_interval = ws_interval
         ir.async_delete_issue(self.hass, DOMAIN, cfg.ws_issue_key)
@@ -305,6 +310,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         _LOGGER.error("%s WebSocket connection lost: %s", cfg.api_label, err)
         self._ws_connected = False
         self._ws = None
+        self._stop_ws_watchdog()
         self.update_interval = self._custom_poll_interval or cfg.scan_interval
 
         if isinstance(err, cfg.auth_error_type):
@@ -377,6 +383,60 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             len(self._WS_RECONNECT_DELAYS),
         )
 
+    # ── WebSocket watchdog ───────────────────────────────────────────────
+
+    def _start_ws_watchdog(self) -> None:
+        """Start a periodic check that the WebSocket is still receiving data."""
+        self._stop_ws_watchdog()
+        self._ws_watchdog_unsub = async_track_time_interval(
+            self.hass,
+            self._async_ws_watchdog_check,
+            WS_WATCHDOG_CHECK_INTERVAL,
+        )
+
+    def _stop_ws_watchdog(self) -> None:
+        """Cancel the WebSocket watchdog timer."""
+        if self._ws_watchdog_unsub:
+            self._ws_watchdog_unsub()
+            self._ws_watchdog_unsub = None
+
+    async def _async_ws_watchdog_check(self, _now: Any = None) -> None:
+        """Check if the WebSocket has received a message recently.
+
+        If no message has been received for WS_WATCHDOG_TIMEOUT_SECONDS,
+        consider the connection stale, disconnect, and trigger a reconnect.
+        """
+        if not self._ws_connected or not self._ws:
+            return
+
+        last_msg = self._ws.last_message_time
+        if last_msg <= 0:
+            return  # no messages received yet, still initializing
+
+        silence = time.monotonic() - last_msg
+        if silence < WS_WATCHDOG_TIMEOUT_SECONDS:
+            return
+
+        cfg = self._config
+        _LOGGER.warning(
+            "%s WebSocket watchdog: no message received for %.0fs, "
+            "forcing disconnect and reconnect",
+            cfg.api_label,
+            silence,
+        )
+        # Force-close the stale WebSocket
+        self._ws_connected = False
+        self._stop_ws_watchdog()
+        self.update_interval = self._custom_poll_interval or cfg.scan_interval
+        try:
+            await self._ws.async_disconnect()
+        except Exception:
+            _LOGGER.debug("Error disconnecting stale WebSocket, ignoring")
+        self._ws = None
+
+        # Trigger immediate data refresh + reconnect
+        await self.async_request_refresh()
+
     # ── MQTT bridge ──────────────────────────────────────────────────────
 
     async def _async_start_mqtt_bridge(self) -> None:
@@ -410,6 +470,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
     async def async_shutdown(self) -> None:
         """Disconnect the WebSocket, revoke token, and clean up resources."""
         self._cancel_ws_reconnect()
+        self._stop_ws_watchdog()
         if self._mqtt_bridge and hasattr(self._mqtt_bridge, "async_stop"):
             await self._mqtt_bridge.async_stop()
         if self._ws:
