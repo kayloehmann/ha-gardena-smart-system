@@ -6,7 +6,7 @@ All notable changes to the Gardena Smart System integration for Home Assistant.
 
 ### Fixed
 - **Remaining duration sensor crash on upgrade** — accessing `duration_timestamp` on a `ValveService` from the old `aiogardenasmart==0.1.2` library caused an `AttributeError`, preventing the sensor entity from being created (showed `restored: True` / `unavailable`). Sensor code now uses defensive `getattr()` for backward compatibility.
-- **Bumped `aiogardenasmart` to 0.1.3** — ensures HA reinstalls the library with the new `duration_timestamp` field after a HACS update
+- **CI version sync check** — new CI job ensures `aiogardenasmart` version in `pyproject.toml` matches `manifest.json` requirements
 
 ## [1.7.0] - 2026-04-04
 
