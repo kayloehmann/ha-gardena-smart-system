@@ -189,9 +189,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         if self._mqtt_bridge is None:
             await self._async_start_mqtt_bridge()
         if self._mqtt_bridge and self._mqtt_bridge.is_active:
-            self.hass.async_create_task(
-                self._mqtt_bridge.async_publish_all_devices(devices)
-            )
+            self.hass.async_create_task(self._mqtt_bridge.async_publish_all_devices(devices))
 
         # Remove devices that disappeared from the API (stale-devices rule)
         self._async_remove_stale_devices(devices)
@@ -405,9 +403,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         )
         self._mqtt_bridge = bridge if started else False
 
-    async def _async_handle_mqtt_command(
-        self, device_id: str, payload: dict[str, Any]
-    ) -> None:
+    async def _async_handle_mqtt_command(self, device_id: str, payload: dict[str, Any]) -> None:
         """Handle an inbound MQTT command (subclasses can override)."""
         _LOGGER.debug("MQTT command received for %s: %s (no handler)", device_id, payload)
 

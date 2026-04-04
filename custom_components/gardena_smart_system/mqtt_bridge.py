@@ -133,9 +133,7 @@ class MqttBridge:
         self._started = False
         _LOGGER.debug("MQTT bridge stopped")
 
-    async def async_publish_device_state(
-        self, device_id: str, device: Any
-    ) -> None:
+    async def async_publish_device_state(self, device_id: str, device: Any) -> None:
         """Publish a device's full state to MQTT."""
         if not self._started or not self._publish_states:
             return
@@ -148,9 +146,7 @@ class MqttBridge:
         except Exception:
             _LOGGER.debug("Failed to publish MQTT state for %s", device_id)
 
-    async def async_publish_availability(
-        self, device_id: str, available: bool
-    ) -> None:
+    async def async_publish_availability(self, device_id: str, available: bool) -> None:
         """Publish device availability to MQTT."""
         if not self._started or not self._publish_states:
             return
@@ -163,9 +159,7 @@ class MqttBridge:
         except Exception:
             _LOGGER.debug("Failed to publish MQTT availability for %s", device_id)
 
-    async def async_publish_all_devices(
-        self, devices: dict[str, Any]
-    ) -> None:
+    async def async_publish_all_devices(self, devices: dict[str, Any]) -> None:
         """Publish state for all known devices."""
         for device_id, device in devices.items():
             await self.async_publish_device_state(device_id, device)
@@ -192,11 +186,7 @@ class MqttBridge:
 
             _LOGGER.debug("MQTT command for %s: %s", device_id, payload)
             if self._command_handler is not None:
-                self._hass.async_create_task(
-                    self._command_handler(device_id, payload)
-                )
+                self._hass.async_create_task(self._command_handler(device_id, payload))
 
-        self._unsub_command = await mqtt.async_subscribe(
-            self._hass, topic, _on_command
-        )
+        self._unsub_command = await mqtt.async_subscribe(self._hass, topic, _on_command)
         _LOGGER.debug("Subscribed to MQTT commands on %s", topic)

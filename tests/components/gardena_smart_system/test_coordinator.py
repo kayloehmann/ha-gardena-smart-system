@@ -537,8 +537,7 @@ class TestWebSocketAutoReconnect:
                 coordinator, "_async_start_websocket", new_callable=AsyncMock
             ) as mock_start,
             patch(
-                "custom_components.gardena_smart_system"
-                ".base_coordinator.asyncio.sleep",
+                "custom_components.gardena_smart_system.base_coordinator.asyncio.sleep",
                 new_callable=AsyncMock,
             ),
         ):
@@ -567,8 +566,7 @@ class TestWebSocketAutoReconnect:
                 coordinator, "_async_start_websocket", new_callable=AsyncMock
             ) as mock_start,
             patch(
-                "custom_components.gardena_smart_system"
-                ".base_coordinator.asyncio.sleep",
+                "custom_components.gardena_smart_system.base_coordinator.asyncio.sleep",
                 new_callable=AsyncMock,
             ),
         ):

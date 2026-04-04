@@ -105,13 +105,15 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
         )
 
     _MQTT_ACTIONS: ClassVar[set[str]] = {
-        "start_watering", "stop_watering", "park",
-        "resume", "turn_on", "turn_off",
+        "start_watering",
+        "stop_watering",
+        "park",
+        "resume",
+        "turn_on",
+        "turn_off",
     }
 
-    async def _async_handle_mqtt_command(
-        self, device_id: str, payload: dict[str, Any]
-    ) -> None:
+    async def _async_handle_mqtt_command(self, device_id: str, payload: dict[str, Any]) -> None:
         """Handle inbound MQTT commands for Gardena devices.
 
         Expected payload: {"action": "start_watering", "duration": 30, "service_id": "..."}
@@ -119,7 +121,9 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
         action = payload.get("action", "")
         if action not in self._MQTT_ACTIONS:
             _LOGGER.warning(
-                "Unknown MQTT action '%s' for device %s", action, device_id,
+                "Unknown MQTT action '%s' for device %s",
+                action,
+                device_id,
             )
             return
 
@@ -136,41 +140,51 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
             if action == "start_watering":
                 minutes = int(duration) if duration else 60
                 await self._client.async_send_command(
-                    service_id, "VALVE_CONTROL",
+                    service_id,
+                    "VALVE_CONTROL",
                     "START_SECONDS_TO_OVERRIDE",
                     seconds=minutes * 60,
                 )
             elif action == "stop_watering":
                 await self._client.async_send_command(
-                    service_id, "VALVE_CONTROL",
+                    service_id,
+                    "VALVE_CONTROL",
                     "STOP_UNTIL_NEXT_TASK",
                 )
             elif action == "turn_on":
                 minutes = int(duration) if duration else 60
                 await self._client.async_send_command(
-                    service_id, "POWER_SOCKET_CONTROL",
+                    service_id,
+                    "POWER_SOCKET_CONTROL",
                     "START_SECONDS_TO_OVERRIDE",
                     seconds=minutes * 60,
                 )
             elif action == "turn_off":
                 await self._client.async_send_command(
-                    service_id, "POWER_SOCKET_CONTROL",
+                    service_id,
+                    "POWER_SOCKET_CONTROL",
                     "STOP_UNTIL_NEXT_TASK",
                 )
             elif action == "park":
                 await self._client.async_send_command(
-                    service_id, "MOWER_CONTROL",
+                    service_id,
+                    "MOWER_CONTROL",
                     "PARK_UNTIL_FURTHER_NOTICE",
                 )
             elif action == "resume":
                 await self._client.async_send_command(
-                    service_id, "MOWER_CONTROL",
+                    service_id,
+                    "MOWER_CONTROL",
                     "START_DONT_OVERRIDE",
                 )
             _LOGGER.info(
-                "MQTT command '%s' executed for %s", action, device_id,
+                "MQTT command '%s' executed for %s",
+                action,
+                device_id,
             )
         except Exception:
             _LOGGER.exception(
-                "MQTT command '%s' failed for %s", action, device_id,
+                "MQTT command '%s' failed for %s",
+                action,
+                device_id,
             )
