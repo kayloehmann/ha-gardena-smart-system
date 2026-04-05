@@ -192,7 +192,12 @@ class GardenaClient:
         Raises:
             GardenaRequestError: if the command is rejected.
         """
-        attributes: dict[str, Any] = {"command": command, **params}
+        # Coerce numeric params to int — callers may pass floats (e.g. from HA
+        # options storage), and the Gardena API schema rejects float values.
+        coerced: dict[str, int | str] = {
+            k: int(v) if isinstance(v, float) else v for k, v in params.items()
+        }
+        attributes: dict[str, Any] = {"command": command, **coerced}
         payload: dict[str, Any] = {
             "data": {
                 "id": service_id,

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator
 
+import json
+
 import aiohttp
 import pytest
 from aioresponses import aioresponses
@@ -160,6 +162,76 @@ class TestSendCommand:
                 control_type="VALVE_CONTROL",
                 command="STOP_UNTIL_NEXT_TASK",
             )
+
+    async def test_float_seconds_serialized_as_integer(
+        self, authenticated_client: tuple[GardenaClient, aiohttp.ClientSession]
+    ) -> None:
+        """Contract test: float params must be coerced to int before serialization.
+
+        The Gardena API schema rejects 3600.0 but accepts 3600. HA's options
+        storage can return numeric values as floats, so the client must coerce them.
+        """
+        client, _session = authenticated_client
+        service_id = f"{WATER_CONTROL_DEVICE_ID}:1"
+        url = f"{API_BASE_URL}/command/{service_id}"
+        with aioresponses() as m:
+            m.put(url, status=202, payload={})
+            await client.async_send_command(
+                service_id=service_id,
+                control_type="VALVE_CONTROL",
+                command="START_SECONDS_TO_OVERRIDE",
+                seconds=3600.0,  # float — simulates HA options.get() return value
+            )
+
+        sent_body = json.loads(m.requests[("PUT", aiohttp.client.URL(url))][0].kwargs["data"])
+        seconds_value = sent_body["data"]["attributes"]["seconds"]
+        assert isinstance(seconds_value, int), (
+            f"Gardena API requires integer 'seconds', got {type(seconds_value).__name__}: {seconds_value!r}"
+        )
+        assert seconds_value == 3600
+
+    async def test_service_id_used_as_payload_id(
+        self, authenticated_client: tuple[GardenaClient, aiohttp.ClientSession]
+    ) -> None:
+        """Contract test: data.id in the payload must match the service_id, not a random UUID.
+
+        The Gardena API v2 validates that data.id corresponds to the service being controlled.
+        """
+        client, _session = authenticated_client
+        service_id = f"{WATER_CONTROL_DEVICE_ID}:1"
+        url = f"{API_BASE_URL}/command/{service_id}"
+        with aioresponses() as m:
+            m.put(url, status=202, payload={})
+            await client.async_send_command(
+                service_id=service_id,
+                control_type="VALVE_CONTROL",
+                command="STOP_UNTIL_NEXT_TASK",
+            )
+
+        sent_body = json.loads(m.requests[("PUT", aiohttp.client.URL(url))][0].kwargs["data"])
+        assert sent_body["data"]["id"] == service_id
+
+    async def test_content_type_header_is_json_api(
+        self, authenticated_client: tuple[GardenaClient, aiohttp.ClientSession]
+    ) -> None:
+        """Contract test: PUT /command must use application/vnd.api+json Content-Type without charset suffix."""
+        client, _session = authenticated_client
+        service_id = f"{WATER_CONTROL_DEVICE_ID}:1"
+        url = f"{API_BASE_URL}/command/{service_id}"
+        with aioresponses() as m:
+            m.put(url, status=202, payload={})
+            await client.async_send_command(
+                service_id=service_id,
+                control_type="VALVE_CONTROL",
+                command="STOP_UNTIL_NEXT_TASK",
+            )
+
+        sent_headers = m.requests[("PUT", aiohttp.client.URL(url))][0].kwargs["headers"]
+        content_type = sent_headers.get("Content-Type", "")
+        assert content_type == "application/vnd.api+json", (
+            f"Expected 'application/vnd.api+json', got {content_type!r}. "
+            "A charset suffix causes 'No schema matches' from the Gardena API."
+        )
 
 
 class TestErrorHandling:

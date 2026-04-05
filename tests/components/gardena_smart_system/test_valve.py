@@ -412,6 +412,43 @@ class TestValveDynamicDevices:
 class TestValveOptionsIntegration:
     """Test that valve commands use configured options."""
 
+    async def test_open_valve_with_float_option_sends_integer_seconds(
+        self, hass: HomeAssistant
+    ) -> None:
+        """Contract test: HA options.get() returns floats; seconds must still be an int.
+
+        Regression for HTTP 400 'No schema matches': the Gardena API rejects 3600.0.
+        """
+        try:
+            from tests.common import MockConfigEntry
+        except ImportError:
+            from pytest_homeassistant_custom_component.common import MockConfigEntry  # type: ignore[no-redef]
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=ENTRY_DATA,
+            title=MOCK_LOCATION_NAME,
+            options={OPT_DEFAULT_WATERING_MINUTES: 30.0},  # float — as HA may store it
+        )
+
+        device = make_mock_device(valve_count=1, has_sensor=False)
+        valve_id = next(iter(device.valves.keys()))
+        devices = {device.device_id: device}
+
+        async for mock_client in _setup_with_devices(hass, entry, devices):
+            await hass.services.async_call(
+                "valve",
+                "open_valve",
+                {"entity_id": "valve.my_sensor_valve_1"},
+                blocking=True,
+            )
+
+            _args, kwargs = mock_client.async_send_command.call_args
+            assert isinstance(kwargs["seconds"], int), (
+                f"seconds must be int, got {type(kwargs['seconds']).__name__}: {kwargs['seconds']!r}"
+            )
+            assert kwargs["seconds"] == 1800
+
     async def test_open_valve_uses_configured_duration(self, hass: HomeAssistant) -> None:
         try:
             from tests.common import MockConfigEntry

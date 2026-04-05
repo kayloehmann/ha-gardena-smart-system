@@ -372,6 +372,42 @@ class TestSwitchDynamicDevices:
 class TestSwitchOptionsIntegration:
     """Test that switch commands use configured options."""
 
+    async def test_turn_on_with_float_option_sends_integer_seconds(
+        self, hass: HomeAssistant
+    ) -> None:
+        """Contract test: HA options.get() returns floats; seconds must still be an int.
+
+        Regression for HTTP 400 'No schema matches': the Gardena API rejects 3600.0.
+        """
+        try:
+            from tests.common import MockConfigEntry
+        except ImportError:
+            from pytest_homeassistant_custom_component.common import MockConfigEntry  # type: ignore[no-redef]
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=ENTRY_DATA,
+            title=MOCK_LOCATION_NAME,
+            options={OPT_DEFAULT_SOCKET_MINUTES: 45.0},  # float — as HA may store it
+        )
+
+        device = make_mock_device(has_sensor=False, has_power_socket=True)
+        devices = {device.device_id: device}
+
+        async for mock_client in _setup_with_devices(hass, entry, devices):
+            await hass.services.async_call(
+                "switch",
+                "turn_on",
+                {"entity_id": "switch.my_sensor_power"},
+                blocking=True,
+            )
+
+            _args, kwargs = mock_client.async_send_command.call_args
+            assert isinstance(kwargs["seconds"], int), (
+                f"seconds must be int, got {type(kwargs['seconds']).__name__}: {kwargs['seconds']!r}"
+            )
+            assert kwargs["seconds"] == 2700
+
     async def test_turn_on_uses_configured_duration(self, hass: HomeAssistant) -> None:
         try:
             from tests.common import MockConfigEntry
