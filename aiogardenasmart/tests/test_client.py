@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
-
 import json
+from collections.abc import AsyncGenerator
 
 import aiohttp
 import pytest
@@ -186,7 +185,8 @@ class TestSendCommand:
         sent_body = json.loads(m.requests[("PUT", aiohttp.client.URL(url))][0].kwargs["data"])
         seconds_value = sent_body["data"]["attributes"]["seconds"]
         assert isinstance(seconds_value, int), (
-            f"Gardena API requires integer 'seconds', got {type(seconds_value).__name__}: {seconds_value!r}"
+            f"Gardena API requires integer 'seconds', "
+            f"got {type(seconds_value).__name__}: {seconds_value!r}"
         )
         assert seconds_value == 3600
 
@@ -214,7 +214,7 @@ class TestSendCommand:
     async def test_content_type_header_is_json_api(
         self, authenticated_client: tuple[GardenaClient, aiohttp.ClientSession]
     ) -> None:
-        """Contract test: PUT /command must use application/vnd.api+json Content-Type without charset suffix."""
+        """Contract test: PUT /command must use application/vnd.api+json without charset suffix."""
         client, _session = authenticated_client
         service_id = f"{WATER_CONTROL_DEVICE_ID}:1"
         url = f"{API_BASE_URL}/command/{service_id}"

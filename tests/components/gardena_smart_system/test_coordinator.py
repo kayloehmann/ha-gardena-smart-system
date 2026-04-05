@@ -676,11 +676,14 @@ class TestWebSocketWatchdog:
     ) -> None:
         """Watchdog does nothing when WS recently received messages."""
         ws = MagicMock()
-        ws.last_message_time = time.monotonic()  # just now
         coordinator._ws = ws
         coordinator._ws_connected = True
 
-        await coordinator._async_ws_watchdog_check()
+        # now=1000, last_message_time=999 → silence=1s < WS_WATCHDOG_TIMEOUT_SECONDS(300)
+        _BASE = "custom_components.gardena_smart_system.base_coordinator.time"
+        with patch(_BASE + ".monotonic", return_value=1000.0):
+            ws.last_message_time = 999.0
+            await coordinator._async_ws_watchdog_check()
 
         # Should still be connected
         assert coordinator._ws_connected is True
@@ -691,11 +694,18 @@ class TestWebSocketWatchdog:
     ) -> None:
         """Watchdog forces disconnect when no message received for too long."""
         ws = AsyncMock()
-        ws.last_message_time = time.monotonic() - 600  # 10 min ago
         coordinator._ws = ws
         coordinator._ws_connected = True
 
-        with patch.object(coordinator, "async_request_refresh", new_callable=AsyncMock):
+        # Patch time.monotonic in the module under test so the test is not
+        # affected by freezegun or other time mocking in the HA test harness.
+        # now=1000, last_message_time=400 → silence=600s > WS_WATCHDOG_TIMEOUT_SECONDS(300)
+        _BASE = "custom_components.gardena_smart_system.base_coordinator.time"
+        with (
+            patch(_BASE + ".monotonic", return_value=1000.0),
+            patch.object(coordinator, "async_request_refresh", new_callable=AsyncMock),
+        ):
+            ws.last_message_time = 400.0
             await coordinator._async_ws_watchdog_check()
 
         assert coordinator._ws_connected is False
@@ -715,13 +725,17 @@ class TestWebSocketWatchdog:
     ) -> None:
         """After watchdog disconnect, an immediate data refresh is requested."""
         ws = AsyncMock()
-        ws.last_message_time = time.monotonic() - 600
         coordinator._ws = ws
         coordinator._ws_connected = True
 
-        with patch.object(
-            coordinator, "async_request_refresh", new_callable=AsyncMock
-        ) as mock_refresh:
+        _BASE = "custom_components.gardena_smart_system.base_coordinator.time"
+        with (
+            patch(_BASE + ".monotonic", return_value=1000.0),
+            patch.object(
+                coordinator, "async_request_refresh", new_callable=AsyncMock
+            ) as mock_refresh,
+        ):
+            ws.last_message_time = 400.0
             await coordinator._async_ws_watchdog_check()
 
         mock_refresh.assert_called_once()

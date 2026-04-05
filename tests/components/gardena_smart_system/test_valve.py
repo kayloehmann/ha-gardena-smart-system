@@ -422,7 +422,9 @@ class TestValveOptionsIntegration:
         try:
             from tests.common import MockConfigEntry
         except ImportError:
-            from pytest_homeassistant_custom_component.common import MockConfigEntry  # type: ignore[no-redef]
+            from pytest_homeassistant_custom_component.common import (
+                MockConfigEntry,  # type: ignore[no-redef]
+            )
 
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -432,7 +434,6 @@ class TestValveOptionsIntegration:
         )
 
         device = make_mock_device(valve_count=1, has_sensor=False)
-        valve_id = next(iter(device.valves.keys()))
         devices = {device.device_id: device}
 
         async for mock_client in _setup_with_devices(hass, entry, devices):
@@ -445,7 +446,8 @@ class TestValveOptionsIntegration:
 
             _args, kwargs = mock_client.async_send_command.call_args
             assert isinstance(kwargs["seconds"], int), (
-                f"seconds must be int, got {type(kwargs['seconds']).__name__}: {kwargs['seconds']!r}"
+                f"seconds must be int, "
+                f"got {type(kwargs['seconds']).__name__}: {kwargs['seconds']!r}"
             )
             assert kwargs["seconds"] == 1800
 

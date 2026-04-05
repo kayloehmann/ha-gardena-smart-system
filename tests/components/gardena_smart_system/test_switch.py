@@ -382,7 +382,9 @@ class TestSwitchOptionsIntegration:
         try:
             from tests.common import MockConfigEntry
         except ImportError:
-            from pytest_homeassistant_custom_component.common import MockConfigEntry  # type: ignore[no-redef]
+            from pytest_homeassistant_custom_component.common import (
+                MockConfigEntry,  # type: ignore[no-redef]
+            )
 
         entry = MockConfigEntry(
             domain=DOMAIN,
@@ -404,7 +406,8 @@ class TestSwitchOptionsIntegration:
 
             _args, kwargs = mock_client.async_send_command.call_args
             assert isinstance(kwargs["seconds"], int), (
-                f"seconds must be int, got {type(kwargs['seconds']).__name__}: {kwargs['seconds']!r}"
+                f"seconds must be int, "
+                f"got {type(kwargs['seconds']).__name__}: {kwargs['seconds']!r}"
             )
             assert kwargs["seconds"] == 2700
 
