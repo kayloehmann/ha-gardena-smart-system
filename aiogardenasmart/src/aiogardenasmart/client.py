@@ -127,8 +127,16 @@ class GardenaClient:
                         "in the Husqvarna Developer Portal."
                     )
                 if resp.status >= 400:
-                    body = await resp.text()
-                    raise GardenaRequestError(resp.status, body)
+                    response_text = await resp.text()
+                    _LOGGER.warning(
+                        "API %s %s → HTTP %s | Request body: %s | Response: %s",
+                        method,
+                        url,
+                        resp.status,
+                        body,
+                        response_text,
+                    )
+                    raise GardenaRequestError(resp.status, response_text)
                 if resp.status == 204:
                     return {}
                 return cast(dict[str, Any], await resp.json(content_type=None))
