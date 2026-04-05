@@ -83,9 +83,9 @@
           "default_socket_minutes": "Czas w minutach przy włączaniu gniazdka (1–1440). Ustaw na 1440 (24 godz.) dla praktycznie ciągłej pracy.",
           "poll_interval_minutes": "Jak często API jest odpytywane o aktualizacje, w minutach (5–1440). Niższe wartości dają aktualniejsze dane, ale zużywają więcej limitu API. Domyślnie: 30 (Gardena) / 15 (Automower).",
           "mqtt_enable": "Mirror device states to a local MQTT broker and optionally accept commands. Requires the MQTT integration to be configured.",
-          "mqtt_topic_prefix": "Base topic for all MQTT messages (e.g. 'gardena' → gardena/{device_id}/state).",
+          "mqtt_topic_prefix": "Base topic for all MQTT messages (e.g. 'gardena' → gardena/<device_id>/state).",
           "mqtt_publish_states": "Publish full device state as JSON on every update (WebSocket push or poll).",
-          "mqtt_subscribe_commands": "Subscribe to {prefix}/{device_id}/command for inbound commands (start_watering, stop_watering, turn_on, turn_off, park, resume)."
+          "mqtt_subscribe_commands": "Subscribe to <prefix>/<device_id>/command for inbound commands (start_watering, stop_watering, turn_on, turn_off, park, resume)."
         }
       }
     }
