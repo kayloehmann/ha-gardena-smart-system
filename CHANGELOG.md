@@ -2,6 +2,45 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.7.8] - 2026-04-05
+
+### Added
+- **Contract tests** (5 new tests, 526 total) — catch float-vs-integer regressions at three layers:
+  - `aiogardenasmart`: verifies float params are coerced to `int` in the serialized body bytes, `data.id` == service_id, Content-Type header has no charset suffix
+  - `test_valve.py` / `test_switch.py`: float option values produce integer `seconds`
+
+### Fixed
+- **Defensive float coercion** in `aiogardenasmart.async_send_command` — numeric params are now explicitly cast to `int` before serialization, regardless of call site
+- Bumped `aiogardenasmart` to 0.1.8
+
+## [1.7.7] - 2026-04-05
+
+### Fixed
+- **HTTP 400 "No schema matches" on valve open and power socket turn-on** — `config_entry.options.get()` returns numeric values as `float` in Home Assistant. The Gardena API schema strictly requires integers: `3600` is accepted, `3600.0` is rejected. Added `int()` cast when reading `default_watering_minutes` (valve) and `default_socket_minutes` (power socket) from options.
+
+## [1.7.6] - 2026-04-05
+
+### Added
+- **Warning-level diagnostic logging** — when the Gardena API returns HTTP 400, the exact request body bytes and full response are logged at `WARNING` level (visible without enabling debug mode). Used to diagnose the float/integer issue.
+- Bumped `aiogardenasmart` to 0.1.7
+
+## [1.7.5] - 2026-04-05
+
+### Fixed
+- **HTTP 400 on commands (attempt 2)** — switched from `data=str` to `data=bytes` in the aiohttp request to prevent aiohttp from appending `; charset=utf-8` to the `Content-Type: application/vnd.api+json` header
+- Bumped `aiogardenasmart` to 0.1.6
+
+## [1.7.4] - 2026-04-05
+
+### Fixed
+- **HTTP 400 on commands (attempt 1)** — changed `data.id` in command payloads from a random UUID to the actual `service_id`. The Gardena API v2 requires `data.id` to match the service being controlled.
+- Bumped `aiogardenasmart` to 0.1.5
+
+## [1.7.3] - 2026-04-05
+
+### Fixed
+- **Translation formatting errors** (`MISSING_VALUE` from formatjs) — `data_description` strings for `mqtt_topic_prefix` and `mqtt_subscribe_commands` used `{device_id}` and `{prefix}` as example text. The HA frontend's ICU message format interpreted these as template variables. Replaced with `<device_id>` and `<prefix>` across all 31 translation files.
+
 ## [1.7.2] - 2026-04-04
 
 ### Fixed

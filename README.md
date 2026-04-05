@@ -50,11 +50,10 @@ Before installing this integration, you need to create an application on the Hus
 ### HACS (Recommended)
 
 1. Open HACS in your Home Assistant UI.
-2. Go to **Integrations** and click the three-dot menu in the top right corner.
-3. Select **Custom repositories**.
-4. Enter `https://github.com/kayloehmann/ha-gardena-smart-system` as the repository URL and select **Integration** as the category.
-5. Click **Add**, then find "Gardena Smart System" in HACS and click **Download**.
-6. Restart Home Assistant.
+2. Go to **Integrations** and search for "Gardena Smart System".
+3. Click **Download** and restart Home Assistant.
+
+> **Not finding it?** If the integration isn't listed yet, add it as a custom repository: click the three-dot menu → **Custom repositories**, enter `https://github.com/kayloehmann/ha-gardena-smart-system`, select **Integration**, then click **Add**.
 
 ### Manual Installation
 
@@ -653,7 +652,7 @@ This integration targets the [Home Assistant Integration Quality Scale](https://
 
 Key quality features:
 
-- **99% test coverage** across 524 automated tests
+- **99% test coverage** across 526 automated tests
 - **mypy --strict** passes with zero errors on all 23 source files
 - **PEP 561** compliant (`py.typed` markers on both client libraries)
 - **Full async** codebase — no blocking I/O in the event loop
