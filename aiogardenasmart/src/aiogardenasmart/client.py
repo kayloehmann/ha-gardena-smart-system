@@ -93,10 +93,11 @@ class GardenaClient:
         """
         headers = await self._async_headers(include_content_type=include_content_type)
         url = f"{API_BASE_URL}{path}"
-        # Serialize JSON body manually and pass as data= to avoid aiohttp's
-        # json= parameter overriding our Content-Type header with
-        # 'application/json' — the Gardena API requires 'application/vnd.api+json'.
-        body = json_mod.dumps(json) if json is not None else None
+        # Serialize JSON body to bytes and pass as data= to avoid two pitfalls:
+        # 1. aiohttp's json= parameter overrides Content-Type with 'application/json'
+        # 2. aiohttp's data=str appends '; charset=utf-8' to the Content-Type header
+        # Passing bytes leaves the Content-Type header untouched.
+        body: bytes | None = json_mod.dumps(json).encode("utf-8") if json is not None else None
         _LOGGER.debug(
             "API request: %s %s | Content-Type: %s | Body: %s",
             method,
