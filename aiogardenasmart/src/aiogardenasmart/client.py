@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json as json_mod
+import logging
 import uuid
 from typing import Any, cast
 
@@ -33,6 +34,9 @@ from .models import (
     ValveService,
     ValveSetService,
 )
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class GardenaClient:
@@ -93,6 +97,13 @@ class GardenaClient:
         # json= parameter overriding our Content-Type header with
         # 'application/json' — the Gardena API requires 'application/vnd.api+json'.
         body = json_mod.dumps(json) if json is not None else None
+        _LOGGER.debug(
+            "API request: %s %s | Content-Type: %s | Body: %s",
+            method,
+            url,
+            headers.get("Content-Type", "(none)"),
+            body,
+        )
         try:
             async with self._websession.request(
                 method,
@@ -175,7 +186,7 @@ class GardenaClient:
         attributes: dict[str, Any] = {"command": command, **params}
         payload: dict[str, Any] = {
             "data": {
-                "id": str(uuid.uuid4()),
+                "id": service_id,
                 "type": control_type,
                 "attributes": attributes,
             }
