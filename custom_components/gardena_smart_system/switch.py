@@ -99,9 +99,11 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the socket on for the configured default duration."""
-        duration_minutes: int = int(self.coordinator.config_entry.options.get(
-            OPT_DEFAULT_SOCKET_MINUTES, DEFAULT_SOCKET_MINUTES
-        ))
+        duration_minutes: int = int(
+            self.coordinator.config_entry.options.get(
+                OPT_DEFAULT_SOCKET_MINUTES, DEFAULT_SOCKET_MINUTES
+            )
+        )
         await self._async_send_command(
             "START_SECONDS_TO_OVERRIDE",
             seconds=duration_minutes * 60,

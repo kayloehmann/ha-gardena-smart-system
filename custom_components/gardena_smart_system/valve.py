@@ -114,9 +114,11 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
 
     async def async_open_valve(self, **kwargs: Any) -> None:
         """Open the valve for the configured default duration."""
-        duration_minutes: int = int(self.coordinator.config_entry.options.get(
-            OPT_DEFAULT_WATERING_MINUTES, DEFAULT_WATERING_MINUTES
-        ))
+        duration_minutes: int = int(
+            self.coordinator.config_entry.options.get(
+                OPT_DEFAULT_WATERING_MINUTES, DEFAULT_WATERING_MINUTES
+            )
+        )
         await self._async_send_command(
             "START_SECONDS_TO_OVERRIDE",
             seconds=duration_minutes * 60,
