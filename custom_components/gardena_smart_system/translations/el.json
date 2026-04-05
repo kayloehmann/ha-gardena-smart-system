@@ -83,9 +83,9 @@
           "default_socket_minutes": "Διάρκεια σε λεπτά κατά την ενεργοποίηση έξυπνης πρίζας (1-1440). Ορίστε σε 1440 (24ώ) για σχεδόν αόριστη λειτουργία.",
           "poll_interval_minutes": "Πόσο συχνά να ερωτάται το API για ενημερώσεις σε λεπτά (5-1440). Χαμηλότερες τιμές παρέχουν πιο πρόσφατα δεδομένα αλλά καταναλώνουν περισσότερο όριο API. Προεπιλογή: 30 (Gardena) / 15 (Automower).",
           "mqtt_enable": "Mirror device states to a local MQTT broker and optionally accept commands. Requires the MQTT integration to be configured.",
-          "mqtt_topic_prefix": "Base topic for all MQTT messages (e.g. 'gardena' → gardena/<device_id>/state).",
+          "mqtt_topic_prefix": "Base topic for all MQTT messages (e.g. 'gardena' → gardena/DEVICE_ID/state).",
           "mqtt_publish_states": "Publish full device state as JSON on every update (WebSocket push or poll).",
-          "mqtt_subscribe_commands": "Subscribe to <prefix>/<device_id>/command for inbound commands (start_watering, stop_watering, turn_on, turn_off, park, resume)."
+          "mqtt_subscribe_commands": "Subscribe to PREFIX/DEVICE_ID/command for inbound commands (start_watering, stop_watering, turn_on, turn_off, park, resume)."
         }
       }
     }
