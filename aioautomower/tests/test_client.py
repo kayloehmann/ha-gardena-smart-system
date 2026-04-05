@@ -196,7 +196,7 @@ class TestActions:
     async def test_content_type_header_is_json_api(
         self, authenticated_client: tuple[AutomowerClient, aiohttp.ClientSession]
     ) -> None:
-        """Contract test: POST /actions must use application/vnd.api+json Content-Type without charset."""
+        """Contract test: POST /actions must use application/vnd.api+json without charset."""
         client, _session = authenticated_client
         url = f"{API_BASE_URL}/mowers/{MOWER_ID}/actions"
         with aioresponses() as m:
