@@ -7,7 +7,6 @@ from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 
 try:
@@ -17,12 +16,7 @@ except ImportError:
         MockConfigEntry,  # type: ignore[no-redef]
     )
 
-from custom_components.gardena_smart_system.const import (
-    CONF_CLIENT_ID,
-    CONF_CLIENT_SECRET,
-    CONF_LOCATION_ID,
-    DOMAIN,
-)
+from custom_components.gardena_smart_system.const import DOMAIN
 
 from .conftest import ENTRY_DATA, make_mock_device
 
@@ -288,7 +282,6 @@ class TestRateLimitBackoffFromAuth:
             await hass.async_block_till_done()
 
             coordinator = mock_config_entry.runtime_data
-            original_interval = coordinator.update_interval
 
             # Simulate reconnect where WS URL fetch hits rate limit
             coordinator._ws_connected = False
@@ -388,8 +381,6 @@ class TestRateLimitBackoffFromAuth:
         mock_config_entry: MockConfigEntry,
     ) -> None:
         """After a successful _async_update_data, rate_limit_hits resets to 0."""
-        from aiogardenasmart.exceptions import GardenaRateLimitError
-
         devices = _make_mock_devices()
         mock_client, mock_auth, mock_ws = _setup_mocks(devices)
 
