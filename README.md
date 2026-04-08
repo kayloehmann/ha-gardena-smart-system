@@ -441,7 +441,7 @@ automation:
 
 Both APIs use the same architecture: real-time WebSocket push with REST polling fallback. Each API has its own independent connection and rate limit budget.
 
-### Gardena Smart System API (~3,000 requests/month)
+### Gardena Smart System API (~10,000 requests/month)
 
 #### Startup (on every HA restart or integration reload)
 
@@ -523,10 +523,12 @@ Each button press or automation action is one API call. The 5-second throttle pr
 | Strategy | Detail |
 |----------|--------|
 | **WebSocket-first architecture** | Device state updates arrive in real time via persistent WebSocket connections. REST API polling is only a fallback. If the WebSocket drops, auto-reconnect with exponential backoff kicks in (30s → 30m). A **watchdog timer** checks every 60 seconds that the WebSocket is still receiving data — if silent for 5 minutes, the connection is forcibly recycled. |
+| **WebSocket URL caching** | The WebSocket URL obtained from the API is cached and reused across reconnects as long as the auth token is still valid. This eliminates an unnecessary `POST /websocket` call on every reconnect attempt. The cache is invalidated when the token expires or a connection attempt fails. |
+| **Connect guard** | An async lock prevents parallel WebSocket connect attempts (e.g. watchdog and poll cycle racing), avoiding duplicate API calls. |
 | **Adaptive polling interval** | When WebSocket is connected: **6-hour** health-check only. When WebSocket drops: **30 min** (Gardena) / **15 min** (Automower). |
-| **Graduated rate limit backoff** | If the API returns HTTP 429, polling backs off exponentially (5 min → 10 → 20 → 40 → 60 min max) and resets after a successful response. |
+| **Graduated rate limit backoff** | If any API call returns HTTP 429 — including token refresh and WebSocket URL requests — polling backs off exponentially (5 min → 10 → 20 → 40 → 60 min max) and resets after a successful response. |
 | **Command throttling** | A minimum **5-second interval** is enforced between consecutive commands to prevent automations from rapid-firing API calls. |
-| **Independent budgets** | The Gardena API (~3,000/month) and Automower API (~10,000/month) have separate rate limits. Using one does not affect the other. |
+| **Independent budgets** | Both the Gardena API and the Automower API allow ~10,000 requests/month each. Using one does not affect the other. |
 
 ### Tips for Avoiding Rate Limits
 
