@@ -15,7 +15,7 @@ API_TYPE_GARDENA = "gardena"
 API_TYPE_AUTOMOWER = "automower"
 
 # ── Gardena polling intervals ──────────────────────────────────────
-# The Husqvarna Gardena API allows ~3 000 requests/month (~1 every 15 min).
+# The Husqvarna Gardena API allows ~10 000 requests/month (~14/hour, ~1 every 4 min).
 # 30 min keeps us well within budget even without WebSocket.
 SCAN_INTERVAL = timedelta(minutes=30)
 SCAN_INTERVAL_WS_CONNECTED = timedelta(hours=6)

@@ -102,6 +102,8 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         self._ws_reconnect_task: asyncio.Task[None] | None = None
         self._mqtt_bridge: Any = None
         self._ws_watchdog_unsub: CALLBACK_TYPE | None = None
+        self._cached_ws_url: str | None = None
+        self._ws_connect_lock = asyncio.Lock()
 
     # ── Public properties ──────────────────────────────────────────────
 
@@ -151,20 +153,9 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         except cfg.auth_error_type as err:
             raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
         except cfg.rate_limit_error_type as err:
-            self._rate_limit_hits += 1
-            backoff = min(
-                cfg.rate_limit_cooldown,
-                timedelta(minutes=5) * (2 ** (self._rate_limit_hits - 1)),
-            )
-            self.update_interval = backoff
-            _LOGGER.warning(
-                "Rate limited by %s API (hit #%d), backing off to %s",
-                cfg.api_label,
-                self._rate_limit_hits,
-                backoff,
-            )
+            self._apply_rate_limit_backoff(err)
             raise UpdateFailed(
-                f"Rate limited by {cfg.api_label} API, retrying in {backoff}: {err}"
+                f"Rate limited by {cfg.api_label} API, retrying in {self.update_interval}: {err}"
             ) from err
         except cfg.connection_error_type as err:
             raise UpdateFailed(f"Cannot connect to {cfg.api_label} API: {err}") from err
@@ -252,17 +243,44 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             del self._stale_miss_counts[device_id]
 
     async def _async_start_websocket(self, devices: dict[str, DeviceT]) -> None:
-        """Start the WebSocket for real-time updates."""
-        cfg = self._config
-        try:
-            ws_url = await self._async_get_ws_url(devices)
-        except (cfg.auth_error_type, cfg.connection_error_type, cfg.rate_limit_error_type) as err:
-            _LOGGER.warning(
-                "Could not obtain %s WebSocket URL, will rely on polling: %s",
-                cfg.api_label,
-                err,
+        """Start the WebSocket for real-time updates.
+
+        Protected by a lock to prevent parallel connect attempts (e.g. watchdog +
+        poll cycle racing).  The WebSocket URL is cached and reused as long as
+        the auth token is still valid; a fresh URL is fetched only when the token
+        was refreshed or the cached URL fails to connect.
+        """
+        if self._ws_connect_lock.locked():
+            _LOGGER.debug(
+                "%s WebSocket connect already in progress, skipping",
+                self._config.api_label,
             )
             return
+
+        async with self._ws_connect_lock:
+            await self._async_start_websocket_locked(devices)
+
+    async def _async_start_websocket_locked(self, devices: dict[str, DeviceT]) -> None:
+        """Inner WebSocket start logic (must be called under _ws_connect_lock)."""
+        cfg = self._config
+
+        # Reuse cached WS URL while the auth token is still valid
+        ws_url = self._cached_ws_url if self._auth.is_token_valid and self._cached_ws_url else None
+
+        if ws_url is None:
+            try:
+                ws_url = await self._async_get_ws_url(devices)
+            except cfg.rate_limit_error_type as err:
+                self._apply_rate_limit_backoff(err)
+                return
+            except (cfg.auth_error_type, cfg.connection_error_type) as err:
+                _LOGGER.warning(
+                    "Could not obtain %s WebSocket URL, will rely on polling: %s",
+                    cfg.api_label,
+                    err,
+                )
+                return
+            self._cached_ws_url = ws_url
 
         self._ws = self._create_websocket(
             auth=self._auth,
@@ -280,6 +298,8 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
                 err,
             )
             self._ws = None
+            # Invalidate cached URL so the next attempt fetches a fresh one
+            self._cached_ws_url = None
             return
 
         self._ws_connected = True
@@ -310,6 +330,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         _LOGGER.error("%s WebSocket connection lost: %s", cfg.api_label, err)
         self._ws_connected = False
         self._ws = None
+        self._cached_ws_url = None
         self._stop_ws_watchdog()
         self.update_interval = self._custom_poll_interval or cfg.scan_interval
 
@@ -332,6 +353,28 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             err,
         )
         self._schedule_ws_reconnect()
+
+    def _apply_rate_limit_backoff(self, err: Exception) -> None:
+        """Apply exponential backoff for a rate-limit error.
+
+        Shared between the poll cycle (_async_update_data) and WebSocket URL
+        fetching so that a 429 from the auth token endpoint triggers the same
+        backoff as a 429 from a normal API call.
+        """
+        cfg = self._config
+        self._rate_limit_hits += 1
+        backoff = min(
+            cfg.rate_limit_cooldown,
+            timedelta(minutes=5) * (2 ** (self._rate_limit_hits - 1)),
+        )
+        self.update_interval = backoff
+        _LOGGER.warning(
+            "Rate limited by %s API (hit #%d), backing off to %s: %s",
+            cfg.api_label,
+            self._rate_limit_hits,
+            backoff,
+            err,
+        )
 
     # ── WebSocket auto-reconnect ────────────────────────────────────────
 
