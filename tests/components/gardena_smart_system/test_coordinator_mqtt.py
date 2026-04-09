@@ -104,9 +104,7 @@ class TestMqttCommandHandler:
 
     async def test_turn_on_custom_duration(self, coordinator) -> None:
         coord, client = coordinator
-        await coord._async_handle_mqtt_command(
-            "dev-1", {"action": "turn_on", "duration": 120}
-        )
+        await coord._async_handle_mqtt_command("dev-1", {"action": "turn_on", "duration": 120})
         client.async_send_command.assert_called_once_with(
             "dev-1", "POWER_SOCKET_CONTROL", "START_SECONDS_TO_OVERRIDE", seconds=7200
         )
