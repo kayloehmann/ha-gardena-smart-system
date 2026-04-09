@@ -15,17 +15,19 @@ API_TYPE_GARDENA = "gardena"
 API_TYPE_AUTOMOWER = "automower"
 
 # ── Gardena polling intervals ──────────────────────────────────────
-# The Husqvarna Gardena API allows ~10 000 requests/month (~14/hour, ~1 every 4 min).
-# 30 min keeps us well within budget even without WebSocket.
-SCAN_INTERVAL = timedelta(minutes=30)
-SCAN_INTERVAL_WS_CONNECTED = timedelta(hours=6)
+# The Husqvarna Gardena API allows ~10 000 requests/month (~333/day).
+# With WebSocket connected, polls are just health-checks (device list sync).
+# With WebSocket down, 5-min polling matches sensor hardware update rate
+# and uses ~86% of budget at worst (full month without WS).
+SCAN_INTERVAL = timedelta(minutes=5)
+SCAN_INTERVAL_WS_CONNECTED = timedelta(hours=1)
 RATE_LIMIT_COOLDOWN = timedelta(hours=1)
 
 # ── Automower polling intervals ───────────────────────────────────
-# The Automower API allows ~10 000 requests/month (~330/day).
-# 15 min fallback, 6h with WS, 1h on rate limit.
-AUTOMOWER_SCAN_INTERVAL = timedelta(minutes=15)
-AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED = timedelta(hours=6)
+# The Automower API allows ~10 000 requests/month (separate budget).
+# Same strategy: aggressive fallback, hourly health-check with WS.
+AUTOMOWER_SCAN_INTERVAL = timedelta(minutes=5)
+AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED = timedelta(hours=1)
 AUTOMOWER_RATE_LIMIT_COOLDOWN = timedelta(hours=1)
 
 # Minimum seconds between consecutive API commands (mower/valve/power socket)
@@ -52,8 +54,8 @@ OPT_MQTT_TOPIC_PREFIX = "mqtt_topic_prefix"
 OPT_MQTT_PUBLISH_STATES = "mqtt_publish_states"
 OPT_MQTT_SUBSCRIBE_COMMANDS = "mqtt_subscribe_commands"
 DEFAULT_MQTT_TOPIC_PREFIX = "gardena"
-DEFAULT_POLL_INTERVAL_GARDENA = 30
-DEFAULT_POLL_INTERVAL_AUTOMOWER = 15
+DEFAULT_POLL_INTERVAL_GARDENA = 5
+DEFAULT_POLL_INTERVAL_AUTOMOWER = 5
 MIN_POLL_INTERVAL = 5
 MAX_POLL_INTERVAL = 1440
 

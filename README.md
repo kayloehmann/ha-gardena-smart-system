@@ -458,20 +458,20 @@ That is **3 REST calls + 1 WebSocket connection** per startup.
 
 | API Call | Frequency | Purpose |
 |---------|-----------|---------|
-| `GET /locations/{id}` | Every **6 hours** | Health-check poll — verifies the device list is in sync |
-| `POST /oauth2/token` | Every **~55 minutes** | Token refresh (tokens expire after 1 hour) |
+| `GET /locations/{id}` | Every **1 hour** | Health-check poll — verifies the device list is in sync and detects newly added devices |
+| `POST /oauth2/token` | Every **~55 minutes** | Token refresh (tokens expire after 1 hour; on a separate endpoint that does not count against the Smart API quota) |
 | WebSocket messages | Continuous (push) | All device state updates arrive here at zero REST cost |
 
-Daily total: **~4 polls + ~24 token refreshes = ~28 requests/day** — roughly **28% of the daily budget**.
+Daily total: **~24 health-check polls/day** — roughly **7% of the monthly budget**.
 
 #### Fallback operation (WebSocket down)
 
 | API Call | Frequency | Purpose |
 |---------|-----------|---------|
-| `GET /locations/{id}` | Every **30 minutes** | Poll for device state |
-| `POST /oauth2/token` | Every **~55 minutes** | Token refresh |
+| `GET /locations/{id}` | Every **5 minutes** | Poll for device state (matches Gardena sensor hardware update frequency) |
+| `POST /oauth2/token` | Every **~55 minutes** | Token refresh (separate endpoint) |
 
-Daily total: **~48 polls + ~24 token refreshes = ~72 requests/day** — roughly **72% of the daily budget**.
+Daily total: **~288 polls/day** — roughly **86% of the monthly budget**. This aggressive fallback ensures near-real-time sensor data even without WebSocket, while still leaving headroom for commands and reconnect attempts.
 
 ### Automower Connect API (~10,000 requests/month)
 
@@ -487,20 +487,20 @@ Daily total: **~48 polls + ~24 token refreshes = ~72 requests/day** — roughly 
 
 | API Call | Frequency | Purpose |
 |---------|-----------|---------|
-| `GET /mowers` | Every **6 hours** | Health-check poll |
-| `POST /oauth2/token` | Every **~55 minutes** | Token refresh |
+| `GET /mowers` | Every **1 hour** | Health-check poll |
+| `POST /oauth2/token` | Every **~55 minutes** | Token refresh (separate endpoint) |
 | WebSocket messages | Continuous (push) | All mower state updates |
 
-Daily total: **~4 polls + ~24 token refreshes = ~28 requests/day** — roughly **8% of the daily budget**.
+Daily total: **~24 health-check polls/day** — roughly **7% of the monthly budget**.
 
 #### Fallback operation (WebSocket down)
 
 | API Call | Frequency | Purpose |
 |---------|-----------|---------|
-| `GET /mowers` | Every **15 minutes** | Poll for mower state |
-| `POST /oauth2/token` | Every **~55 minutes** | Token refresh |
+| `GET /mowers` | Every **5 minutes** | Poll for mower state |
+| `POST /oauth2/token` | Every **~55 minutes** | Token refresh (separate endpoint) |
 
-Daily total: **~96 polls + ~24 token refreshes = ~120 requests/day** — roughly **36% of the daily budget**.
+Daily total: **~288 polls/day** — roughly **86% of the monthly budget**.
 
 ### Rate-limited state (both APIs)
 
@@ -525,7 +525,7 @@ Each button press or automation action is one API call. The 5-second throttle pr
 | **WebSocket-first architecture** | Device state updates arrive in real time via persistent WebSocket connections. REST API polling is only a fallback. If the WebSocket drops, auto-reconnect with exponential backoff kicks in (30s → 30m). A **watchdog timer** checks every 60 seconds that the WebSocket is still receiving data — if silent for 5 minutes, the connection is forcibly recycled. |
 | **WebSocket URL caching** | The WebSocket URL obtained from the API is cached and reused across reconnects as long as the auth token is still valid. This eliminates an unnecessary `POST /websocket` call on every reconnect attempt. The cache is invalidated when the token expires or a connection attempt fails. |
 | **Connect guard** | An async lock prevents parallel WebSocket connect attempts (e.g. watchdog and poll cycle racing), avoiding duplicate API calls. |
-| **Adaptive polling interval** | When WebSocket is connected: **6-hour** health-check only. When WebSocket drops: **30 min** (Gardena) / **15 min** (Automower). |
+| **Adaptive polling interval** | When WebSocket is connected: **1-hour** health-check only. When WebSocket drops: **5-minute** polling (matches sensor hardware update rate, uses ~86% of monthly budget at worst). |
 | **Graduated rate limit backoff** | If any API call returns HTTP 429 — including token refresh and WebSocket URL requests — polling backs off exponentially (5 min → 10 → 20 → 40 → 60 min max) and resets after a successful response. |
 | **Command throttling** | A minimum **5-second interval** is enforced between consecutive commands to prevent automations from rapid-firing API calls. |
 | **Independent budgets** | Both the Gardena API and the Automower API allow ~10,000 requests/month each. Using one does not affect the other. |
