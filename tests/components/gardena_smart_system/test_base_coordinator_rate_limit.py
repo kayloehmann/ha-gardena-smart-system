@@ -404,3 +404,76 @@ class TestRateLimitBackoffFromAuth:
             await hass.async_block_till_done()
 
             assert coordinator._rate_limit_hits == 0
+
+
+class TestCustomPollIntervalWithWs:
+    """Custom poll interval only applies to REST fallback, not WS mode."""
+
+    async def test_ws_connected_uses_health_check_interval_not_custom(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """With WS connected, the 6h health check is used even if custom interval is set."""
+        from custom_components.gardena_smart_system.const import (
+            OPT_POLL_INTERVAL_MINUTES,
+            SCAN_INTERVAL_WS_CONNECTED,
+        )
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=ENTRY_DATA,
+            title="My Garden",
+            options={OPT_POLL_INTERVAL_MINUTES: 5},
+        )
+
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = entry.runtime_data
+            assert coordinator._ws_connected is True
+            # Should use 6h WS interval, NOT the 5-minute custom interval
+            assert coordinator.update_interval == SCAN_INTERVAL_WS_CONNECTED
+
+    async def test_ws_disconnected_uses_custom_interval(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        """With WS disconnected, the custom poll interval is used."""
+        from custom_components.gardena_smart_system.const import OPT_POLL_INTERVAL_MINUTES
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=ENTRY_DATA,
+            title="My Garden",
+            options={OPT_POLL_INTERVAL_MINUTES: 10},
+        )
+
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = entry.runtime_data
+            # Simulate WS disconnect — prevent reconnect so we observe fallback
+            coordinator._ws_connected = False
+            coordinator.update_interval = timedelta(hours=1)  # from rate limit
+            with patch.object(coordinator, "_async_start_websocket"):
+                await coordinator._async_update_data()
+
+            assert coordinator.update_interval == timedelta(minutes=10)

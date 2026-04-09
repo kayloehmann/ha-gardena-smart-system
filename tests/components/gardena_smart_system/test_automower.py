@@ -1689,9 +1689,16 @@ class TestAutomowerCoordinatorWebSocket:
     async def test_custom_poll_interval_restored_after_rate_limit(
         self, hass: HomeAssistant
     ) -> None:
-        """Custom poll interval takes precedence over defaults after rate limit (line 115)."""
+        """Custom poll interval is used in REST fallback after rate limit recovery.
+
+        When the WebSocket is disconnected and a custom poll interval is set,
+        recovering from a rate limit should restore the custom interval (not the
+        default).  When the WebSocket is connected, the long health-check
+        interval (6h) is always used regardless of custom interval.
+        """
         from custom_components.gardena_smart_system.const import (
             AUTOMOWER_RATE_LIMIT_COOLDOWN,
+            AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED,
             OPT_POLL_INTERVAL_MINUTES,
         )
 
@@ -1710,12 +1717,20 @@ class TestAutomowerCoordinatorWebSocket:
         async with _setup_automower(hass, entry, devices) as mock_client:
             coordinator = entry.runtime_data
 
-            # Simulate rate limit then recovery
+            # With WS connected, custom interval should NOT apply
             coordinator.update_interval = AUTOMOWER_RATE_LIMIT_COOLDOWN
             mock_client.async_get_mowers = AsyncMock(return_value=devices)
 
             await coordinator._async_update_data()
+            assert coordinator.update_interval == AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED
 
+            # With WS disconnected, custom interval SHOULD apply.
+            # Prevent _async_start_websocket from reconnecting so we can
+            # observe the REST fallback interval.
+            coordinator._ws_connected = False
+            coordinator.update_interval = AUTOMOWER_RATE_LIMIT_COOLDOWN
+            with patch.object(coordinator, "_async_start_websocket"):
+                await coordinator._async_update_data()
             assert coordinator.update_interval == timedelta(minutes=45)
 
     async def test_stale_device_reappears_clears_miss_count(

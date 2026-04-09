@@ -160,12 +160,16 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         except cfg.connection_error_type as err:
             raise UpdateFailed(f"Cannot connect to {cfg.api_label} API: {err}") from err
 
-        # Reset rate-limit counter and restore normal polling interval
+        # Reset rate-limit counter and restore normal polling interval.
+        # Custom poll interval only applies to REST fallback — when WebSocket
+        # is active, data arrives via push and only a 6-hour health check is
+        # needed.  Using a short custom interval with WS connected would burn
+        # through the API rate limit budget for no benefit.
         self._rate_limit_hits = 0
-        if self._custom_poll_interval is not None:
-            normal_interval = self._custom_poll_interval
-        elif self._ws_connected:
+        if self._ws_connected:
             normal_interval = cfg.scan_interval_ws
+        elif self._custom_poll_interval is not None:
+            normal_interval = self._custom_poll_interval
         else:
             normal_interval = cfg.scan_interval
         if self.update_interval != normal_interval:
@@ -305,7 +309,9 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         self._ws_connected = True
         self._cancel_ws_reconnect()
         self._start_ws_watchdog()
-        ws_interval = self._custom_poll_interval or cfg.scan_interval_ws
+        # Always use the long WS health-check interval when connected — the
+        # custom poll interval is for REST fallback only.
+        ws_interval = cfg.scan_interval_ws
         self.update_interval = ws_interval
         ir.async_delete_issue(self.hass, DOMAIN, cfg.ws_issue_key)
         _LOGGER.debug(
