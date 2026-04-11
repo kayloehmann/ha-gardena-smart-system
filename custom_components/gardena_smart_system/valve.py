@@ -34,6 +34,10 @@ PARALLEL_UPDATES = 1
 
 MAX_WATERING_DURATION_MINUTES = 1440  # 24 hours
 
+# Smart Irrigation Control allows at most this many valves open simultaneously
+# per controller. Opening a third is rejected by the Husqvarna API.
+MAX_CONCURRENT_IRRIGATION_VALVES = 2
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -119,6 +123,7 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
                 OPT_DEFAULT_WATERING_MINUTES, DEFAULT_WATERING_MINUTES
             )
         )
+        self._check_concurrent_valve_limit()
         await self._async_send_command(
             "START_SECONDS_TO_OVERRIDE",
             seconds=duration_minutes * 60,
@@ -126,6 +131,7 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
 
     async def async_start_watering(self, duration: int) -> None:
         """Start watering for the given number of minutes."""
+        self._check_concurrent_valve_limit()
         await self._async_send_command(
             "START_SECONDS_TO_OVERRIDE",
             seconds=duration * 60,
@@ -134,6 +140,28 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
     async def async_close_valve(self, **kwargs: Any) -> None:
         """Close the valve immediately."""
         await self._async_send_command("STOP_UNTIL_NEXT_TASK")
+
+    def _check_concurrent_valve_limit(self) -> None:
+        """Refuse opening if the irrigation controller's concurrent limit is reached.
+
+        Applies only to valves that belong to a Smart Irrigation Control
+        (device with a VALVE_SET service). Standalone Water Controls have no
+        such limit.
+        """
+        device = self._device
+        if device is None or device.valve_set is None:
+            return
+        already_open = sum(
+            1
+            for sid, valve in device.valves.items()
+            if sid != self._service_id and valve.activity != ValveActivity.CLOSED
+        )
+        if already_open >= MAX_CONCURRENT_IRRIGATION_VALVES:
+            raise HomeAssistantError(
+                translation_domain="gardena_smart_system",
+                translation_key="too_many_open_valves",
+                translation_placeholders={"limit": str(MAX_CONCURRENT_IRRIGATION_VALVES)},
+            )
 
     async def _async_send_command(self, command: str, **params: int) -> None:
         """Send a command to this valve."""

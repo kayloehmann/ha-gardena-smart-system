@@ -471,6 +471,9 @@
     },
     "command_throttled": {
       "message": "Os comandos estão sendo enviados muito rapidamente. Aguarde alguns segundos entre os comandos para evitar exceder o limite da API."
+    },
+    "too_many_open_valves": {
+      "message": "Não é possível abrir a válvula: o Smart Irrigation Control permite no máximo {limit} válvulas abertas ao mesmo tempo. Feche primeiro outra válvula."
     }
   },
   "issues": {

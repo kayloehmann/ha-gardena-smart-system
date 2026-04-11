@@ -471,6 +471,9 @@
     },
     "command_throttled": {
       "message": "Comenzile sunt trimise prea rapid. Vă rugăm să așteptați câteva secunde între comenzi pentru a evita depășirea limitei de rată API."
+    },
+    "too_many_open_valves": {
+      "message": "Supapa nu poate fi deschisă: Smart Irrigation Control permite cel mult {limit} supape deschise în același timp. Închide mai întâi o altă supapă."
     }
   },
   "issues": {

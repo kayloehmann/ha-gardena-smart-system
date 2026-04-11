@@ -471,6 +471,9 @@
     },
     "command_throttled": {
       "message": "Käske saadetakse liiga kiiresti. Palun oota mõni sekund käskude vahel, et vältida API päringulimiidi ületamist."
+    },
+    "too_many_open_valves": {
+      "message": "Ventiili ei saa avada: Smart Irrigation Control lubab korraga avatud olla kuni {limit} ventiili. Sulge esmalt mõni teine ventiil."
     }
   },
   "issues": {

@@ -471,6 +471,9 @@
     },
     "command_throttled": {
       "message": "Ukazi se pošiljajo prehitro. Prosimo, počakajte nekaj sekund med ukazi, da se izognete preseganju omejitve API."
+    },
+    "too_many_open_valves": {
+      "message": "Ventila ni mogoče odpreti: Smart Irrigation Control omogoča hkrati odprte največ {limit} ventile. Najprej zapri drug ventil."
     }
   },
   "issues": {

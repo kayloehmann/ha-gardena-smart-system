@@ -471,6 +471,9 @@
     },
     "command_throttled": {
       "message": "コマンドの送信が速すぎます。APIレート制限を超えないよう、コマンド間に数秒の間隔を空けてください。"
+    },
+    "too_many_open_valves": {
+      "message": "バルブを開けません: Smart Irrigation Control では同時に開けるバルブは最大 {limit} 個までです。まず別のバルブを閉じてください。"
     }
   },
   "issues": {

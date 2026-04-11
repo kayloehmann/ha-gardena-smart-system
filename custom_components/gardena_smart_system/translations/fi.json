@@ -471,6 +471,9 @@
     },
     "command_throttled": {
       "message": "Komentoja lähetetään liian nopeasti. Odota muutama sekunti komentojen välillä, jotta API-nopeusrajaa ei ylitetä."
+    },
+    "too_many_open_valves": {
+      "message": "Venttiiliä ei voi avata: Smart Irrigation Control sallii enintään {limit} auki olevaa venttiiliä samanaikaisesti. Sulje ensin toinen venttiili."
     }
   },
   "issues": {

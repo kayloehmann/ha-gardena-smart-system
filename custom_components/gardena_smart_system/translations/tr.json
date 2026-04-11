@@ -471,6 +471,9 @@
     },
     "command_throttled": {
       "message": "Komutlar çok hızlı gönderiliyor. API hız sınırını aşmamak için lütfen komutlar arasında birkaç saniye bekleyin."
+    },
+    "too_many_open_valves": {
+      "message": "Vana açılamıyor: Smart Irrigation Control aynı anda en fazla {limit} vananın açık olmasına izin veriyor. Önce başka bir vanayı kapat."
     }
   },
   "issues": {

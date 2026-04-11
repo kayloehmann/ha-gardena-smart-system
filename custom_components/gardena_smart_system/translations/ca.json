@@ -471,6 +471,9 @@
     },
     "command_throttled": {
       "message": "Les ordres s'estan enviant massa ràpid. Si us plau, espereu uns segons entre ordres per evitar superar el límit de peticions de l'API."
+    },
+    "too_many_open_valves": {
+      "message": "No es pot obrir la vàlvula: el Smart Irrigation Control permet un màxim de {limit} vàlvules obertes alhora. Tanca primer una altra vàlvula."
     }
   },
   "issues": {

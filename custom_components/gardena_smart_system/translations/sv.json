@@ -471,6 +471,9 @@
     },
     "command_throttled": {
       "message": "Kommandon skickas för snabbt. Vänta några sekunder mellan kommandona för att inte överskrida API-hastighetsgränserna."
+    },
+    "too_many_open_valves": {
+      "message": "Ventilen kan inte öppnas: Smart Irrigation Control tillåter högst {limit} samtidigt öppna ventiler. Stäng först en annan ventil."
     }
   },
   "issues": {

@@ -2,6 +2,16 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.9.0] - 2026-04-11
+
+### Added
+- **Preflight check for Smart Irrigation Control** — Smart Irrigation Control devices allow at most **2 valves open simultaneously** per controller. Opening a third valve is now rejected locally before the API call with a translated error (`too_many_open_valves`), so the user gets an immediate, actionable message instead of a generic "command failed". The check only applies to multi-zone irrigation controllers (devices with a `VALVE_SET` service); standalone Smart Water Control devices are not subject to the limit. A valve that is already open is not counted against itself, so re-opening an active valve remains allowed.
+- New translation key `too_many_open_valves` shipped in **all 31 supported languages**.
+- **5 new valve tests** (556 tests total) covering: third valve refused, `start_watering` service also refused, re-opening an already open valve, second valve allowed, standalone Water Control unaffected.
+
+### Changed
+- `manifest.json` now declares `"quality_scale": "platinum"` — the integration has met the Platinum tier requirements since 1.7.x; this makes the declaration explicit in the manifest so Home Assistant surfaces the badge natively.
+
 ## [1.7.8] - 2026-04-05
 
 ### Added

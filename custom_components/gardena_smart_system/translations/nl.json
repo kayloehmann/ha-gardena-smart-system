@@ -471,6 +471,9 @@
     },
     "command_throttled": {
       "message": "Opdrachten worden te snel verzonden. Wacht een paar seconden tussen opdrachten om de API-limiet niet te overschrijden."
+    },
+    "too_many_open_valves": {
+      "message": "Kan klep niet openen: de Smart Irrigation Control staat maximaal {limit} gelijktijdig geopende kleppen toe. Sluit eerst een andere klep."
     }
   },
   "issues": {

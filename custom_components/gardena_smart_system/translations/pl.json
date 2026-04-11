@@ -471,6 +471,9 @@
     },
     "command_throttled": {
       "message": "Polecenia są wysyłane zbyt szybko. Poczekaj kilka sekund między poleceniami, aby nie przekroczyć limitu API."
+    },
+    "too_many_open_valves": {
+      "message": "Nie można otworzyć zaworu: Smart Irrigation Control pozwala na jednoczesne otwarcie maksymalnie {limit} zaworów. Najpierw zamknij inny zawór."
     }
   },
   "issues": {

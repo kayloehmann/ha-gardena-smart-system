@@ -471,6 +471,9 @@
     },
     "command_throttled": {
       "message": "Komandos siunčiamos per greitai. Prašome palaukti kelias sekundes tarp komandų, kad neviršytumėte API limito."
+    },
+    "too_many_open_valves": {
+      "message": "Vožtuvo atidaryti negalima: „Smart Irrigation Control“ leidžia vienu metu turėti atvertus ne daugiau kaip {limit} vožtuvus. Pirmiausia uždaryk kitą vožtuvą."
     }
   },
   "issues": {

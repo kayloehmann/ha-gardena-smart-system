@@ -471,6 +471,9 @@
     },
     "command_throttled": {
       "message": "A parancsok túl gyorsan kerülnek küldésre. Kérjük, várjon néhány másodpercet a parancsok között az API sebességkorlát túllépésének elkerülése érdekében."
+    },
+    "too_many_open_valves": {
+      "message": "A szelep nem nyitható meg: a Smart Irrigation Control egyszerre legfeljebb {limit} nyitott szelepet engedélyez. Először zárj be egy másik szelepet."
     }
   },
   "issues": {

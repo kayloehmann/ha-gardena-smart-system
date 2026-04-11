@@ -553,3 +553,104 @@ class TestValveDeviceNoneGuards:
             coordinator.async_set_updated_data({})
             with pytest.raises(HomeAssistantError):
                 await entity._async_send_command("START_SECONDS_TO_OVERRIDE", seconds=60)
+
+
+class TestIrrigationConcurrentValveLimit:
+    """Preflight check: Smart Irrigation Control allows at most 2 open valves."""
+
+    async def test_third_valve_open_is_refused_on_irrigation_controller(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=3, has_sensor=False)
+        device.valve_set = object()  # marks device as Smart Irrigation Control
+        valve_ids = sorted(device.valves.keys())
+        device.valves[valve_ids[0]].activity = "MANUAL_WATERING"
+        device.valves[valve_ids[1]].activity = "SCHEDULED_WATERING"
+        # valve 3 is still CLOSED — opening it should be refused
+        devices = {device.device_id: device}
+
+        async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
+            with pytest.raises(HomeAssistantError):
+                await hass.services.async_call(
+                    "valve",
+                    "open_valve",
+                    {"entity_id": "valve.my_sensor_valve_3"},
+                    blocking=True,
+                )
+            mock_client.async_send_command.assert_not_called()
+
+    async def test_start_watering_service_also_refused(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=3, has_sensor=False)
+        device.valve_set = object()
+        valve_ids = sorted(device.valves.keys())
+        device.valves[valve_ids[0]].activity = "MANUAL_WATERING"
+        device.valves[valve_ids[1]].activity = "MANUAL_WATERING"
+        devices = {device.device_id: device}
+
+        async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
+            with pytest.raises(HomeAssistantError):
+                await hass.services.async_call(
+                    "gardena_smart_system",
+                    "start_watering",
+                    {"entity_id": "valve.my_sensor_valve_3", "duration": 15},
+                    blocking=True,
+                )
+            mock_client.async_send_command.assert_not_called()
+
+    async def test_reopening_an_already_open_valve_is_allowed(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """The valve being opened itself does not count against the limit."""
+        device = make_mock_device(valve_count=3, has_sensor=False)
+        device.valve_set = object()
+        valve_ids = sorted(device.valves.keys())
+        device.valves[valve_ids[0]].activity = "MANUAL_WATERING"
+        device.valves[valve_ids[2]].activity = "MANUAL_WATERING"
+        devices = {device.device_id: device}
+
+        async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
+            await hass.services.async_call(
+                "valve",
+                "open_valve",
+                {"entity_id": "valve.my_sensor_valve_3"},
+                blocking=True,
+            )
+            mock_client.async_send_command.assert_called_once()
+
+    async def test_second_valve_open_is_allowed(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=3, has_sensor=False)
+        device.valve_set = object()
+        valve_ids = sorted(device.valves.keys())
+        device.valves[valve_ids[0]].activity = "MANUAL_WATERING"
+        devices = {device.device_id: device}
+
+        async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
+            await hass.services.async_call(
+                "valve",
+                "open_valve",
+                {"entity_id": "valve.my_sensor_valve_2"},
+                blocking=True,
+            )
+            mock_client.async_send_command.assert_called_once()
+
+    async def test_standalone_water_control_has_no_limit(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Standalone Water Control (no valve_set) is not subject to the limit."""
+        device = make_mock_device(valve_count=1, has_sensor=False)
+        # valve_set stays None — this is a standalone Water Control
+        assert device.valve_set is None
+        devices = {device.device_id: device}
+
+        async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
+            await hass.services.async_call(
+                "valve",
+                "open_valve",
+                {"entity_id": "valve.my_sensor_valve_1"},
+                blocking=True,
+            )
+            mock_client.async_send_command.assert_called_once()

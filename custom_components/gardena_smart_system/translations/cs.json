@@ -471,6 +471,9 @@
     },
     "command_throttled": {
       "message": "Příkazy jsou odesílány příliš rychle. Počkejte prosím několik sekund mezi příkazy, abyste nepřekročili limit API."
+    },
+    "too_many_open_valves": {
+      "message": "Ventil nelze otevřít: Smart Irrigation Control umožňuje mít současně otevřené nanejvýš {limit} ventily. Nejprve zavři jiný ventil."
     }
   },
   "issues": {

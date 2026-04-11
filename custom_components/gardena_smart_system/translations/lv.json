@@ -471,6 +471,9 @@
     },
     "command_throttled": {
       "message": "Komandas tiek sūtītas pārāk ātri. Lūdzu, uzgaidiet dažas sekundes starp komandām, lai nepārsniegtu API pieprasījumu limitu."
+    },
+    "too_many_open_valves": {
+      "message": "Vārstu nevar atvērt: Smart Irrigation Control ļauj vienlaikus atvērt ne vairāk kā {limit} vārstus. Vispirms aizver citu vārstu."
     }
   },
   "issues": {

@@ -471,6 +471,9 @@
     },
     "command_throttled": {
       "message": "命令发送过于频繁。请在两次命令之间等待几秒钟，以避免超过 API 速率限制。"
+    },
+    "too_many_open_valves": {
+      "message": "无法打开阀门：Smart Irrigation Control 最多允许同时打开 {limit} 个阀门。请先关闭另一个阀门。"
     }
   },
   "issues": {

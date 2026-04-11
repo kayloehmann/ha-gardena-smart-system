@@ -471,6 +471,9 @@
     },
     "command_throttled": {
       "message": "Les commandes sont envoyées trop rapidement. Attends quelques secondes entre les commandes pour ne pas dépasser la limite de requêtes API."
+    },
+    "too_many_open_valves": {
+      "message": "Impossible d'ouvrir la vanne : le Smart Irrigation Control autorise au maximum {limit} vannes ouvertes en même temps. Ferme d'abord une autre vanne."
     }
   },
   "issues": {
