@@ -652,18 +652,14 @@ class TestCommandThrottle:
         # Should not raise
         coordinator.check_command_throttle()
 
-    def test_burst_of_ten_rapid_commands_allowed(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    def test_burst_of_ten_rapid_commands_allowed(self, coordinator: GardenaCoordinator) -> None:
         """The bucket holds up to COMMAND_BURST_CAPACITY (10) tokens."""
         from custom_components.gardena_smart_system.const import COMMAND_BURST_CAPACITY
 
         for _ in range(COMMAND_BURST_CAPACITY):
             coordinator.check_command_throttle()
 
-    def test_eleventh_rapid_command_blocked(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    def test_eleventh_rapid_command_blocked(self, coordinator: GardenaCoordinator) -> None:
         """After the burst is exhausted, the next command is rejected."""
         from custom_components.gardena_smart_system.const import COMMAND_BURST_CAPACITY
 
@@ -673,9 +669,7 @@ class TestCommandThrottle:
         with pytest.raises(HomeAssistantError):
             coordinator.check_command_throttle()
 
-    def test_command_allowed_after_refill_interval(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    def test_command_allowed_after_refill_interval(self, coordinator: GardenaCoordinator) -> None:
         """After MIN_COMMAND_INTERVAL_SECONDS, one token is back."""
         from custom_components.gardena_smart_system.const import (
             COMMAND_BURST_CAPACITY,
@@ -686,16 +680,12 @@ class TestCommandThrottle:
             coordinator.check_command_throttle()
 
         # Simulate one refill interval passing
-        coordinator._command_tokens_updated = (
-            time.monotonic() - MIN_COMMAND_INTERVAL_SECONDS - 0.1
-        )
+        coordinator._command_tokens_updated = time.monotonic() - MIN_COMMAND_INTERVAL_SECONDS - 0.1
 
         # Should not raise — one token has refilled
         coordinator.check_command_throttle()
 
-    def test_tokens_capped_at_capacity(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    def test_tokens_capped_at_capacity(self, coordinator: GardenaCoordinator) -> None:
         """Long idle periods do not grow the bucket beyond its capacity."""
         from custom_components.gardena_smart_system.const import COMMAND_BURST_CAPACITY
 
