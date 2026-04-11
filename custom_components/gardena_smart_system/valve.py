@@ -7,7 +7,7 @@ to a HA valve entity.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, cast
 
 import voluptuous as vol
@@ -210,7 +210,7 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
             seconds = params.get("seconds")
             if isinstance(seconds, int):
                 valve.duration = seconds
-                valve.duration_timestamp = datetime.now(tz=timezone.utc).isoformat()
+                valve.duration_timestamp = datetime.now(tz=UTC).isoformat()
         elif command == "STOP_UNTIL_NEXT_TASK":
             valve.activity = ValveActivity.CLOSED
             valve.duration = 0
