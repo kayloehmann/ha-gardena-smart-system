@@ -30,9 +30,14 @@ AUTOMOWER_SCAN_INTERVAL = timedelta(minutes=5)
 AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED = timedelta(hours=1)
 AUTOMOWER_RATE_LIMIT_COOLDOWN = timedelta(hours=1)
 
-# Minimum seconds between consecutive API commands (mower/valve/power socket)
-# to avoid burning through the API quota with rapid-fire automations.
+# Command throttle: token-bucket model.
+# Steady-state: at most one command every MIN_COMMAND_INTERVAL_SECONDS — tokens
+# refill at 1 per this interval. Burst: up to COMMAND_BURST_CAPACITY commands
+# may be fired back-to-back (e.g. a user opening several irrigation valves in
+# quick succession) before the throttle kicks in. This preserves the long-term
+# API quota budget while not punishing legitimate bursts.
 MIN_COMMAND_INTERVAL_SECONDS = 5
+COMMAND_BURST_CAPACITY = 10
 
 # WebSocket watchdog: if no message received for this long, consider the
 # connection dead and trigger a reconnect.  The Gardena API sends periodic

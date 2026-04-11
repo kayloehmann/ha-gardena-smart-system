@@ -512,11 +512,11 @@ After receiving HTTP 429, both coordinators use **graduated backoff**: 5 min →
 
 | API Call | Frequency | Purpose |
 |---------|-----------|---------|
-| `PUT /command/{id}` (Gardena) | On demand, **min 5 seconds apart** | Valve, switch, mower commands |
-| `POST /mowers/{id}/actions` (Automower) | On demand, **min 5 seconds apart** | Mower actions (start, pause, park) |
-| `PATCH /mowers/{id}/settings` (Automower) | On demand, **min 5 seconds apart** | Cutting height, headlight, stay-out zones |
+| `PUT /command/{id}` (Gardena) | On demand, **token bucket (10, refill 1/5 s)** | Valve, switch, mower commands |
+| `POST /mowers/{id}/actions` (Automower) | On demand, **token bucket (10, refill 1/5 s)** | Mower actions (start, pause, park) |
+| `PATCH /mowers/{id}/settings` (Automower) | On demand, **token bucket (10, refill 1/5 s)** | Cutting height, headlight, stay-out zones |
 
-Each button press or automation action is one API call. The 5-second throttle prevents rapid-fire sequences from burning quota.
+Each button press or automation action is one API call. A token-bucket throttle (10 tokens, refilling at 1 per 5 s) allows small bursts (e.g. opening several valves) while capping the long-term rate at 1 command per 5 seconds.
 
 ## API Rate Limits
 
@@ -529,7 +529,7 @@ Each button press or automation action is one API call. The 5-second throttle pr
 | **Connect guard** | An async lock prevents parallel WebSocket connect attempts (e.g. watchdog and poll cycle racing), avoiding duplicate API calls. |
 | **Adaptive polling interval** | When WebSocket is connected: **1-hour** health-check only. When WebSocket drops: **5-minute** polling (matches sensor hardware update rate, uses ~86% of monthly budget at worst). |
 | **Graduated rate limit backoff** | If any API call returns HTTP 429 — including token refresh and WebSocket URL requests — polling backs off exponentially (5 min → 10 → 20 → 40 → 60 min max) and resets after a successful response. |
-| **Command throttling** | A minimum **5-second interval** is enforced between consecutive commands to prevent automations from rapid-firing API calls. |
+| **Command throttling (token bucket)** | A token bucket of **10 commands** refills at 1 token per **5 seconds**. This allows small bursts (e.g. opening several irrigation valves in a row) while keeping the long-term steady-state rate at ≤1 command / 5 s to protect the monthly API quota. |
 | **Independent budgets** | Both the Gardena API and the Automower API allow ~10,000 requests/month each. Using one does not affect the other. |
 
 ### Tips for Avoiding Rate Limits
@@ -634,8 +634,8 @@ This indicates the WebSocket connection to the Husqvarna cloud has failed. The i
 
 ### "Commands are being sent too quickly"
 
-- The integration enforces a 5-second minimum interval between commands to protect the API quota.
-- If you see this in automations, add a `delay` step between consecutive service calls.
+- The integration uses a token-bucket throttle (10 commands, refilling at 1 per 5 s). Short bursts (e.g. opening several valves at once) are allowed; the warning only appears when an automation has already fired 10+ commands in quick succession.
+- If you see this in automations, add a `delay` step between consecutive service calls, or spread them out further.
 
 ### "Rate limited" in logs
 
@@ -656,7 +656,7 @@ This integration targets the [Home Assistant Integration Quality Scale](https://
 
 Key quality features:
 
-- **99% test coverage** across 556 automated tests
+- **99% test coverage** across 561 automated tests
 - **mypy --strict** passes with zero errors on all 23 source files
 - **PEP 561** compliant (`py.typed` markers on both client libraries)
 - **Full async** codebase — no blocking I/O in the event loop

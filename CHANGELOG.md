@@ -2,6 +2,12 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.9.1] - 2026-04-11
+
+### Fixed
+- **Valve UI stayed "closed" after a successful open command** — the integration waited for the WebSocket event to update the valve state, but that event can arrive with a noticeable delay or, rarely, be lost entirely if the WebSocket was silently dropped. Valve commands now apply an **optimistic local state update** immediately after the API call succeeds: `START_SECONDS_TO_OVERRIDE` flips `activity` to `MANUAL_WATERING` (with updated remaining-duration timestamp) and `STOP_UNTIL_NEXT_TASK` flips it to `CLOSED`. The subsequent WebSocket event simply reconfirms the state. This also means the 2-valve concurrent-open preflight check correctly sees the freshly-opened sibling valve when the next command is issued.
+- **Command throttle too strict** — the previous throttle rejected any command sent within 5 seconds of the previous one, so opening two irrigation valves back-to-back from the UI immediately surfaced as "commands are being sent too quickly". Replaced with a **token-bucket** model: the bucket holds **10 tokens** and refills at 1 token every `MIN_COMMAND_INTERVAL_SECONDS` (= 5 s). Users can fire up to 10 commands in a burst (e.g. opening several valves, running a short automation sequence) before the throttle kicks in, while the long-term steady-state rate is still capped at one command per 5 seconds — so the monthly API quota remains protected.
+
 ## [1.9.0] - 2026-04-11
 
 ### Added

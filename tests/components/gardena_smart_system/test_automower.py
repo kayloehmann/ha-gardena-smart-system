@@ -1237,19 +1237,22 @@ class TestAutomowerCoordinator:
             # to the WS-connected interval
             assert coordinator.update_interval == AUTOMOWER_SCAN_INTERVAL_WS_CONNECTED
 
-    async def test_command_throttle_raises_when_too_fast(
+    async def test_command_throttle_raises_when_burst_exhausted(
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
     ) -> None:
+        from custom_components.gardena_smart_system.const import COMMAND_BURST_CAPACITY
+
         device = make_mock_automower_device()
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
             coordinator = automower_config_entry.runtime_data
 
-            # First call should succeed
-            coordinator.check_command_throttle()
+            # Burst is allowed up to the bucket capacity.
+            for _ in range(COMMAND_BURST_CAPACITY):
+                coordinator.check_command_throttle()
 
-            # Second call immediately should raise
+            # The next one is rejected until a token refills.
             with pytest.raises(HomeAssistantError):
                 coordinator.check_command_throttle()
 

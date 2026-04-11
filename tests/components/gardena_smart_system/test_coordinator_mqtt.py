@@ -141,15 +141,22 @@ class TestMqttCommandHandler:
         client.async_send_command.assert_not_called()
 
     async def test_command_throttled(self, coordinator) -> None:
-        """Rapid commands are throttled (5s minimum)."""
+        """After the token bucket is drained, further commands are throttled."""
         import time
 
+        from custom_components.gardena_smart_system.const import COMMAND_BURST_CAPACITY
+
         coord, client = coordinator
-        # First command succeeds
-        coord._last_command_time = time.monotonic()  # just now
+        # Drain the bucket by zeroing all tokens.
+        coord._command_tokens = 0.0
+        coord._command_tokens_updated = time.monotonic()
         await coord._async_handle_mqtt_command("dev-1", {"action": "park"})
         # Should be throttled — no API call
         client.async_send_command.assert_not_called()
+        # Sanity: refilling the bucket lets the next command through.
+        coord._command_tokens = float(COMMAND_BURST_CAPACITY)
+        await coord._async_handle_mqtt_command("dev-1", {"action": "park"})
+        client.async_send_command.assert_called_once()
 
     async def test_command_exception_logged_not_raised(self, coordinator) -> None:
         """If async_send_command raises, it's logged but doesn't propagate."""

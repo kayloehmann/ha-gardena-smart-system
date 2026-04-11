@@ -7,6 +7,7 @@ to a HA valve entity.
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from typing import Any, cast
 
 import voluptuous as vol
@@ -190,3 +191,33 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
+        self._apply_optimistic_state(command, params)
+
+    def _apply_optimistic_state(self, command: str, params: dict[str, int]) -> None:
+        """Apply the expected state locally after a successful command.
+
+        The Gardena API returns 204 with no body and the confirming WebSocket
+        event may take a few seconds (or, rarely, be missed entirely if the WS
+        was silently dropped). Updating the local state immediately keeps the
+        HA UI in sync with reality and makes the concurrent-valve preflight
+        check see the newly-open valve on the next call.
+        """
+        valve = self._valve
+        if valve is None:
+            return
+        if command == "START_SECONDS_TO_OVERRIDE":
+            valve.activity = ValveActivity.MANUAL_WATERING
+            seconds = params.get("seconds")
+            if isinstance(seconds, int):
+                valve.duration = seconds
+                valve.duration_timestamp = datetime.now(tz=timezone.utc).isoformat()
+        elif command == "STOP_UNTIL_NEXT_TASK":
+            valve.activity = ValveActivity.CLOSED
+            valve.duration = 0
+            valve.duration_timestamp = None
+        else:
+            return
+        # Push the mutation through the coordinator so all listeners (this
+        # entity, sibling valves on the same controller, countdown sensors)
+        # refresh immediately.
+        self.coordinator.async_set_updated_data(self.coordinator.data or {})

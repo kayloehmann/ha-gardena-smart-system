@@ -654,3 +654,89 @@ class TestIrrigationConcurrentValveLimit:
                 blocking=True,
             )
             mock_client.async_send_command.assert_called_once()
+
+
+class TestValveOptimisticState:
+    """After a successful command, the UI must reflect the new state immediately."""
+
+    async def test_open_valve_flips_ui_to_open_without_websocket_event(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=1, has_sensor=False)
+        devices = {device.device_id: device}
+
+        async for _mock_client in _setup_with_devices(hass, mock_config_entry, devices):
+            # Precondition: the valve is closed.
+            assert hass.states.get("valve.my_sensor_valve_1").state == "closed"
+
+            await hass.services.async_call(
+                "valve",
+                "open_valve",
+                {"entity_id": "valve.my_sensor_valve_1"},
+                blocking=True,
+            )
+
+            # No WebSocket event was delivered — only the optimistic update.
+            assert hass.states.get("valve.my_sensor_valve_1").state == "open"
+
+    async def test_close_valve_flips_ui_to_closed_without_websocket_event(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=1, has_sensor=False)
+        valve_id = next(iter(device.valves.keys()))
+        device.valves[valve_id].activity = "MANUAL_WATERING"
+        devices = {device.device_id: device}
+
+        async for _mock_client in _setup_with_devices(hass, mock_config_entry, devices):
+            assert hass.states.get("valve.my_sensor_valve_1").state == "open"
+
+            await hass.services.async_call(
+                "valve",
+                "close_valve",
+                {"entity_id": "valve.my_sensor_valve_1"},
+                blocking=True,
+            )
+
+            assert hass.states.get("valve.my_sensor_valve_1").state == "closed"
+
+    async def test_preflight_sees_optimistically_opened_sibling(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Opening 2 valves optimistically must cause the 3rd to be refused.
+
+        This is the full regression for the reported bug: the first two opens
+        must flip the local state so the preflight check sees them as active
+        when the third valve is about to be opened.
+        """
+        device = make_mock_device(valve_count=3, has_sensor=False)
+        device.valve_set = object()
+        devices = {device.device_id: device}
+
+        async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
+            await hass.services.async_call(
+                "valve",
+                "open_valve",
+                {"entity_id": "valve.my_sensor_valve_1"},
+                blocking=True,
+            )
+            await hass.services.async_call(
+                "valve",
+                "open_valve",
+                {"entity_id": "valve.my_sensor_valve_2"},
+                blocking=True,
+            )
+            # Both commands issued against the API…
+            assert mock_client.async_send_command.call_count == 2
+            # …and the UI must reflect both as open.
+            assert hass.states.get("valve.my_sensor_valve_1").state == "open"
+            assert hass.states.get("valve.my_sensor_valve_2").state == "open"
+
+            # Third open must now be refused by the preflight check.
+            with pytest.raises(HomeAssistantError):
+                await hass.services.async_call(
+                    "valve",
+                    "open_valve",
+                    {"entity_id": "valve.my_sensor_valve_3"},
+                    blocking=True,
+                )
+            assert mock_client.async_send_command.call_count == 2

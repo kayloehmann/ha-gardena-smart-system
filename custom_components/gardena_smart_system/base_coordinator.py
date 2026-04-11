@@ -21,6 +21,7 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
+    COMMAND_BURST_CAPACITY,
     DEFAULT_MQTT_TOPIC_PREFIX,
     DOMAIN,
     MIN_COMMAND_INTERVAL_SECONDS,
@@ -92,6 +93,10 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         self._ws: Any = None
         self._ws_connected = False
         self._last_command_time: float = 0.0
+        # Token bucket for command throttling — starts full so a cold-start
+        # burst is permitted. Refills at 1 token per MIN_COMMAND_INTERVAL_SECONDS.
+        self._command_tokens: float = float(COMMAND_BURST_CAPACITY)
+        self._command_tokens_updated: float = time.monotonic()
         self._stale_miss_counts: dict[str, int] = {}
         self._custom_poll_interval: timedelta | None = (
             timedelta(minutes=int(custom_minutes))
@@ -532,12 +537,27 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             _LOGGER.debug("Token revocation failed during shutdown")
 
     def check_command_throttle(self) -> None:
-        """Raise if a command is sent too soon after the previous one."""
+        """Raise only when the command token bucket is empty.
+
+        Token-bucket model: the bucket holds up to COMMAND_BURST_CAPACITY
+        tokens and refills at 1 token per MIN_COMMAND_INTERVAL_SECONDS. Each
+        command consumes one token. This lets the user fire a small burst of
+        commands back-to-back (e.g. opening two irrigation valves) without
+        tripping the throttle, while still capping the steady-state rate to
+        protect the API quota.
+        """
         now = time.monotonic()
-        elapsed = now - self._last_command_time
-        if elapsed < MIN_COMMAND_INTERVAL_SECONDS:
+        elapsed = now - self._command_tokens_updated
+        refill = elapsed / MIN_COMMAND_INTERVAL_SECONDS
+        self._command_tokens = min(
+            float(COMMAND_BURST_CAPACITY),
+            self._command_tokens + refill,
+        )
+        self._command_tokens_updated = now
+        if self._command_tokens < 1.0:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="command_throttled",
             )
+        self._command_tokens -= 1.0
         self._last_command_time = now
