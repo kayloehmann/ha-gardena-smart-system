@@ -9,7 +9,8 @@
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/kayloehmann/ha-gardena-smart-system/issues",
   "loggers": ["aiogardenasmart"],
+  "quality_scale": "platinum",
   "requirements": ["aiogardenasmart==0.1.8"],
   "single_config_entry": false,
-  "version": "1.8.0"
+  "version": "1.9.0"
 }
