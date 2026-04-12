@@ -221,6 +221,8 @@ async def async_setup_entry(
             [
                 HubDeviceCountSensor(coordinator, entry),
                 HubPollingIntervalSensor(coordinator, entry),
+                HubApiRequestsMonthSensor(coordinator, entry),
+                HubApiBudgetRemainingSensor(coordinator, entry),
             ]
         )
         return
@@ -295,6 +297,8 @@ async def async_setup_entry(
         [
             HubDeviceCountSensor(coordinator, entry),
             HubPollingIntervalSensor(coordinator, entry),
+            HubApiRequestsMonthSensor(coordinator, entry),
+            HubApiBudgetRemainingSensor(coordinator, entry),
         ]
     )
 
@@ -568,3 +572,55 @@ class HubPollingIntervalSensor(CoordinatorEntity, SensorEntity):
         if self.coordinator.update_interval is None:
             return None
         return self.coordinator.update_interval.total_seconds()
+
+
+class HubApiRequestsMonthSensor(CoordinatorEntity, SensorEntity):
+    """Number of API requests made in the current calendar month."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "hub_api_requests_month"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_state_class = SensorStateClass.TOTAL
+    _attr_suggested_display_precision = 0
+
+    def __init__(
+        self,
+        coordinator: BaseSmartSystemCoordinator[Any],
+        entry: GardenaConfigEntry,
+    ) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"hub_{entry.entry_id}_api_requests_month"
+        self._attr_device_info = _hub_device_info(entry)
+
+    @property
+    def native_value(self) -> int:
+        return self.coordinator.api_budget.request_count
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        budget = self.coordinator.api_budget
+        return {"month": budget.month, "budget": budget.budget}
+
+
+class HubApiBudgetRemainingSensor(CoordinatorEntity, SensorEntity):
+    """Remaining API budget as a percentage."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "hub_api_budget_remaining"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_suggested_display_precision = 1
+
+    def __init__(
+        self,
+        coordinator: BaseSmartSystemCoordinator[Any],
+        entry: GardenaConfigEntry,
+    ) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"hub_{entry.entry_id}_api_budget_remaining"
+        self._attr_device_info = _hub_device_info(entry)
+
+    @property
+    def native_value(self) -> float:
+        return self.coordinator.api_budget.remaining_percent

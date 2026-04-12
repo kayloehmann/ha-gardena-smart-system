@@ -268,6 +268,12 @@
       },
       "hub_polling_interval": {
         "name": "Intervalo de consulta"
+      },
+      "hub_api_requests_month": {
+        "name": "Requisições API este mês"
+      },
+      "hub_api_budget_remaining": {
+        "name": "Orçamento API restante"
       }
     },
     "binary_sensor": {

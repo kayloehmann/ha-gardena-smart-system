@@ -268,6 +268,12 @@
       },
       "hub_polling_interval": {
         "name": "Pollningsintervall"
+      },
+      "hub_api_requests_month": {
+        "name": "API-förfrågningar denna månad"
+      },
+      "hub_api_budget_remaining": {
+        "name": "Återstående API-budget"
       }
     },
     "binary_sensor": {

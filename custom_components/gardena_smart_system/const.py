@@ -46,6 +46,11 @@ COMMAND_BURST_CAPACITY = 10
 WS_WATCHDOG_TIMEOUT_SECONDS = 300
 WS_WATCHDOG_CHECK_INTERVAL = timedelta(seconds=60)
 
+# ── API budget tracking ──────────────────────────────────────────
+API_BUDGET_MONTHLY = 10_000
+STORAGE_VERSION_API_BUDGET = 1
+BUDGET_SAVE_DELAY_SECONDS = 60
+
 # ── Options flow defaults ─────────────────────────────────────────
 OPT_DEFAULT_WATERING_MINUTES = "default_watering_minutes"
 OPT_DEFAULT_SOCKET_MINUTES = "default_socket_minutes"

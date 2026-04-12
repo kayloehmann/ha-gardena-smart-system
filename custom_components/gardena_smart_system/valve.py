@@ -191,6 +191,7 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
+        self.coordinator.api_budget.increment()
         self._apply_optimistic_state(command, params)
 
     def _apply_optimistic_state(self, command: str, params: dict[str, int]) -> None:

@@ -90,3 +90,4 @@ class AutomowerConfirmErrorButton(AutomowerEntity, ButtonEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
+        self.coordinator.api_budget.increment()

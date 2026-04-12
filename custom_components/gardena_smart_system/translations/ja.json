@@ -268,6 +268,12 @@
       },
       "hub_polling_interval": {
         "name": "ポーリング間隔"
+      },
+      "hub_api_requests_month": {
+        "name": "今月のAPIリクエスト数"
+      },
+      "hub_api_budget_remaining": {
+        "name": "API予算残量"
       }
     },
     "binary_sensor": {

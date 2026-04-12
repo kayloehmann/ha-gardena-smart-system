@@ -109,6 +109,7 @@ class AutomowerCuttingHeightEntity(AutomowerEntity, NumberEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
+        self.coordinator.api_budget.increment()
 
 
 class AutomowerScheduleOverrideEntity(AutomowerEntity, NumberEntity):
@@ -166,6 +167,7 @@ class AutomowerScheduleOverrideEntity(AutomowerEntity, NumberEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
+        self.coordinator.api_budget.increment()
         self._last_set_value = value
 
 
@@ -228,3 +230,4 @@ class AutomowerWorkAreaHeightEntity(AutomowerEntity, NumberEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
+        self.coordinator.api_budget.increment()

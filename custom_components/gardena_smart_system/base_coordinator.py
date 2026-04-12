@@ -18,14 +18,19 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .const import (
+    API_BUDGET_MONTHLY,
+    BUDGET_SAVE_DELAY_SECONDS,
     COMMAND_BURST_CAPACITY,
     DEFAULT_MQTT_TOPIC_PREFIX,
     DOMAIN,
     MIN_COMMAND_INTERVAL_SECONDS,
     OPT_MQTT_ENABLE,
+    STORAGE_VERSION_API_BUDGET,
     OPT_MQTT_PUBLISH_STATES,
     OPT_MQTT_SUBSCRIBE_COMMANDS,
     OPT_MQTT_TOPIC_PREFIX,
@@ -35,6 +40,71 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class ApiBudgetTracker:
+    """Track the number of API requests made this calendar month.
+
+    Uses Home Assistant's Store with delayed saves so that every increment
+    does not trigger a disk write — at most one write per BUDGET_SAVE_DELAY_SECONDS.
+    The counter resets automatically when a new calendar month starts.
+    """
+
+    def __init__(self, store: Store, budget: int = API_BUDGET_MONTHLY) -> None:
+        self._store = store
+        self._budget = budget
+        self._month: str = ""
+        self._count: int = 0
+        self._loaded = False
+
+    async def async_load(self) -> None:
+        """Load persisted data from disk, resetting if the month rolled over."""
+        data = await self._store.async_load()
+        current_month = dt_util.now().strftime("%Y-%m")
+        if data and data.get("month") == current_month:
+            self._month = current_month
+            self._count = data.get("request_count", 0)
+        else:
+            self._month = current_month
+            self._count = 0
+        self._loaded = True
+
+    def increment(self, count: int = 1) -> None:
+        """Record that *count* API requests were made.
+
+        Automatically resets if the calendar month has changed since the last
+        call. Schedules a delayed save so that rapid increments do not cause
+        excessive I/O.
+        """
+        current_month = dt_util.now().strftime("%Y-%m")
+        if current_month != self._month:
+            self._month = current_month
+            self._count = 0
+        self._count += count
+        self._store.async_delay_save(
+            lambda: {"month": self._month, "request_count": self._count},
+            delay=BUDGET_SAVE_DELAY_SECONDS,
+        )
+
+    @property
+    def request_count(self) -> int:
+        """Total API requests in the current calendar month."""
+        return self._count
+
+    @property
+    def month(self) -> str:
+        """Current tracking month as YYYY-MM."""
+        return self._month
+
+    @property
+    def budget(self) -> int:
+        """Monthly API request budget."""
+        return self._budget
+
+    @property
+    def remaining_percent(self) -> float:
+        """Remaining budget as a percentage (0.0 – 100.0)."""
+        return max(0.0, (1 - self._count / self._budget) * 100)
 
 
 @dataclass(frozen=True)
@@ -109,6 +179,9 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         self._ws_watchdog_unsub: CALLBACK_TYPE | None = None
         self._cached_ws_url: str | None = None
         self._ws_connect_lock = asyncio.Lock()
+        self._api_budget = ApiBudgetTracker(
+            Store(hass, STORAGE_VERSION_API_BUDGET, f"{DOMAIN}.{entry.entry_id}.api_budget"),
+        )
 
     # ── Public properties ──────────────────────────────────────────────
 
@@ -123,9 +196,16 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         return self._last_command_time
 
     @property
+    def api_budget(self) -> ApiBudgetTracker:
+        """Return the API budget tracker."""
+        return self._api_budget
+
+    @property
     def stale_miss_counts(self) -> dict[str, int]:
         """Per-device consecutive miss counts for stale-device detection."""
         return self._stale_miss_counts
+
+    _ws_url_is_api_call: bool = True
 
     # ── Abstract methods (subclass must implement) ─────────────────────
 
@@ -164,6 +244,8 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             ) from err
         except cfg.connection_error_type as err:
             raise UpdateFailed(f"Cannot connect to {cfg.api_label} API: {err}") from err
+
+        self._api_budget.increment()
 
         # Reset rate-limit counter and restore normal polling interval.
         # Custom poll interval only applies to REST fallback — when WebSocket
@@ -290,6 +372,8 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
                 )
                 return
             self._cached_ws_url = ws_url
+            if self._ws_url_is_api_call:
+                self._api_budget.increment()
 
         self._ws = self._create_websocket(
             auth=self._auth,

@@ -120,6 +120,7 @@ class AutomowerHeadlightSwitch(AutomowerEntity, SwitchEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
+        self.coordinator.api_budget.increment()
 
 
 class AutomowerStayOutZoneSwitch(AutomowerEntity, SwitchEntity):
@@ -183,6 +184,7 @@ class AutomowerStayOutZoneSwitch(AutomowerEntity, SwitchEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
+        self.coordinator.api_budget.increment()
 
 
 class AutomowerWorkAreaSwitch(AutomowerEntity, SwitchEntity):
@@ -246,3 +248,4 @@ class AutomowerWorkAreaSwitch(AutomowerEntity, SwitchEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
+        self.coordinator.api_budget.increment()

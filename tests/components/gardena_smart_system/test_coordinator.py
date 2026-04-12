@@ -772,3 +772,163 @@ class TestWebSocketWatchdog:
             await coordinator._async_ws_watchdog_check()
 
         mock_refresh.assert_called_once()
+
+
+class TestApiBudgetTracker:
+    """Test the ApiBudgetTracker class."""
+
+    async def test_initial_state_zero(self, hass: HomeAssistant) -> None:
+        from homeassistant.helpers.storage import Store
+
+        from custom_components.gardena_smart_system.base_coordinator import ApiBudgetTracker
+
+        store = Store(hass, 1, "test_budget")
+        tracker = ApiBudgetTracker(store)
+
+        await tracker.async_load()
+
+        assert tracker.request_count == 0
+        assert tracker.remaining_percent == 100.0
+
+    async def test_increment_increases_count(self, hass: HomeAssistant) -> None:
+        from homeassistant.helpers.storage import Store
+
+        from custom_components.gardena_smart_system.base_coordinator import ApiBudgetTracker
+
+        store = Store(hass, 1, "test_budget_inc")
+        tracker = ApiBudgetTracker(store)
+        await tracker.async_load()
+
+        tracker.increment()
+        assert tracker.request_count == 1
+
+        tracker.increment(5)
+        assert tracker.request_count == 6
+
+    async def test_remaining_percent_decreases(self, hass: HomeAssistant) -> None:
+        from homeassistant.helpers.storage import Store
+
+        from custom_components.gardena_smart_system.base_coordinator import ApiBudgetTracker
+
+        store = Store(hass, 1, "test_budget_pct")
+        tracker = ApiBudgetTracker(store, budget=100)
+        await tracker.async_load()
+
+        tracker.increment(25)
+        assert tracker.remaining_percent == 75.0
+
+        tracker.increment(75)
+        assert tracker.remaining_percent == 0.0
+
+    async def test_remaining_percent_floor_at_zero(self, hass: HomeAssistant) -> None:
+        from homeassistant.helpers.storage import Store
+
+        from custom_components.gardena_smart_system.base_coordinator import ApiBudgetTracker
+
+        store = Store(hass, 1, "test_budget_floor")
+        tracker = ApiBudgetTracker(store, budget=10)
+        await tracker.async_load()
+
+        tracker.increment(20)
+        assert tracker.remaining_percent == 0.0
+
+    async def test_month_property(self, hass: HomeAssistant) -> None:
+        from homeassistant.helpers.storage import Store
+        from homeassistant.util import dt as dt_util
+
+        from custom_components.gardena_smart_system.base_coordinator import ApiBudgetTracker
+
+        store = Store(hass, 1, "test_budget_month")
+        tracker = ApiBudgetTracker(store)
+        await tracker.async_load()
+
+        expected_month = dt_util.now().strftime("%Y-%m")
+        assert tracker.month == expected_month
+
+    async def test_month_rollover_resets_count(self, hass: HomeAssistant) -> None:
+        from unittest.mock import patch as _patch
+
+        from homeassistant.helpers.storage import Store
+
+        from custom_components.gardena_smart_system.base_coordinator import ApiBudgetTracker
+
+        store = Store(hass, 1, "test_budget_rollover")
+        tracker = ApiBudgetTracker(store)
+        await tracker.async_load()
+
+        tracker.increment(50)
+        assert tracker.request_count == 50
+
+        with _patch(
+            "custom_components.gardena_smart_system.base_coordinator.dt_util"
+        ) as mock_dt:
+            mock_dt.now.return_value.strftime.return_value = "2099-01"
+            tracker.increment(1)
+
+        assert tracker.request_count == 1
+
+    async def test_persistence_across_load(self, hass: HomeAssistant) -> None:
+        from homeassistant.helpers.storage import Store
+        from homeassistant.util import dt as dt_util
+
+        from custom_components.gardena_smart_system.base_coordinator import ApiBudgetTracker
+
+        store = Store(hass, 1, "test_budget_persist")
+        tracker = ApiBudgetTracker(store)
+        await tracker.async_load()
+
+        tracker.increment(42)
+
+        current_month = dt_util.now().strftime("%Y-%m")
+        await store.async_save({"month": current_month, "request_count": 42})
+
+        tracker2 = ApiBudgetTracker(store)
+        await tracker2.async_load()
+
+        assert tracker2.request_count == 42
+        assert tracker2.month == current_month
+
+    async def test_stale_month_data_resets_on_load(self, hass: HomeAssistant) -> None:
+        from homeassistant.helpers.storage import Store
+
+        from custom_components.gardena_smart_system.base_coordinator import ApiBudgetTracker
+
+        store = Store(hass, 1, "test_budget_stale")
+        await store.async_save({"month": "2020-01", "request_count": 9999})
+
+        tracker = ApiBudgetTracker(store)
+        await tracker.async_load()
+
+        assert tracker.request_count == 0
+
+    def test_budget_property(self, hass: HomeAssistant) -> None:
+        from homeassistant.helpers.storage import Store
+
+        from custom_components.gardena_smart_system.base_coordinator import ApiBudgetTracker
+
+        store = Store(hass, 1, "test_budget_prop")
+        tracker = ApiBudgetTracker(store, budget=5000)
+
+        assert tracker.budget == 5000
+
+    async def test_coordinator_exposes_api_budget(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        from custom_components.gardena_smart_system.base_coordinator import ApiBudgetTracker
+
+        assert isinstance(coordinator.api_budget, ApiBudgetTracker)
+
+    async def test_poll_increments_budget(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        devices = {"dev-1": make_mock_device()}
+        coordinator._client = AsyncMock()
+        coordinator._client.async_get_devices = AsyncMock(return_value=devices)
+        await coordinator.api_budget.async_load()
+
+        initial = coordinator.api_budget.request_count
+
+        with patch.object(coordinator, "_async_start_websocket", new_callable=AsyncMock):
+            await coordinator._async_update_data()
+
+        assert coordinator.api_budget.request_count == initial + 1

@@ -268,6 +268,12 @@
       },
       "hub_polling_interval": {
         "name": "Interval dotazování"
+      },
+      "hub_api_requests_month": {
+        "name": "API požadavky tento měsíc"
+      },
+      "hub_api_budget_remaining": {
+        "name": "Zbývající API rozpočet"
       }
     },
     "binary_sensor": {

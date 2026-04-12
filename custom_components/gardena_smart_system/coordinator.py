@@ -177,6 +177,7 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
                     "MOWER_CONTROL",
                     "START_DONT_OVERRIDE",
                 )
+            self._api_budget.increment()
             _LOGGER.info(
                 "MQTT command '%s' executed for %s",
                 action,

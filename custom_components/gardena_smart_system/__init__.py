@@ -35,6 +35,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GardenaConfigEntry) -> b
         from .automower_coordinator import AutomowerCoordinator
 
         am_coordinator = AutomowerCoordinator(hass, entry, session)
+        await am_coordinator.api_budget.async_load()
         await am_coordinator.async_config_entry_first_refresh()
         entry.runtime_data = am_coordinator
         await hass.config_entries.async_forward_entry_setups(entry, AUTOMOWER_PLATFORMS)
@@ -42,6 +43,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GardenaConfigEntry) -> b
         from .coordinator import GardenaCoordinator
 
         gd_coordinator = GardenaCoordinator(hass, entry, session)
+        await gd_coordinator.api_budget.async_load()
         await gd_coordinator.async_config_entry_first_refresh()
         entry.runtime_data = gd_coordinator
         await hass.config_entries.async_forward_entry_setups(entry, GARDENA_PLATFORMS)

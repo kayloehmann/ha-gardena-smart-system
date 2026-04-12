@@ -51,6 +51,7 @@ _AUTOMOWER_CONFIG = CoordinatorConfig(
 class AutomowerCoordinator(BaseSmartSystemCoordinator[AutomowerDevice]):
     """Manages data fetching and WebSocket updates for Automower devices."""
 
+    _ws_url_is_api_call = False
     config_entry: ConfigEntry
 
     def __init__(

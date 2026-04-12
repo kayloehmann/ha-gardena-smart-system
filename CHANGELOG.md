@@ -2,6 +2,14 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.10.0] - 2026-04-11
+
+### Added
+- **API budget tracking** — two new hub diagnostic sensors: **API requests this month** (total count with `month` and `budget` attributes) and **API budget remaining** (percentage). Every API request — polls, WebSocket URL fetches, and device commands — is counted and persisted across restarts using `Store.async_delay_save`. The counter resets automatically at the start of each calendar month. Budget assumes 10,000 requests/month per API (the standard Husqvarna limit when the key is used exclusively for Home Assistant).
+- Sensor translations for `hub_api_requests_month` and `hub_api_budget_remaining` in all **31 languages**.
+- Icons: `mdi:counter` for API requests, `mdi:chart-donut` for budget remaining.
+- 12 new tests for `ApiBudgetTracker` (572 tests total): initial state, increment, remaining percent, floor at zero, month property, month rollover reset, persistence across load, stale data reset, budget property, coordinator integration, poll increment.
+
 ## [1.9.1] - 2026-04-11
 
 ### Fixed

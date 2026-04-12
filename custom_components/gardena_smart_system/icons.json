@@ -108,6 +108,12 @@
       },
       "hub_polling_interval": {
         "default": "mdi:update"
+      },
+      "hub_api_requests_month": {
+        "default": "mdi:counter"
+      },
+      "hub_api_budget_remaining": {
+        "default": "mdi:chart-donut"
       }
     },
     "binary_sensor": {

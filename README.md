@@ -278,6 +278,14 @@ Each config entry creates a virtual "hub" device with integration-level diagnost
 |--------|-------------|----------|
 | Device count | Number of devices managed by this entry | Diagnostic |
 | Polling interval | Current polling interval in seconds | Diagnostic |
+| API requests this month | Total API requests in the current calendar month | Diagnostic |
+| API budget remaining | Remaining monthly API budget as a percentage | Diagnostic |
+
+#### API Budget Tracking
+
+The integration tracks every API request (polls, WebSocket URL fetches, and device commands) and persists the monthly count across restarts. The budget assumes **10,000 requests/month** per API — the standard Husqvarna rate limit when the API key is used exclusively for Home Assistant. The counter resets automatically at the start of each calendar month.
+
+The **API requests this month** sensor also exposes `month` and `budget` as extra state attributes, making it easy to build dashboard cards or automations that warn when the budget is running low.
 
 ## Services
 
@@ -536,7 +544,7 @@ Each button press or automation action is one API call. A token-bucket throttle 
 
 - **Don't restart Home Assistant frequently.** Each restart triggers a full API poll and a new WebSocket connection request.
 - **Avoid rapid-fire automations.** If you have automations that send multiple commands in a loop, add delays between them. The integration enforces a 5-second minimum, but longer pauses are better for quota.
-- **Don't reuse your API key across multiple systems.** If you use the same Husqvarna application credentials in another smart home platform alongside Home Assistant, they share the same quota. Create a separate application on the Husqvarna Developer Portal for each system.
+- **Use a dedicated API key for Home Assistant.** The budget tracking sensors assume the full 10,000 requests/month are available exclusively for this integration. If you share the same Husqvarna application credentials with another smart home platform, they consume from the same quota and the budget percentage will be inaccurate. Create a separate application on the Husqvarna Developer Portal for each system.
 - **Use one integration instance per API.** Each additional instance adds its own polling and WebSocket overhead.
 - **Monitor for rate limit warnings.** Check the Home Assistant logs for messages containing "Rate limited" — this applies to both APIs.
 
@@ -656,7 +664,7 @@ This integration targets the [Home Assistant Integration Quality Scale](https://
 
 Key quality features:
 
-- **99% test coverage** across 561 automated tests
+- **99% test coverage** across 572 automated tests
 - **mypy --strict** passes with zero errors on all 23 source files
 - **PEP 561** compliant (`py.typed` markers on both client libraries)
 - **Full async** codebase — no blocking I/O in the event loop
