@@ -859,9 +859,7 @@ class TestApiBudgetTracker:
         tracker.increment(50)
         assert tracker.request_count == 50
 
-        with _patch(
-            "custom_components.gardena_smart_system.base_coordinator.dt_util"
-        ) as mock_dt:
+        with _patch("custom_components.gardena_smart_system.base_coordinator.dt_util") as mock_dt:
             mock_dt.now.return_value.strftime.return_value = "2099-01"
             tracker.increment(1)
 
@@ -911,16 +909,12 @@ class TestApiBudgetTracker:
 
         assert tracker.budget == 5000
 
-    async def test_coordinator_exposes_api_budget(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    async def test_coordinator_exposes_api_budget(self, coordinator: GardenaCoordinator) -> None:
         from custom_components.gardena_smart_system.base_coordinator import ApiBudgetTracker
 
         assert isinstance(coordinator.api_budget, ApiBudgetTracker)
 
-    async def test_poll_increments_budget(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    async def test_poll_increments_budget(self, coordinator: GardenaCoordinator) -> None:
         devices = {"dev-1": make_mock_device()}
         coordinator._client = AsyncMock()
         coordinator._client.async_get_devices = AsyncMock(return_value=devices)
