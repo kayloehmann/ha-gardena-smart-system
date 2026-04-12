@@ -179,6 +179,12 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         self._ws_watchdog_unsub: CALLBACK_TYPE | None = None
         self._cached_ws_url: str | None = None
         self._ws_connect_lock = asyncio.Lock()
+        # WebSocket circuit breaker: consecutive failures trigger an escalating
+        # cooldown during which no new WS connection attempts are made. Protects
+        # the API rate-limit budget when WS URLs are repeatedly rejected
+        # (observed as HTTP 410 on signed single-use URLs).
+        self._ws_consecutive_failures: int = 0
+        self._ws_cooldown_until: float = 0.0
         self._api_budget = ApiBudgetTracker(
             Store(hass, STORAGE_VERSION_API_BUDGET, f"{DOMAIN}.{entry.entry_id}.api_budget"),
         )
@@ -333,6 +339,45 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
                 device_registry.async_remove_device(ha_device.id)
             del self._stale_miss_counts[device_id]
 
+    # Circuit-breaker cooldown schedule: (consecutive-failure threshold, seconds).
+    # Once a threshold is crossed, no new WS connection is attempted for that
+    # duration. A successful connection resets the counter.
+    _WS_COOLDOWN_SCHEDULE: tuple[tuple[int, int], ...] = (
+        (3, 15 * 60),
+        (5, 30 * 60),
+        (7, 60 * 60),
+    )
+
+    def _record_ws_failure(self) -> None:
+        """Increment the WS failure counter and activate cooldown if crossed."""
+        self._ws_consecutive_failures += 1
+        n = self._ws_consecutive_failures
+        cooldown_seconds = 0
+        for threshold, seconds in self._WS_COOLDOWN_SCHEDULE:
+            if n >= threshold:
+                cooldown_seconds = seconds
+        if cooldown_seconds > 0:
+            self._ws_cooldown_until = time.monotonic() + cooldown_seconds
+            _LOGGER.warning(
+                "%s WebSocket failed %d times consecutively, cooling down for %d min "
+                "before retrying (protecting API rate-limit budget); REST polling "
+                "continues",
+                self._config.api_label,
+                n,
+                cooldown_seconds // 60,
+            )
+
+    def _reset_ws_failures(self) -> None:
+        """Clear the WS failure counter and cooldown after a successful connect."""
+        if self._ws_consecutive_failures:
+            _LOGGER.debug(
+                "%s WebSocket connected — resetting failure counter (was %d)",
+                self._config.api_label,
+                self._ws_consecutive_failures,
+            )
+        self._ws_consecutive_failures = 0
+        self._ws_cooldown_until = 0.0
+
     async def _async_start_websocket(self, devices: dict[str, DeviceT]) -> None:
         """Start the WebSocket for real-time updates.
 
@@ -341,6 +386,15 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         the auth token is still valid; a fresh URL is fetched only when the token
         was refreshed or the cached URL fails to connect.
         """
+        now = time.monotonic()
+        if now < self._ws_cooldown_until:
+            _LOGGER.debug(
+                "%s WebSocket in cooldown for %.0fs, skipping connect",
+                self._config.api_label,
+                self._ws_cooldown_until - now,
+            )
+            return
+
         if self._ws_connect_lock.locked():
             _LOGGER.debug(
                 "%s WebSocket connect already in progress, skipping",
@@ -363,13 +417,22 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
                 ws_url = await self._async_get_ws_url(devices)
             except cfg.rate_limit_error_type as err:
                 self._apply_rate_limit_backoff(err)
+                self._record_ws_failure()
                 return
-            except (cfg.auth_error_type, cfg.connection_error_type) as err:
+            except cfg.auth_error_type as err:
+                _LOGGER.warning(
+                    "Could not obtain %s WebSocket URL (auth), will rely on polling: %s",
+                    cfg.api_label,
+                    err,
+                )
+                return
+            except cfg.connection_error_type as err:
                 _LOGGER.warning(
                     "Could not obtain %s WebSocket URL, will rely on polling: %s",
                     cfg.api_label,
                     err,
                 )
+                self._record_ws_failure()
                 return
             self._cached_ws_url = ws_url
             if self._ws_url_is_api_call:
@@ -393,9 +456,11 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             self._ws = None
             # Invalidate cached URL so the next attempt fetches a fresh one
             self._cached_ws_url = None
+            self._record_ws_failure()
             return
 
         self._ws_connected = True
+        self._reset_ws_failures()
         self._cancel_ws_reconnect()
         self._start_ws_watchdog()
         # Always use the long WS health-check interval when connected — the
@@ -430,8 +495,11 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         self.update_interval = self._custom_poll_interval or cfg.scan_interval
 
         if isinstance(err, cfg.auth_error_type):
+            # Auth failures are resolved by re-auth, not by cooling down.
             self.config_entry.async_start_reauth(self.hass)
             return
+
+        self._record_ws_failure()
 
         ir.async_create_issue(
             self.hass,
@@ -473,7 +541,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
 
     # ── WebSocket auto-reconnect ────────────────────────────────────────
 
-    _WS_RECONNECT_DELAYS = (30, 60, 120, 300, 600, 1800)  # seconds
+    _WS_RECONNECT_DELAYS = (60, 300, 900)  # seconds
 
     def _schedule_ws_reconnect(self) -> None:
         """Start the background reconnect task if not already running."""
@@ -497,6 +565,12 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             await asyncio.sleep(delay)
             if self._ws_connected:
                 return  # reconnected by a poll cycle
+            if time.monotonic() < self._ws_cooldown_until:
+                _LOGGER.debug(
+                    "%s WebSocket circuit breaker active, aborting reconnect loop",
+                    cfg.api_label,
+                )
+                return
             _LOGGER.debug(
                 "%s WebSocket reconnect attempt %d (after %ds)",
                 cfg.api_label,

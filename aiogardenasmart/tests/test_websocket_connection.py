@@ -152,9 +152,10 @@ class TestWebSocketConnect:
         )
 
         await ws.async_connect("wss://test")
-        # Allow reconnect attempts to exhaust (they retry 10 times — but we mock no-sleep)
+        # Let the single-shot listen loop run and escalate via on_error
         await asyncio.sleep(0)
         await ws.async_disconnect()
+        assert len(errors) == 1
 
 
 class TestApplyServiceUpdateAllTypes:

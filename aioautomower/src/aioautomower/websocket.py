@@ -14,9 +14,7 @@ from aiogardenasmart.auth import GardenaAuth
 
 from .const import (
     AUTHORIZATION_PROVIDER,
-    WEBSOCKET_MAX_RECONNECT_ATTEMPTS,
     WEBSOCKET_PING_INTERVAL,
-    WEBSOCKET_RECONNECT_BASE_DELAY,
 )
 from .exceptions import AutomowerWebSocketError
 from .models import AutomowerDevice
@@ -52,7 +50,12 @@ class AutomowerWebSocket:
         self._running = False
 
     async def async_connect(self, ws_url: str) -> None:
-        """Establish the WebSocket connection and begin listening."""
+        """Establish the WebSocket connection and begin listening.
+
+        Runs a single connect-and-listen cycle. On any failure, escalates to
+        ``on_error`` and exits — reconnect orchestration is the caller's
+        responsibility.
+        """
         self._running = True
         self._listen_task = asyncio.create_task(
             self._async_listen_loop(ws_url), name="automower_ws_listen"
@@ -69,35 +72,22 @@ class AutomowerWebSocket:
                 await self._listen_task
 
     async def _async_listen_loop(self, ws_url: str) -> None:
-        """Outer loop that reconnects on failure."""
-        attempt = 0
-        while self._running:
-            try:
-                await self._async_connect_and_listen(ws_url)
-                attempt = 0
-            except asyncio.CancelledError:
-                break
-            except Exception as err:
-                if not self._running:
-                    break
-                attempt += 1
-                if attempt > WEBSOCKET_MAX_RECONNECT_ATTEMPTS:
-                    _LOGGER.error(
-                        "Automower WebSocket: giving up after %d reconnect attempts",
-                        attempt,
-                    )
-                    if self._on_error:
-                        self._on_error(AutomowerWebSocketError(f"Max reconnects reached: {err}"))
-                    break
-                delay = WEBSOCKET_RECONNECT_BASE_DELAY * (2 ** (attempt - 1))
-                _LOGGER.warning(
-                    "Automower WebSocket error (attempt %d/%d), reconnecting in %.0fs: %s",
-                    attempt,
-                    WEBSOCKET_MAX_RECONNECT_ATTEMPTS,
-                    delay,
-                    err,
-                )
-                await asyncio.sleep(delay)
+        """Run one connect-and-listen cycle; escalate any failure to on_error.
+
+        Husqvarna WebSocket URLs are signed single-use URLs — retrying the
+        same URL after a failure is pointless. The caller fetches a fresh
+        URL on each connect attempt.
+        """
+        try:
+            await self._async_connect_and_listen(ws_url)
+        except asyncio.CancelledError:
+            raise
+        except Exception as err:
+            if not self._running:
+                return
+            _LOGGER.warning("Automower WebSocket connection lost: %s", err)
+            if self._on_error:
+                self._on_error(err)
 
     async def _async_connect_and_listen(self, ws_url: str) -> None:
         """Connect to the WebSocket URL and process messages until closed."""

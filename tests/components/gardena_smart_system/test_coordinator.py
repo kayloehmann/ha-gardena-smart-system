@@ -609,6 +609,109 @@ class TestWebSocketAutoReconnect:
         assert coordinator._ws_reconnect_task is None
 
 
+class TestWebSocketCircuitBreaker:
+    """Test the WebSocket circuit breaker cooldown mechanism."""
+
+    def test_failure_counter_increments_on_ws_error(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        assert coordinator._ws_consecutive_failures == 0
+        coordinator._on_ws_error(RuntimeError("lost"))
+        assert coordinator._ws_consecutive_failures == 1
+        coordinator._cancel_ws_reconnect()
+        coordinator._on_ws_error(RuntimeError("lost again"))
+        assert coordinator._ws_consecutive_failures == 2
+        coordinator._cancel_ws_reconnect()
+
+    def test_cooldown_activates_after_threshold(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        # Two failures below threshold → no cooldown
+        coordinator._record_ws_failure()
+        coordinator._record_ws_failure()
+        assert coordinator._ws_cooldown_until == 0.0
+
+        # Third failure triggers 15 min cooldown
+        before = time.monotonic()
+        coordinator._record_ws_failure()
+        assert coordinator._ws_cooldown_until >= before + 15 * 60 - 1
+
+    def test_cooldown_escalates_with_more_failures(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        for _ in range(5):
+            coordinator._record_ws_failure()
+        cooldown_5 = coordinator._ws_cooldown_until - time.monotonic()
+        assert cooldown_5 >= 30 * 60 - 1  # 30 min after 5 failures
+
+        for _ in range(2):
+            coordinator._record_ws_failure()
+        cooldown_7 = coordinator._ws_cooldown_until - time.monotonic()
+        assert cooldown_7 >= 60 * 60 - 1  # 60 min after 7 failures
+
+    async def test_start_websocket_respects_cooldown(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        coordinator._ws_cooldown_until = time.monotonic() + 900
+        coordinator._client = AsyncMock()
+        coordinator._client.async_get_websocket_url = AsyncMock(
+            return_value="wss://gardena.example/ws"
+        )
+
+        with patch(_PATCH_WS) as mock_ws_cls:
+            await coordinator._async_start_websocket({})
+
+        # No WebSocket construction attempted
+        mock_ws_cls.assert_not_called()
+        coordinator._client.async_get_websocket_url.assert_not_called()
+        assert coordinator._ws_connected is False
+
+    async def test_reconnect_loop_aborts_when_cooldown_active(
+        self, hass: HomeAssistant, coordinator: GardenaCoordinator
+    ) -> None:
+        coordinator.data = {"dev-1": MagicMock()}
+
+        with (
+            patch.object(
+                coordinator, "_async_start_websocket", new_callable=AsyncMock
+            ) as mock_start,
+            patch(
+                "custom_components.gardena_smart_system.base_coordinator.asyncio.sleep",
+                new_callable=AsyncMock,
+            ),
+        ):
+            # First attempt: bump into cooldown mid-loop
+            async def _side_effect(devices):
+                coordinator._ws_cooldown_until = time.monotonic() + 900
+
+            mock_start.side_effect = _side_effect
+            await coordinator._async_ws_reconnect_loop()
+
+        # Should have aborted after the first attempt set cooldown
+        assert mock_start.call_count == 1
+
+    async def test_successful_connect_resets_failure_counter(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        coordinator._ws_consecutive_failures = 4
+        coordinator._ws_cooldown_until = time.monotonic() + 900
+
+        # Let cooldown expire so the connect proceeds
+        coordinator._ws_cooldown_until = 0.0
+
+        coordinator._client = AsyncMock()
+        coordinator._client.async_get_websocket_url = AsyncMock(
+            return_value="wss://gardena.example/ws"
+        )
+        with patch(_PATCH_WS) as mock_ws_cls:
+            mock_ws_cls.return_value = AsyncMock()
+            await coordinator._async_start_websocket({})
+
+        assert coordinator._ws_connected is True
+        assert coordinator._ws_consecutive_failures == 0
+        assert coordinator._ws_cooldown_until == 0.0
+
+
 class TestRepairFlow:
     """Test the WebSocketReconnectRepairFlow."""
 

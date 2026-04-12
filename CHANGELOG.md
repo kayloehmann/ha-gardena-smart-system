@@ -2,6 +2,15 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.10.1] - 2026-04-12
+
+### Fixed
+- **WebSocket reconnect storm burning through the API rate-limit budget** — when Husqvarna's WebSocket endpoint started rejecting signed connection URLs with HTTP 410 (URL consumed/expired), the library's inner reconnect loop retried the *same dead URL* up to 5 times with exponential backoff (30s → 60s → 120s → 240s → 480s). Each outer reconnect attempt then fetched a fresh WS URL via REST, and every poll cycle also tried to start the WebSocket again. Result: hundreds of wasted REST calls per day, repeated HTTP 429 rate limiting, and the integration entering 1-hour backoff windows.
+  - **Library fix** — `aiogardenasmart` and `aioautomower` WebSocket clients no longer retry inside `_async_listen_loop`. Any failure is escalated to the caller's `on_error` callback immediately. WebSocket URLs are single-use; retrying the same URL is pointless and amplifies failures.
+  - **Circuit breaker in the coordinator** — after 3 consecutive WebSocket start failures, the integration enters a 15-minute cooldown during which no new connection attempts are made (REST polling continues). After 5 failures the cooldown grows to 30 min, after 7+ to 60 min. A successful connection resets the counter. The cooldown guards both the reconnect loop and the regular poll cycle, so the poll cycle no longer triggers new WS attempts during the cooldown. Auth errors bypass the cooldown and trigger reauth instead.
+  - **Reconnect schedule tightened** — outer reconnect loop reduced from 6 attempts over ~50 min (30/60/120/300/600/1800 s) to 3 attempts over ~20 min (60/300/900 s). The circuit breaker handles longer outages.
+  - 6 new coordinator tests covering failure counter increment, cooldown activation at thresholds, escalation, guard in `_async_start_websocket`, reconnect loop abort when cooldown is active, and counter reset on successful connection.
+
 ## [1.10.0] - 2026-04-11
 
 ### Added
