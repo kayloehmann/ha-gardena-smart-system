@@ -574,7 +574,7 @@ class HubPollingIntervalSensor(CoordinatorEntity, SensorEntity):
         return self.coordinator.update_interval.total_seconds()
 
 
-class HubApiRequestsMonthSensor(CoordinatorEntity, SensorEntity):
+class HubApiRequestsMonthSensor(CoordinatorEntity[BaseSmartSystemCoordinator[Any]], SensorEntity):
     """Number of API requests made in the current calendar month."""
 
     _attr_has_entity_name = True
@@ -602,7 +602,7 @@ class HubApiRequestsMonthSensor(CoordinatorEntity, SensorEntity):
         return {"month": budget.month, "budget": budget.budget}
 
 
-class HubApiBudgetRemainingSensor(CoordinatorEntity, SensorEntity):
+class HubApiBudgetRemainingSensor(CoordinatorEntity[BaseSmartSystemCoordinator[Any]], SensorEntity):
     """Remaining API budget as a percentage."""
 
     _attr_has_entity_name = True

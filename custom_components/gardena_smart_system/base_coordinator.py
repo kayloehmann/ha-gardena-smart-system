@@ -30,11 +30,11 @@ from .const import (
     DOMAIN,
     MIN_COMMAND_INTERVAL_SECONDS,
     OPT_MQTT_ENABLE,
-    STORAGE_VERSION_API_BUDGET,
     OPT_MQTT_PUBLISH_STATES,
     OPT_MQTT_SUBSCRIBE_COMMANDS,
     OPT_MQTT_TOPIC_PREFIX,
     OPT_POLL_INTERVAL_MINUTES,
+    STORAGE_VERSION_API_BUDGET,
     WS_WATCHDOG_CHECK_INTERVAL,
     WS_WATCHDOG_TIMEOUT_SECONDS,
 )
@@ -50,7 +50,7 @@ class ApiBudgetTracker:
     The counter resets automatically when a new calendar month starts.
     """
 
-    def __init__(self, store: Store, budget: int = API_BUDGET_MONTHLY) -> None:
+    def __init__(self, store: Store[dict[str, Any]], budget: int = API_BUDGET_MONTHLY) -> None:
         self._store = store
         self._budget = budget
         self._month: str = ""
@@ -103,7 +103,7 @@ class ApiBudgetTracker:
 
     @property
     def remaining_percent(self) -> float:
-        """Remaining budget as a percentage (0.0 – 100.0)."""
+        """Remaining budget as a percentage (0.0 - 100.0)."""
         return max(0.0, (1 - self._count / self._budget) * 100)
 
 
