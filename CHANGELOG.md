@@ -2,6 +2,13 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.10.2] - 2026-04-18
+
+### Added
+- **Auto-stop safety net when the monthly API budget is nearly exhausted** — once the remaining budget drops below **5 %** (i.e. fewer than 500 of the 10 000 monthly requests remain), the coordinator automatically pauses all outbound API activity: REST polls raise `UpdateFailed`, WebSocket (re)connect attempts are suppressed, and user-issued commands are rejected with the new translated error `api_budget_exhausted`. Normal operation resumes automatically when the calendar month rolls over — or the user can create a fresh Husqvarna application to reset the budget. This prevents runaway scenarios (e.g. an unforeseen reconnect storm or library bug) from exhausting the budget 100 % and forcing Husqvarna to hard-block the key for the rest of the month.
+- 6 new coordinator tests: `is_exhausted` true/false around the threshold, reset on month rollover, `_async_update_data` raises `UpdateFailed` when exhausted, `check_command_throttle` raises `HomeAssistantError` with the `api_budget_exhausted` translation key, and confirmation that throttle still works below the threshold.
+- New exception translation key `api_budget_exhausted` in `strings.json`, `translations/en.json`, and `translations/de.json` (other languages fall back to English until translated).
+
 ## [1.10.1] - 2026-04-12
 
 ### Fixed

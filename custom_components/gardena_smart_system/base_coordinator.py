@@ -24,6 +24,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     API_BUDGET_MONTHLY,
+    API_BUDGET_STOP_PERCENT,
     BUDGET_SAVE_DELAY_SECONDS,
     COMMAND_BURST_CAPACITY,
     DEFAULT_MQTT_TOPIC_PREFIX,
@@ -69,6 +70,13 @@ class ApiBudgetTracker:
             self._count = 0
         self._loaded = True
 
+    def _check_month_rollover(self) -> None:
+        """Reset the counter if the calendar month has changed since load."""
+        current_month = dt_util.now().strftime("%Y-%m")
+        if current_month != self._month:
+            self._month = current_month
+            self._count = 0
+
     def increment(self, count: int = 1) -> None:
         """Record that *count* API requests were made.
 
@@ -76,10 +84,7 @@ class ApiBudgetTracker:
         call. Schedules a delayed save so that rapid increments do not cause
         excessive I/O.
         """
-        current_month = dt_util.now().strftime("%Y-%m")
-        if current_month != self._month:
-            self._month = current_month
-            self._count = 0
+        self._check_month_rollover()
         self._count += count
         self._store.async_delay_save(
             lambda: {"month": self._month, "request_count": self._count},
@@ -104,7 +109,19 @@ class ApiBudgetTracker:
     @property
     def remaining_percent(self) -> float:
         """Remaining budget as a percentage (0.0 - 100.0)."""
+        self._check_month_rollover()
         return max(0.0, (1 - self._count / self._budget) * 100)
+
+    @property
+    def is_exhausted(self) -> bool:
+        """True when less than API_BUDGET_STOP_PERCENT of the budget remains.
+
+        Triggers the auto-stop safety net: while exhausted, the coordinator
+        refuses polls, WS fetches, and user commands until the calendar month
+        rolls over (or the user wires up a fresh Husqvarna application).
+        """
+        self._check_month_rollover()
+        return self.remaining_percent < API_BUDGET_STOP_PERCENT
 
 
 @dataclass(frozen=True)
@@ -239,6 +256,12 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
     async def _async_update_data(self) -> dict[str, DeviceT]:
         """Fetch the latest device state from the REST API."""
         cfg = self._config
+        if self._api_budget.is_exhausted:
+            raise UpdateFailed(
+                f"{cfg.api_label} API monthly budget nearly exhausted "
+                f"({self._api_budget.request_count}/{self._api_budget.budget} requests "
+                f"used this month); polling paused until the next calendar month"
+            )
         try:
             devices = await self._async_fetch_devices()
         except cfg.auth_error_type as err:
@@ -704,6 +727,11 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         tripping the throttle, while still capping the steady-state rate to
         protect the API quota.
         """
+        if self._api_budget.is_exhausted:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="api_budget_exhausted",
+            )
         now = time.monotonic()
         elapsed = now - self._command_tokens_updated
         refill = elapsed / MIN_COMMAND_INTERVAL_SECONDS

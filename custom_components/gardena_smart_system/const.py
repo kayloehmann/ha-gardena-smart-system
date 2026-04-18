@@ -50,6 +50,12 @@ WS_WATCHDOG_CHECK_INTERVAL = timedelta(seconds=60)
 API_BUDGET_MONTHLY = 10_000
 STORAGE_VERSION_API_BUDGET = 1
 BUDGET_SAVE_DELAY_SECONDS = 60
+# Auto-stop safety threshold: once less than this percentage of the monthly
+# budget is left, the coordinator stops making polls/WS fetches and rejects
+# commands until the calendar month rolls over (or the user creates a fresh
+# Husqvarna application). 5 % of 10 000 = 500 requests headroom — enough to
+# absorb a normal day's activity without being tripped.
+API_BUDGET_STOP_PERCENT = 5.0
 
 # ── Options flow defaults ─────────────────────────────────────────
 OPT_DEFAULT_WATERING_MINUTES = "default_watering_minutes"

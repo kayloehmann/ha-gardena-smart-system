@@ -367,9 +367,13 @@ class TestRateLimitBackoffFromAuth:
                 side_effect=GardenaRateLimitError("429")
             )
 
-            # Simulate many hits
+            # Simulate many hits. Reset the circuit breaker each iteration so
+            # the backoff keeps escalating — this test isolates the cap logic
+            # in _apply_rate_limit_backoff, not the WS circuit breaker.
             for _ in range(10):
                 coordinator._cached_ws_url = None
+                coordinator._ws_cooldown_until = 0.0
+                coordinator._ws_consecutive_failures = 0
                 await coordinator._async_start_websocket(devices)
 
             # Should be capped at 1 hour

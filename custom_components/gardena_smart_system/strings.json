@@ -454,6 +454,9 @@
     "command_throttled": {
       "message": "Commands are being sent too quickly. Please wait a few seconds between commands to avoid exceeding the API rate limit."
     },
+    "api_budget_exhausted": {
+      "message": "The monthly API request budget is nearly exhausted. Commands, polling, and real-time updates are paused to protect the remaining quota. Normal operation resumes when the calendar month rolls over, or you can create a fresh Husqvarna application to reset the budget."
+    },
     "too_many_open_valves": {
       "message": "Cannot open valve: the Smart Irrigation Control allows at most {limit} valves open at the same time. Close another valve first."
     }

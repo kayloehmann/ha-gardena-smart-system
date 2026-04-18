@@ -1029,3 +1029,85 @@ class TestApiBudgetTracker:
             await coordinator._async_update_data()
 
         assert coordinator.api_budget.request_count == initial + 1
+
+
+class TestApiBudgetAutoStop:
+    """Test the auto-stop safety net that pauses API activity near budget exhaustion."""
+
+    async def test_is_exhausted_false_with_headroom(self, hass: HomeAssistant) -> None:
+        from homeassistant.helpers.storage import Store
+
+        from custom_components.gardena_smart_system.base_coordinator import ApiBudgetTracker
+
+        store = Store(hass, 1, "test_autostop_headroom")
+        tracker = ApiBudgetTracker(store, budget=100)
+        await tracker.async_load()
+
+        tracker.increment(50)
+
+        assert tracker.is_exhausted is False
+
+    async def test_is_exhausted_true_near_limit(self, hass: HomeAssistant) -> None:
+        from homeassistant.helpers.storage import Store
+
+        from custom_components.gardena_smart_system.base_coordinator import ApiBudgetTracker
+
+        store = Store(hass, 1, "test_autostop_near")
+        tracker = ApiBudgetTracker(store, budget=100)
+        await tracker.async_load()
+
+        # 96 / 100 consumed → 4% remaining → below 5% threshold
+        tracker.increment(96)
+
+        assert tracker.is_exhausted is True
+
+    async def test_is_exhausted_resets_on_month_rollover(self, hass: HomeAssistant) -> None:
+        from unittest.mock import patch as _patch
+
+        from homeassistant.helpers.storage import Store
+
+        from custom_components.gardena_smart_system.base_coordinator import ApiBudgetTracker
+
+        store = Store(hass, 1, "test_autostop_rollover")
+        tracker = ApiBudgetTracker(store, budget=100)
+        await tracker.async_load()
+
+        tracker.increment(99)
+        assert tracker.is_exhausted is True
+
+        with _patch("custom_components.gardena_smart_system.base_coordinator.dt_util") as mock_dt:
+            mock_dt.now.return_value.strftime.return_value = "2099-01"
+            assert tracker.is_exhausted is False
+
+    async def test_update_raises_when_exhausted(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        await coordinator.api_budget.async_load()
+        coordinator.api_budget.increment(coordinator.api_budget.budget)
+        coordinator._client = AsyncMock()
+        coordinator._client.async_get_devices = AsyncMock()
+
+        with pytest.raises(UpdateFailed, match="budget nearly exhausted"):
+            await coordinator._async_update_data()
+
+        coordinator._client.async_get_devices.assert_not_called()
+
+    async def test_command_throttle_raises_when_exhausted(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        await coordinator.api_budget.async_load()
+        coordinator.api_budget.increment(coordinator.api_budget.budget)
+
+        with pytest.raises(HomeAssistantError) as excinfo:
+            coordinator.check_command_throttle()
+
+        assert excinfo.value.translation_key == "api_budget_exhausted"
+
+    async def test_command_throttle_works_below_threshold(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        await coordinator.api_budget.async_load()
+        # 50% of budget still available → well above 5% threshold
+        coordinator.api_budget.increment(coordinator.api_budget.budget // 2)
+
+        coordinator.check_command_throttle()  # must not raise
