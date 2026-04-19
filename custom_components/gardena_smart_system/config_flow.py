@@ -421,20 +421,31 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
         client_id: str,
         client_secret: str,
     ) -> tuple[list[dict[str, str]], str]:
-        """Test Gardena API access and return (locations, error_key)."""
+        """Test Gardena API access and return (locations, error_key).
+
+        Always revokes the access token before returning so that repeated
+        reauth/reconfigure attempts do not leave dangling tokens on the
+        Husqvarna auth server.
+        """
         auth = GardenaAuth(client_id, client_secret, session)
         client = GardenaClient(auth, session)
         try:
-            locations = await client.async_get_locations()
-            return (
-                [{"id": loc.location_id, "name": loc.name} for loc in locations],
-                "",
-            )
-        except tuple(_GARDENA_ERROR_MAP) as err:
-            return [], _GARDENA_ERROR_MAP.get(type(err), "unknown")
-        except Exception:
-            _LOGGER.exception("Unexpected error during Gardena credential test")
-            return [], "unknown"
+            try:
+                locations = await client.async_get_locations()
+                return (
+                    [{"id": loc.location_id, "name": loc.name} for loc in locations],
+                    "",
+                )
+            except tuple(_GARDENA_ERROR_MAP) as err:
+                return [], _GARDENA_ERROR_MAP.get(type(err), "unknown")
+            except Exception:
+                _LOGGER.exception("Unexpected error during Gardena credential test")
+                return [], "unknown"
+        finally:
+            try:
+                await auth.async_revoke_token()
+            except (GardenaException, aiohttp.ClientError, TimeoutError, OSError):
+                _LOGGER.debug("Token revocation failed during Gardena credential test")
 
     @staticmethod
     async def _async_test_automower(
@@ -442,7 +453,12 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
         client_id: str,
         client_secret: str,
     ) -> str:
-        """Test Automower API access. Returns error key or empty string."""
+        """Test Automower API access. Returns error key or empty string.
+
+        Always revokes the access token before returning so that repeated
+        reauth/reconfigure attempts do not leave dangling tokens on the
+        Husqvarna auth server.
+        """
         from aioautomower.exceptions import (
             AutomowerAuthenticationError,
             AutomowerConnectionError,
@@ -462,13 +478,19 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
         auth = GardenaAuth(client_id, client_secret, session)
         client = AutomowerClient(auth, session)
         try:
-            await client.async_get_mowers()
-            return ""
-        except tuple(automower_error_map) as err:
-            return automower_error_map.get(type(err), "unknown")
-        except Exception:
-            _LOGGER.exception("Unexpected error during Automower credential test")
-            return "unknown"
+            try:
+                await client.async_get_mowers()
+                return ""
+            except tuple(automower_error_map) as err:
+                return automower_error_map.get(type(err), "unknown")
+            except Exception:
+                _LOGGER.exception("Unexpected error during Automower credential test")
+                return "unknown"
+        finally:
+            try:
+                await auth.async_revoke_token()
+            except (GardenaException, aiohttp.ClientError, TimeoutError, OSError):
+                _LOGGER.debug("Token revocation failed during Automower credential test")
 
 
 class GardenaOptionsFlowHandler(OptionsFlow):

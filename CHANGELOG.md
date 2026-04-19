@@ -2,6 +2,18 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.12.1] - 2026-04-19
+
+### Security
+- **Reauth and reconfigure now revoke the access token before returning.** `async_step_user` already revoked its OAuth token on completion (v1.10+), but `async_step_reauth_confirm` and `async_step_reconfigure` went through `_async_test_gardena` / `_async_test_automower` without the same cleanup. Every failed or successful re-credential test left a live access token on the Husqvarna auth server until it expired naturally. Both helpers now wrap the test in `try: … finally: await auth.async_revoke_token()`.
+
+### Fixed
+- **MQTT bridge retries on startup failure.** When Home Assistant loads the MQTT integration *after* Gardena (common on cold boot), the first `_async_start_mqtt_bridge` call failed and the bridge stayed disabled until HA was restarted. The coordinator now retries at most once every 5 minutes on subsequent polls.
+- **`_mqtt_bridge` sentinel typed correctly.** The three-valued `None | False | MqttBridge` pattern (typed as `Any`) is gone. `_mqtt_bridge: MqttBridge | None = None`, with a separate `_mqtt_bridge_next_check: float` throttle for the retry interval. Removes the `hasattr(self._mqtt_bridge, "async_stop")` type-dodge in `async_shutdown`.
+
+### Changed
+- MQTT publish background tasks now have descriptive names (`<domain>_mqtt_publish_all`, `<domain>_mqtt_publish_device`) for easier debug/profiling.
+
 ## [1.12.0] - 2026-04-19
 
 ### Changed

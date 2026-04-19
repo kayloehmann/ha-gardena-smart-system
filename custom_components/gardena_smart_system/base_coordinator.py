@@ -9,7 +9,7 @@ from abc import abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import aiohttp
 from homeassistant.config_entries import ConfigEntry
@@ -40,7 +40,12 @@ from .const import (
     WS_WATCHDOG_TIMEOUT_SECONDS,
 )
 
+if TYPE_CHECKING:
+    from .mqtt_bridge import MqttBridge
+
 _LOGGER = logging.getLogger(__name__)
+
+MQTT_RETRY_INTERVAL_SECONDS = 300
 
 
 class ApiBudgetTracker:
@@ -192,7 +197,12 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         )
         self._rate_limit_hits: int = 0
         self._ws_reconnect_task: asyncio.Task[None] | None = None
-        self._mqtt_bridge: Any = None
+        self._mqtt_bridge: MqttBridge | None = None
+        # Throttle for bridge start retries: HA may load the MQTT integration
+        # after Gardena, so the first start attempt can legitimately fail.
+        # Retry on the next poll, but at most once per MQTT_RETRY_INTERVAL to
+        # avoid log spam when MQTT is permanently unavailable.
+        self._mqtt_bridge_next_check: float = 0.0
         self._ws_watchdog_unsub: CALLBACK_TYPE | None = None
         self._cached_ws_url: str | None = None
         self._ws_connect_lock = asyncio.Lock()
@@ -303,11 +313,20 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         if not self._ws_connected:
             await self._async_start_websocket(devices)
 
-        # Start MQTT bridge on first successful fetch
-        if self._mqtt_bridge is None:
-            await self._async_start_mqtt_bridge()
-        if self._mqtt_bridge and self._mqtt_bridge.is_active:
-            self.hass.async_create_task(self._mqtt_bridge.async_publish_all_devices(devices))
+        # Start the MQTT bridge on first successful fetch, and retry if it
+        # failed previously — HA may load the MQTT integration *after* Gardena,
+        # so a first-poll failure is expected in that case.
+        if self._mqtt_bridge is None or not self._mqtt_bridge.is_active:
+            now = time.monotonic()
+            if now >= self._mqtt_bridge_next_check:
+                await self._async_start_mqtt_bridge()
+                if self._mqtt_bridge is None or not self._mqtt_bridge.is_active:
+                    self._mqtt_bridge_next_check = now + MQTT_RETRY_INTERVAL_SECONDS
+        if self._mqtt_bridge is not None and self._mqtt_bridge.is_active:
+            self.hass.async_create_task(
+                self._mqtt_bridge.async_publish_all_devices(devices),
+                name=f"{self._config.coordinator_name}_mqtt_publish_all",
+            )
 
         # Remove devices that disappeared from the API (stale-devices rule)
         self._async_remove_stale_devices(devices)
@@ -514,9 +533,10 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         """Called by the WebSocket client when a device state changes."""
         if self.data is not None:
             self.data[device_id] = device
-        if self._mqtt_bridge and self._mqtt_bridge.is_active:
+        if self._mqtt_bridge is not None and self._mqtt_bridge.is_active:
             self.hass.async_create_task(
-                self._mqtt_bridge.async_publish_device_state(device_id, device)
+                self._mqtt_bridge.async_publish_device_state(device_id, device),
+                name=f"{self._config.coordinator_name}_mqtt_publish_device",
             )
         self.async_set_updated_data(self.data or {})
 
@@ -690,10 +710,14 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
     # ── MQTT bridge ──────────────────────────────────────────────────────
 
     async def _async_start_mqtt_bridge(self) -> None:
-        """Initialize and start the MQTT bridge if enabled in options."""
+        """Initialize and start the MQTT bridge if enabled in options.
+
+        Leaves ``self._mqtt_bridge`` at ``None`` when the bridge is disabled or
+        its start fails (MQTT integration not yet loaded). The caller retries
+        periodically via ``_mqtt_bridge_next_check``.
+        """
         opts = self.config_entry.options
         if not opts.get(OPT_MQTT_ENABLE, False):
-            self._mqtt_bridge = False  # sentinel: checked, not enabled
             return
 
         from .mqtt_bridge import MqttBridge
@@ -711,7 +735,8 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         started = await bridge.async_start(
             command_handler=self._async_handle_mqtt_command if subscribe else None,
         )
-        self._mqtt_bridge = bridge if started else False
+        if started:
+            self._mqtt_bridge = bridge
 
     async def _async_handle_mqtt_command(self, device_id: str, payload: dict[str, Any]) -> None:
         """Handle an inbound MQTT command (subclasses can override)."""
@@ -721,7 +746,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         """Disconnect the WebSocket, revoke token, and clean up resources."""
         self._cancel_ws_reconnect()
         self._stop_ws_watchdog()
-        if self._mqtt_bridge and hasattr(self._mqtt_bridge, "async_stop"):
+        if self._mqtt_bridge is not None:
             await self._mqtt_bridge.async_stop()
         if self._ws:
             await self._ws.async_disconnect()
