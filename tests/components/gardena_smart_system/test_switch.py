@@ -499,3 +499,101 @@ class TestSwitchDeviceNoneGuards:
             coordinator.async_set_updated_data({})
             with pytest.raises(HomeAssistantError):
                 await entity._async_send_command("START_SECONDS_TO_OVERRIDE", seconds=60)
+
+
+class TestSwitchOptimisticState:
+    """Test that the switch flips state immediately after a successful command.
+
+    Without optimistic updates the switch had to declare assumed_state = True,
+    which HA renders as two separate on/off buttons instead of a single toggle.
+    The local state must reflect the command before the confirming WebSocket
+    event arrives.
+    """
+
+    async def test_assumed_state_is_not_set(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(has_sensor=False, has_power_socket=True)
+        device.power_socket.activity = "OFF"
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            pass
+
+        state = hass.states.get("switch.my_sensor_power")
+        assert state is not None
+        # HA only sets assumed_state in the state attributes when the entity
+        # declares it, so its absence here is the contract we want.
+        assert state.attributes.get("assumed_state") is not True
+
+    async def test_turn_on_flips_state_immediately(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(has_sensor=False, has_power_socket=True)
+        device.power_socket.activity = "OFF"
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            state = hass.states.get("switch.my_sensor_power")
+            assert state.state == STATE_OFF
+
+            await hass.services.async_call(
+                "switch",
+                "turn_on",
+                {"entity_id": "switch.my_sensor_power"},
+                blocking=True,
+            )
+            await hass.async_block_till_done()
+
+            state = hass.states.get("switch.my_sensor_power")
+            assert state.state == STATE_ON
+            # The underlying device must also reflect the optimistic activity
+            # so that downstream consumers (sensors, MQTT bridge) stay in sync.
+            assert device.power_socket.activity == "TIME_LIMITED_ON"
+            assert device.power_socket.duration == 3600
+
+    async def test_turn_off_flips_state_immediately(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(has_sensor=False, has_power_socket=True)
+        device.power_socket.activity = "FOREVER_ON"
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            state = hass.states.get("switch.my_sensor_power")
+            assert state.state == STATE_ON
+
+            await hass.services.async_call(
+                "switch",
+                "turn_off",
+                {"entity_id": "switch.my_sensor_power"},
+                blocking=True,
+            )
+            await hass.async_block_till_done()
+
+            state = hass.states.get("switch.my_sensor_power")
+            assert state.state == STATE_OFF
+            assert device.power_socket.activity == "OFF"
+            assert device.power_socket.duration == 0
+            assert device.power_socket.duration_timestamp is None
+
+    async def test_turn_on_for_flips_state_immediately(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(has_sensor=False, has_power_socket=True)
+        device.power_socket.activity = "OFF"
+        devices = {device.device_id: device}
+
+        async for _ in _setup_with_devices(hass, mock_config_entry, devices):
+            await hass.services.async_call(
+                "gardena_smart_system",
+                "turn_on_for",
+                {"entity_id": "switch.my_sensor_power", "duration": 30},
+                blocking=True,
+            )
+            await hass.async_block_till_done()
+
+            state = hass.states.get("switch.my_sensor_power")
+            assert state.state == STATE_ON
+            assert device.power_socket.activity == "TIME_LIMITED_ON"
+            assert device.power_socket.duration == 1800

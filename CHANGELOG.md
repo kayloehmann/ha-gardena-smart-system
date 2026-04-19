@@ -2,6 +2,12 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.10.3] - 2026-04-19
+
+### Changed
+- **Power socket switch now renders as a single toggle instead of two separate on/off buttons.** The switch entity previously declared `assumed_state = True` because it waited for a confirming WebSocket event from the Gardena cloud before updating its local state — during that window the state was considered "assumed", so Home Assistant rendered two separate buttons (the only UI that can represent an assumed state unambiguously). The switch now applies an **optimistic local state update** immediately after the API call succeeds: `START_SECONDS_TO_OVERRIDE` flips `activity` to `TIME_LIMITED_ON` (with updated `duration` / `duration_timestamp`) and `STOP_UNTIL_NEXT_TASK` flips it to `OFF`. The subsequent WebSocket event simply reconfirms the state. With the state now trustworthy immediately, `assumed_state` has been removed and HA renders a normal toggle. Mirrors the valve optimistic-update fix shipped in 1.9.1.
+- 4 new switch tests: `assumed_state` flag is absent, `turn_on` / `turn_off` / `turn_on_for` flip the HA state and the underlying device activity immediately.
+
 ## [1.10.2] - 2026-04-18
 
 ### Added

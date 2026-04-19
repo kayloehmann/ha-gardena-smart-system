@@ -5,6 +5,7 @@ Maps the POWER_SOCKET service to a HA switch entity.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Any, cast
 
 import voluptuous as vol
@@ -79,7 +80,6 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
 
     _attr_device_class = SwitchDeviceClass.OUTLET
     _attr_translation_key = "power_socket"
-    _attr_assumed_state = True
 
     def __init__(self, coordinator: GardenaCoordinator, device: Device) -> None:
         """Initialize the switch."""
@@ -149,3 +149,31 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
                 translation_placeholders={"error": str(err)},
             ) from err
         self.coordinator.api_budget.increment()
+        self._apply_optimistic_state(command, params)
+
+    def _apply_optimistic_state(self, command: str, params: dict[str, int]) -> None:
+        """Apply the expected state locally after a successful command.
+
+        The Gardena API returns 204 with no body and the confirming WebSocket
+        event may take a few seconds or, rarely, be missed entirely. Updating
+        the local state immediately keeps the HA UI in sync with reality and
+        removes the need for assumed_state (which HA renders as two separate
+        on/off buttons instead of a single toggle).
+        """
+        device = self._device
+        if device is None or device.power_socket is None:
+            return
+        ps = device.power_socket
+        if command == "START_SECONDS_TO_OVERRIDE":
+            ps.activity = PowerSocketActivity.TIME_LIMITED_ON
+            seconds = params.get("seconds")
+            if isinstance(seconds, int):
+                ps.duration = seconds
+                ps.duration_timestamp = datetime.now(tz=UTC).isoformat()
+        elif command == "STOP_UNTIL_NEXT_TASK":
+            ps.activity = PowerSocketActivity.OFF
+            ps.duration = 0
+            ps.duration_timestamp = None
+        else:
+            return
+        self.coordinator.async_set_updated_data(self.coordinator.data or {})
