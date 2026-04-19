@@ -10,6 +10,7 @@ import voluptuous as vol
 from aiogardenasmart.exceptions import (
     GardenaAuthenticationError,
     GardenaConnectionError,
+    GardenaException,
     GardenaForbiddenError,
     GardenaRateLimitError,
 )
@@ -61,6 +62,15 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# Library exception → error-key mapping for the credential-test helpers.
+# Shared by every config flow step that needs to render a translated error.
+_GARDENA_ERROR_MAP: dict[type[Exception], str] = {
+    GardenaAuthenticationError: "invalid_auth",
+    GardenaForbiddenError: "forbidden",
+    GardenaRateLimitError: "rate_limited",
+    GardenaConnectionError: "cannot_connect",
+}
+
 
 class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle the Gardena Smart System config flow.
@@ -98,12 +108,8 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
             auth = GardenaAuth(client_id, client_secret, session)
             try:
                 await auth.async_ensure_valid_token()
-            except GardenaAuthenticationError:
-                errors["base"] = "invalid_auth"
-            except GardenaRateLimitError:
-                errors["base"] = "rate_limited"
-            except GardenaConnectionError:
-                errors["base"] = "cannot_connect"
+            except tuple(_GARDENA_ERROR_MAP) as err:
+                errors["base"] = _GARDENA_ERROR_MAP.get(type(err), "unknown")
             except Exception:
                 _LOGGER.exception("Unexpected error during credential test")
                 errors["base"] = "unknown"
@@ -114,7 +120,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
             finally:
                 try:
                     await auth.async_revoke_token()
-                except Exception:
+                except (GardenaException, aiohttp.ClientError, TimeoutError, OSError):
                     _LOGGER.debug("Token revocation failed during config flow cleanup")
 
         return self.async_show_form(
@@ -424,14 +430,8 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                 [{"id": loc.location_id, "name": loc.name} for loc in locations],
                 "",
             )
-        except GardenaAuthenticationError:
-            return [], "invalid_auth"
-        except GardenaForbiddenError:
-            return [], "forbidden"
-        except GardenaRateLimitError:
-            return [], "rate_limited"
-        except GardenaConnectionError:
-            return [], "cannot_connect"
+        except tuple(_GARDENA_ERROR_MAP) as err:
+            return [], _GARDENA_ERROR_MAP.get(type(err), "unknown")
         except Exception:
             _LOGGER.exception("Unexpected error during Gardena credential test")
             return [], "unknown"
@@ -452,19 +452,20 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
 
         from aioautomower import AutomowerClient
 
+        automower_error_map: dict[type[Exception], str] = {
+            AutomowerAuthenticationError: "invalid_auth",
+            AutomowerForbiddenError: "automower_not_connected",
+            AutomowerRateLimitError: "rate_limited",
+            AutomowerConnectionError: "cannot_connect",
+        }
+
         auth = GardenaAuth(client_id, client_secret, session)
         client = AutomowerClient(auth, session)
         try:
             await client.async_get_mowers()
             return ""
-        except AutomowerAuthenticationError:
-            return "invalid_auth"
-        except AutomowerForbiddenError:
-            return "automower_not_connected"
-        except AutomowerRateLimitError:
-            return "rate_limited"
-        except AutomowerConnectionError:
-            return "cannot_connect"
+        except tuple(automower_error_map) as err:
+            return automower_error_map.get(type(err), "unknown")
         except Exception:
             _LOGGER.exception("Unexpected error during Automower credential test")
             return "unknown"

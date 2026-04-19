@@ -483,7 +483,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         )
         try:
             await self._ws.async_connect(ws_url)
-        except Exception as err:
+        except (aiohttp.ClientError, TimeoutError, OSError) as err:
             _LOGGER.warning(
                 "Could not connect %s WebSocket, will rely on polling: %s",
                 cfg.api_label,
@@ -678,7 +678,9 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         self.update_interval = self._custom_poll_interval or cfg.scan_interval
         try:
             await self._ws.async_disconnect()
-        except Exception:
+        except (aiohttp.ClientError, TimeoutError, OSError):
+            # Stale WebSocket may have already dropped the TCP connection; all
+            # we're doing is making sure the local handle is released.
             _LOGGER.debug("Error disconnecting stale WebSocket, ignoring")
         self._ws = None
 
@@ -727,7 +729,9 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         self._ws_connected = False
         try:
             await self._auth.async_revoke_token()
-        except Exception:
+        except (aiohttp.ClientError, TimeoutError, OSError):
+            # Revocation is best-effort; if the network is already unreachable
+            # during shutdown there is nothing actionable to do.
             _LOGGER.debug("Token revocation failed during shutdown")
 
     def check_command_throttle(self) -> None:

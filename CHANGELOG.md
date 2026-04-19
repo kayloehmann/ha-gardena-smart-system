@@ -2,6 +2,25 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.12.0] - 2026-04-19
+
+### Changed
+- **Exception handling narrowed.** Several `except Exception` catchalls in critical paths were replaced with precise type tuples:
+  - `base_coordinator._async_start_websocket_locked`, `_async_stop_stale_websocket`, and `async_shutdown` now only catch `(aiohttp.ClientError, TimeoutError, OSError)` around WS connect, disconnect, and token-revoke — unexpected library bugs surface as real errors instead of being silently swallowed.
+  - `mqtt_bridge.async_publish_device_state` and `async_publish_availability` catch `HomeAssistantError` only — retained topics heal on the next publish anyway.
+  - `coordinator._async_handle_mqtt_command` uses the narrow throttle exception (`HomeAssistantError`) and domain exception (`GardenaException`); other errors now propagate and are visible in logs.
+  - `config_flow.async_step_user` + `_async_test_gardena` + `_async_test_automower` now catch the domain error types explicitly via a lookup table; all other exceptions still fall through to the `"unknown"` error key but are logged with full traceback at `exception` level instead of being hidden.
+- **ConfigFlow error mapping extracted.** The six-branch `if/elif` ladder that mapped `GardenaAuthenticationError`, `GardenaForbiddenError`, `GardenaRateLimitError`, `GardenaConnectionError` to translation keys was duplicated twice (user step + Gardena-credentials test) and a third variant sat in the Automower test. All three now read from a single `dict[type[Exception], str]` (`_GARDENA_ERROR_MAP` at module level; the Automower map is local to the lazy-imported method). Adding a new mapped exception is a one-line change per map.
+
+### aiogardenasmart library (0.1.8 → 0.1.9)
+- **`GardenaClient` caches static request headers.** `Authorization-Provider`, `X-Api-Key`, `Accept`, and `Content-Type` never change across the life of a client; they are now built once in `__init__` and only the per-request `Authorization` token is rebuilt. Eliminates redundant dict construction on every REST call.
+- **`_parse_devices` uses `setdefault`.** Six `if base_device_id not in devices: devices[base_device_id] = Device(...)` patterns collapsed into a single `devices.setdefault(...)`.
+- **`GardenaWebSocket._apply_service_update` rewritten as a dispatch table.** The five-branch `if/elif` cascade for singleton services (common, mower, valve_set, sensor, power_socket) now reads from `_SINGLETON_SERVICES: dict[ServiceType, tuple[attr_name, service_cls]]`. Valves remain a special case because they live in a dict keyed by service ID. Adding a new singleton service is a one-line change.
+- **Two pre-existing mypy warnings cleared.** `models._attr_timestamp` now returns a properly typed `str | None` and the stale `# type: ignore[unreachable]` on the locked fast-path in `auth.py` is removed.
+
+### Developer Notes
+- Pure refactor + error-handling-hygiene release. All **591 integration tests** and **104 library tests** still pass. No UI-visible behaviour change — but unexpected failures will now surface as real errors instead of being silently swallowed.
+
 ## [1.11.0] - 2026-04-19
 
 ### Changed

@@ -8,6 +8,7 @@ from typing import Any, ClassVar
 import aiohttp
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 
 from aiogardenasmart import (
     Device,
@@ -15,6 +16,7 @@ from aiogardenasmart import (
     GardenaAuthenticationError,
     GardenaClient,
     GardenaConnectionError,
+    GardenaException,
     GardenaRateLimitError,
     GardenaWebSocket,
 )
@@ -137,7 +139,7 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
 
         try:
             self.check_command_throttle()
-        except Exception:
+        except HomeAssistantError:
             _LOGGER.warning("MQTT command throttled for %s", device_id)
             return
 
@@ -151,14 +153,15 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
 
         try:
             await self._client.async_send_command(service_id, control_type, command, **kwargs)
-            _LOGGER.info(
-                "MQTT command '%s' executed for %s",
-                action,
-                device_id,
-            )
-        except Exception:
+        except GardenaException:
             _LOGGER.exception(
                 "MQTT command '%s' failed for %s",
                 action,
                 device_id,
             )
+            return
+        _LOGGER.info(
+            "MQTT command '%s' executed for %s",
+            action,
+            device_id,
+        )

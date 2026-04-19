@@ -160,8 +160,10 @@ class TestMqttCommandHandler:
 
     async def test_command_exception_logged_not_raised(self, coordinator) -> None:
         """If async_send_command raises, it's logged but doesn't propagate."""
+        from aiogardenasmart.exceptions import GardenaException
+
         coord, client = coordinator
-        client.async_send_command.side_effect = Exception("API error")
+        client.async_send_command.side_effect = GardenaException("API error")
         # Should not raise
         await coord._async_handle_mqtt_command("dev-1", {"action": "park"})
         client.async_send_command.assert_called_once()

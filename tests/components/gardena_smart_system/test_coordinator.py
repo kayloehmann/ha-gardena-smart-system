@@ -6,6 +6,7 @@ import time
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp
 import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
@@ -323,7 +324,9 @@ class TestShutdown:
         self, coordinator: GardenaCoordinator
     ) -> None:
         coordinator._ws = None
-        coordinator._auth.async_revoke_token = AsyncMock(side_effect=Exception("network down"))
+        coordinator._auth.async_revoke_token = AsyncMock(
+            side_effect=aiohttp.ClientError("network down")
+        )
         # Should not raise
         await coordinator.async_shutdown()
 

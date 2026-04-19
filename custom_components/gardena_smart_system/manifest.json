@@ -10,7 +10,7 @@
   "issue_tracker": "https://github.com/kayloehmann/ha-gardena-smart-system/issues",
   "loggers": ["aiogardenasmart"],
   "quality_scale": "platinum",
-  "requirements": ["aiogardenasmart==0.1.8"],
+  "requirements": ["aiogardenasmart==0.1.9"],
   "single_config_entry": false,
-  "version": "1.11.0"
+  "version": "1.12.0"
 }

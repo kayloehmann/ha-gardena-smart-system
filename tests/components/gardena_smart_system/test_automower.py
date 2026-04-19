@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, patch
 
+import aiohttp
 import pytest
 from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
@@ -1574,7 +1575,7 @@ class TestAutomowerCoordinatorWebSocket:
             mock_client_cls.return_value = mock_client
 
             mock_ws = AsyncMock()
-            mock_ws.async_connect = AsyncMock(side_effect=Exception("WS connect failed"))
+            mock_ws.async_connect = AsyncMock(side_effect=aiohttp.ClientError("WS connect failed"))
             mock_ws_cls.return_value = mock_ws
 
             automower_config_entry.add_to_hass(hass)

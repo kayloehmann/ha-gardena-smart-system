@@ -6,6 +6,7 @@ import asyncio
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp
 import pytest
 from homeassistant.core import HomeAssistant
 
@@ -166,7 +167,7 @@ class TestWsUrlCaching:
             # Simulate reconnect with failing connect
             coordinator._ws_connected = False
             coordinator._ws = None
-            mock_ws.async_connect = AsyncMock(side_effect=Exception("Connection refused"))
+            mock_ws.async_connect = AsyncMock(side_effect=aiohttp.ClientError("Connection refused"))
 
             with patch(_PATCH_WS, return_value=mock_ws):
                 await coordinator._async_start_websocket(devices)

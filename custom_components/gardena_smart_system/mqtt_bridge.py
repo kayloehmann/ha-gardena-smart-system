@@ -12,6 +12,7 @@ from typing import Any
 
 from homeassistant.components import mqtt
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 
 from .const import DEFAULT_MQTT_TOPIC_PREFIX
 
@@ -143,7 +144,10 @@ class MqttBridge:
 
         try:
             await mqtt.async_publish(self._hass, topic, payload, qos=1, retain=True)
-        except Exception:
+        except HomeAssistantError:
+            # MQTT broker dropped the publish (offline, unauthorised, topic
+            # refused). Failing a single state update is fine — the next one
+            # refreshes the retained topic.
             _LOGGER.debug("Failed to publish MQTT state for %s", device_id)
 
     async def async_publish_availability(self, device_id: str, available: bool) -> None:
@@ -156,7 +160,7 @@ class MqttBridge:
 
         try:
             await mqtt.async_publish(self._hass, topic, payload, qos=1, retain=True)
-        except Exception:
+        except HomeAssistantError:
             _LOGGER.debug("Failed to publish MQTT availability for %s", device_id)
 
     async def async_publish_all_devices(self, devices: dict[str, Any]) -> None:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
 
+import aiohttp
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -97,7 +98,7 @@ class TestUserStep:
         """Token revocation errors during cleanup must not break the config flow."""
         mock_auth = AsyncMock()
         mock_auth.async_ensure_valid_token = AsyncMock()
-        mock_auth.async_revoke_token = AsyncMock(side_effect=Exception("revoke failed"))
+        mock_auth.async_revoke_token = AsyncMock(side_effect=aiohttp.ClientError("revoke failed"))
 
         result = await _init_user_step(hass)
         with patch(_PATCH_AUTH, return_value=mock_auth):
