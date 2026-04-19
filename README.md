@@ -668,7 +668,7 @@ This integration targets the [Home Assistant Integration Quality Scale](https://
 
 Key quality features:
 
-- **99% test coverage** across 725 automated tests
+- **99% test coverage** across 695 automated tests
 - **mypy --strict** passes with zero errors on all 33 source files
 - **PEP 561** compliant (`py.typed` markers on both client libraries)
 - **Full async** codebase — no blocking I/O in the event loop
