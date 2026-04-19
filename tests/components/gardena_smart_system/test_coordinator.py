@@ -612,9 +612,7 @@ class TestWebSocketAutoReconnect:
 class TestWebSocketCircuitBreaker:
     """Test the WebSocket circuit breaker cooldown mechanism."""
 
-    def test_failure_counter_increments_on_ws_error(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    def test_failure_counter_increments_on_ws_error(self, coordinator: GardenaCoordinator) -> None:
         assert coordinator._ws_consecutive_failures == 0
         coordinator._on_ws_error(RuntimeError("lost"))
         assert coordinator._ws_consecutive_failures == 1
@@ -623,9 +621,7 @@ class TestWebSocketCircuitBreaker:
         assert coordinator._ws_consecutive_failures == 2
         coordinator._cancel_ws_reconnect()
 
-    def test_cooldown_activates_after_threshold(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    def test_cooldown_activates_after_threshold(self, coordinator: GardenaCoordinator) -> None:
         # Two failures below threshold → no cooldown
         coordinator._record_ws_failure()
         coordinator._record_ws_failure()
@@ -636,9 +632,7 @@ class TestWebSocketCircuitBreaker:
         coordinator._record_ws_failure()
         assert coordinator._ws_cooldown_until >= before + 15 * 60 - 1
 
-    def test_cooldown_escalates_with_more_failures(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    def test_cooldown_escalates_with_more_failures(self, coordinator: GardenaCoordinator) -> None:
         for _ in range(5):
             coordinator._record_ws_failure()
         cooldown_5 = coordinator._ws_cooldown_until - time.monotonic()
@@ -649,9 +643,7 @@ class TestWebSocketCircuitBreaker:
         cooldown_7 = coordinator._ws_cooldown_until - time.monotonic()
         assert cooldown_7 >= 60 * 60 - 1  # 60 min after 7 failures
 
-    async def test_start_websocket_respects_cooldown(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    async def test_start_websocket_respects_cooldown(self, coordinator: GardenaCoordinator) -> None:
         coordinator._ws_cooldown_until = time.monotonic() + 900
         coordinator._client = AsyncMock()
         coordinator._client.async_get_websocket_url = AsyncMock(
@@ -1079,9 +1071,7 @@ class TestApiBudgetAutoStop:
             mock_dt.now.return_value.strftime.return_value = "2099-01"
             assert tracker.is_exhausted is False
 
-    async def test_update_raises_when_exhausted(
-        self, coordinator: GardenaCoordinator
-    ) -> None:
+    async def test_update_raises_when_exhausted(self, coordinator: GardenaCoordinator) -> None:
         await coordinator.api_budget.async_load()
         coordinator.api_budget.increment(coordinator.api_budget.budget)
         coordinator._client = AsyncMock()
