@@ -135,6 +135,8 @@ class AutomowerLawnMowerEntity(AutomowerEntity, LawnMowerEntity):
                 translation_key="device_unavailable",
             )
         self.coordinator.check_command_throttle()
+        # Count before dispatch — see note in valve.py._async_send_command.
+        self.coordinator.api_budget.increment()
         try:
             client = self.coordinator.client
             if command == "start":
@@ -159,4 +161,3 @@ class AutomowerLawnMowerEntity(AutomowerEntity, LawnMowerEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
-        self.coordinator.api_budget.increment()

@@ -86,6 +86,8 @@ class AutomowerHeadlightSelect(AutomowerEntity, SelectEntity):
             )
         self.coordinator.check_command_throttle()
         mode = option.upper()
+        # Count before dispatch — see note in valve.py._async_send_command.
+        self.coordinator.api_budget.increment()
         try:
             await self.coordinator.client.async_set_headlight_mode(device.mower_id, mode)
         except AutomowerAuthenticationError as err:
@@ -100,4 +102,3 @@ class AutomowerHeadlightSelect(AutomowerEntity, SelectEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
-        self.coordinator.api_budget.increment()

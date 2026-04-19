@@ -2,6 +2,17 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.10.4] - 2026-04-19
+
+### Fixed
+- **API budget counter drifted below real usage under failure load.** `api_budget.increment()` used to run only after a successful API call, so polls that raised `GardenaConnectionError`, `GardenaRateLimitError`, or server-side 5xx were never counted locally — yet Husqvarna counts every attempt against the monthly quota. With the counter under-reporting, the 5 %-auto-stop safety net introduced in 1.10.2 would trigger too late (or never) during a failure storm. Increment now happens **before** the outbound call in all call sites: REST polls (`base_coordinator._async_update_data`), WebSocket URL fetches (`_async_start_websocket`), MQTT inbound commands (`coordinator._async_handle_mqtt_command`), entity commands (valve, switch, lawn_mower, automower_switch, automower_select, automower_button, automower_number, automower_lawn_mower). Pessimistic accounting matches server-side reality and makes auto-stop protective rather than decorative.
+- **Double token refresh under concurrent load.** `GardenaAuth.async_ensure_valid_token` had no mutex, so a simultaneous REST call and WebSocket connect (or watchdog reconnect + poll cycle) could both observe `is_token_valid == False`, fire two parallel POSTs to the auth endpoint, consume two quota units, and leave the old refresh_token invalidated by Husqvarna's server. Added an `asyncio.Lock` with double-checked locking: the fast path still returns the cached token without acquiring the lock, and the slow path serializes refreshes so only one HTTP round-trip happens per expiry cycle.
+- **Secrets leaked to debug logs.** `GardenaClient._async_request` logged the full request body at DEBUG level and on 4xx warnings, which exposed JSON command payloads (service IDs, schedule data) in `home-assistant.log` whenever users enabled debug logging — a common request in GitHub issue triage. Replaced with body-size-only logs; credentials (`client_secret`, `refresh_token`, `access_token`) continue to be redacted in diagnostics via `async_redact_data`.
+
+### Added
+- **Auto-stop now also gates WebSocket connects.** When the monthly budget is exhausted, `_async_start_websocket` now returns immediately before fetching a fresh WS URL. Previously the REST-poll gate (added in 1.10.2) was the only checkpoint, leaving `_async_get_ws_url` as a quota leak path during exhaustion.
+- 4 new tests: `test_poll_increments_budget_even_on_connection_error`, `test_poll_increments_budget_on_rate_limit`, `test_start_websocket_aborts_when_exhausted` (all `tests/components/gardena_smart_system/test_coordinator.py`), and `test_parallel_callers_share_single_refresh` (`aiogardenasmart/tests/test_auth.py`). Total **725 tests** passing.
+
 ## [1.10.3] - 2026-04-19
 
 ### Changed

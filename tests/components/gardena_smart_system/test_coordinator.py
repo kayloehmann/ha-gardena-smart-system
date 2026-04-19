@@ -1101,3 +1101,54 @@ class TestApiBudgetAutoStop:
         coordinator.api_budget.increment(coordinator.api_budget.budget // 2)
 
         coordinator.check_command_throttle()  # must not raise
+
+    async def test_poll_increments_budget_even_on_connection_error(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        """Failed polls still consume server-side quota → must count locally."""
+        from aiogardenasmart.exceptions import GardenaConnectionError
+
+        await coordinator.api_budget.async_load()
+        initial = coordinator.api_budget.request_count
+
+        coordinator._client = AsyncMock()
+        coordinator._client.async_get_devices = AsyncMock(
+            side_effect=GardenaConnectionError("unreachable")
+        )
+
+        with pytest.raises(UpdateFailed):
+            await coordinator._async_update_data()
+
+        assert coordinator.api_budget.request_count == initial + 1
+
+    async def test_poll_increments_budget_on_rate_limit(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        """Rate-limit responses were billed server-side → must count locally."""
+        from aiogardenasmart.exceptions import GardenaRateLimitError
+
+        await coordinator.api_budget.async_load()
+        initial = coordinator.api_budget.request_count
+
+        coordinator._client = AsyncMock()
+        coordinator._client.async_get_devices = AsyncMock(side_effect=GardenaRateLimitError("429"))
+
+        with pytest.raises(UpdateFailed):
+            await coordinator._async_update_data()
+
+        assert coordinator.api_budget.request_count == initial + 1
+
+    async def test_start_websocket_aborts_when_exhausted(
+        self, coordinator: GardenaCoordinator
+    ) -> None:
+        """WS connect must not call the API when the budget is exhausted."""
+        await coordinator.api_budget.async_load()
+        coordinator.api_budget.increment(coordinator.api_budget.budget)
+
+        coordinator._client = AsyncMock()
+        coordinator._client.async_get_websocket_url = AsyncMock(return_value="wss://x")
+
+        await coordinator._async_start_websocket({})
+
+        coordinator._client.async_get_websocket_url.assert_not_called()
+        assert coordinator._ws_connected is False

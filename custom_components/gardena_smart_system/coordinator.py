@@ -136,6 +136,8 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
             _LOGGER.warning("MQTT command throttled for %s", device_id)
             return
 
+        # Count before dispatch — any failed PUT still counts against quota.
+        self._api_budget.increment()
         try:
             if action == "start_watering":
                 minutes = int(duration) if duration else 60
@@ -177,7 +179,6 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
                     "MOWER_CONTROL",
                     "START_DONT_OVERRIDE",
                 )
-            self._api_budget.increment()
             _LOGGER.info(
                 "MQTT command '%s' executed for %s",
                 action,

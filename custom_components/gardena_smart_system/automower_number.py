@@ -95,6 +95,8 @@ class AutomowerCuttingHeightEntity(AutomowerEntity, NumberEntity):
                 translation_key="device_unavailable",
             )
         self.coordinator.check_command_throttle()
+        # Count before dispatch — see note in valve.py._async_send_command.
+        self.coordinator.api_budget.increment()
         try:
             await self.coordinator.client.async_set_cutting_height(device.mower_id, int(value))
         except AutomowerAuthenticationError as err:
@@ -109,7 +111,6 @@ class AutomowerCuttingHeightEntity(AutomowerEntity, NumberEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
-        self.coordinator.api_budget.increment()
 
 
 class AutomowerScheduleOverrideEntity(AutomowerEntity, NumberEntity):
@@ -153,6 +154,8 @@ class AutomowerScheduleOverrideEntity(AutomowerEntity, NumberEntity):
                 translation_key="device_unavailable",
             )
         self.coordinator.check_command_throttle()
+        # Count before dispatch — see note in valve.py._async_send_command.
+        self.coordinator.api_budget.increment()
         try:
             await self.coordinator.client.async_start(device.mower_id, duration=int(value))
         except AutomowerAuthenticationError as err:
@@ -167,7 +170,6 @@ class AutomowerScheduleOverrideEntity(AutomowerEntity, NumberEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
-        self.coordinator.api_budget.increment()
         self._last_set_value = value
 
 
@@ -214,6 +216,8 @@ class AutomowerWorkAreaHeightEntity(AutomowerEntity, NumberEntity):
                 translation_key="device_unavailable",
             )
         self.coordinator.check_command_throttle()
+        # Count before dispatch — see note in valve.py._async_send_command.
+        self.coordinator.api_budget.increment()
         try:
             await self.coordinator.client.async_set_work_area_cutting_height(
                 device.mower_id, self._work_area_id, int(value)
@@ -230,4 +234,3 @@ class AutomowerWorkAreaHeightEntity(AutomowerEntity, NumberEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
-        self.coordinator.api_budget.increment()

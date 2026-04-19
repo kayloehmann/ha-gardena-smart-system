@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
 from collections.abc import AsyncGenerator
 
@@ -150,3 +151,34 @@ class TestTokenRevocation:
             await auth.async_revoke_token()  # should not raise
 
         assert auth.access_token is None
+
+
+class TestConcurrentAcquisition:
+    """Ensure parallel callers do not trigger redundant token requests."""
+
+    async def test_parallel_callers_share_single_refresh(self, auth: GardenaAuth) -> None:
+        """Two concurrent acquire calls must result in exactly one auth POST."""
+        call_count = 0
+        original_post = auth._async_post_token
+
+        async def _counting_post(data: dict[str, str]) -> str:
+            nonlocal call_count
+            call_count += 1
+            # Yield so the peer coroutine actually attempts to enter.  Without
+            # the lock it would observe is_token_valid==False and fire a
+            # parallel request.
+            await asyncio.sleep(0)
+            return await original_post(data)
+
+        auth._async_post_token = _counting_post  # type: ignore[method-assign]
+
+        with aioresponses() as m:
+            m.post(AUTH_TOKEN_URL, payload=TOKEN_RESPONSE)
+
+            tokens = await asyncio.gather(
+                auth.async_ensure_valid_token(),
+                auth.async_ensure_valid_token(),
+            )
+
+        assert tokens[0] == tokens[1] == "test-access-token"
+        assert call_count == 1

@@ -97,12 +97,15 @@ class GardenaClient:
         # 2. aiohttp's data=str appends '; charset=utf-8' to the Content-Type header
         # Passing bytes leaves the Content-Type header untouched.
         body: bytes | None = json_mod.dumps(json).encode("utf-8") if json is not None else None
+        # Body intentionally elided from logs — command payloads carry service
+        # IDs that, together with X-Api-Key in the header, are sensitive enough
+        # that users routinely leak them via issue reports.
         _LOGGER.debug(
-            "API request: %s %s | Content-Type: %s | Body: %s",
+            "API request: %s %s | Content-Type: %s | Body size: %d bytes",
             method,
             url,
             headers.get("Content-Type", "(none)"),
-            body,
+            len(body) if body else 0,
         )
         try:
             async with self._websession.request(
@@ -119,7 +122,6 @@ class GardenaClient:
                         "API key not authorized — check application connection on developer portal"
                     )
                 if resp.status == 429:
-                    body = await resp.text()
                     raise GardenaRateLimitError(
                         "API rate limit reached or API key temporarily blocked. "
                         "Wait a few minutes and try again, or create a new application "
@@ -128,11 +130,10 @@ class GardenaClient:
                 if resp.status >= 400:
                     response_text = await resp.text()
                     _LOGGER.warning(
-                        "API %s %s → HTTP %s | Request body: %s | Response: %s",
+                        "API %s %s → HTTP %s | Response: %s",
                         method,
                         url,
                         resp.status,
-                        body,
                         response_text,
                     )
                     raise GardenaRequestError(resp.status, response_text)

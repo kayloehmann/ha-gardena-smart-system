@@ -172,6 +172,9 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
                 translation_key="device_unavailable",
             )
         self.coordinator.check_command_throttle()
+        # Count before dispatch — failed PUTs still consume the server-side
+        # quota, so optimistic post-success counting would drift below reality.
+        self.coordinator.api_budget.increment()
         try:
             await self.coordinator.client.async_send_command(
                 service_id=self._service_id,
@@ -191,7 +194,6 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
-        self.coordinator.api_budget.increment()
         self._apply_optimistic_state(command, params)
 
     def _apply_optimistic_state(self, command: str, params: dict[str, int]) -> None:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
 from typing import Any
 
@@ -37,6 +38,10 @@ class GardenaAuth:
         self._access_token: str | None = None
         self._refresh_token: str | None = None
         self._token_expires_at: float = 0.0
+        # Serializes refresh attempts so concurrent callers (REST + WebSocket,
+        # watchdog reconnect + poll cycle) do not fire two parallel token
+        # requests against the rate-limited auth endpoint.
+        self._refresh_lock = asyncio.Lock()
 
     @property
     def client_id(self) -> str:
@@ -59,6 +64,10 @@ class GardenaAuth:
     async def async_ensure_valid_token(self) -> str:
         """Return a valid access token, refreshing or re-acquiring as needed.
 
+        Double-checked locking: callers that arrive while another refresh is
+        in flight wait on the lock and then return the newly-cached token
+        without firing a second auth request.
+
         Raises:
             GardenaAuthenticationError: if authentication fails.
             GardenaConnectionError: if a network error occurs.
@@ -67,14 +76,22 @@ class GardenaAuth:
             assert self._access_token is not None
             return self._access_token
 
-        if self._refresh_token:
-            try:
-                return await self._async_refresh_token()
-            except GardenaAuthenticationError:
-                # Refresh token expired; fall through to re-authenticate
-                self._refresh_token = None
+        async with self._refresh_lock:
+            # Re-check under the lock: another task may have refreshed while
+            # we were waiting.  mypy's flow analysis cannot see the concurrent
+            # mutation, so it flags the body as unreachable.
+            if self.is_token_valid:
+                assert self._access_token is not None  # type: ignore[unreachable]
+                return self._access_token
 
-        return await self._async_acquire_token()
+            if self._refresh_token:
+                try:
+                    return await self._async_refresh_token()
+                except GardenaAuthenticationError:
+                    # Refresh token expired; fall through to re-authenticate
+                    self._refresh_token = None
+
+            return await self._async_acquire_token()
 
     async def _async_acquire_token(self) -> str:
         """Acquire a new token using client credentials."""

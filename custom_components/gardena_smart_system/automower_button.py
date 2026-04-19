@@ -76,6 +76,8 @@ class AutomowerConfirmErrorButton(AutomowerEntity, ButtonEntity):
                 translation_key="device_unavailable",
             )
         self.coordinator.check_command_throttle()
+        # Count before dispatch — see note in valve.py._async_send_command.
+        self.coordinator.api_budget.increment()
         try:
             await self.coordinator.client.async_confirm_error(device.mower_id)
         except AutomowerAuthenticationError as err:
@@ -90,4 +92,3 @@ class AutomowerConfirmErrorButton(AutomowerEntity, ButtonEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
-        self.coordinator.api_budget.increment()

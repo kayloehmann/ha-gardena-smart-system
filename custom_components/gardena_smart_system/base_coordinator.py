@@ -262,6 +262,11 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
                 f"({self._api_budget.request_count}/{self._api_budget.budget} requests "
                 f"used this month); polling paused until the next calendar month"
             )
+        # Count the request before it is sent — the server-side quota counts
+        # every attempt, including the ones that fail. An optimistic increment
+        # after success would slowly drift the local counter below the true
+        # usage and let auto-stop fire too late.
+        self._api_budget.increment()
         try:
             devices = await self._async_fetch_devices()
         except cfg.auth_error_type as err:
@@ -273,8 +278,6 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             ) from err
         except cfg.connection_error_type as err:
             raise UpdateFailed(f"Cannot connect to {cfg.api_label} API: {err}") from err
-
-        self._api_budget.increment()
 
         # Reset rate-limit counter and restore normal polling interval.
         # Custom poll interval only applies to REST fallback — when WebSocket
@@ -409,6 +412,13 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         the auth token is still valid; a fresh URL is fetched only when the token
         was refreshed or the cached URL fails to connect.
         """
+        if self._api_budget.is_exhausted:
+            _LOGGER.debug(
+                "%s API budget exhausted — skipping WebSocket connect",
+                self._config.api_label,
+            )
+            return
+
         now = time.monotonic()
         if now < self._ws_cooldown_until:
             _LOGGER.debug(
@@ -436,6 +446,11 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         ws_url = self._cached_ws_url if self._auth.is_token_valid and self._cached_ws_url else None
 
         if ws_url is None:
+            if self._ws_url_is_api_call:
+                # Increment before the call — failed attempts still count
+                # against the server-side monthly quota (see note in
+                # _async_update_data).
+                self._api_budget.increment()
             try:
                 ws_url = await self._async_get_ws_url(devices)
             except cfg.rate_limit_error_type as err:
@@ -458,8 +473,6 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
                 self._record_ws_failure()
                 return
             self._cached_ws_url = ws_url
-            if self._ws_url_is_api_call:
-                self._api_budget.increment()
 
         self._ws = self._create_websocket(
             auth=self._auth,

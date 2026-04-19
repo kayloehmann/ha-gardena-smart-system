@@ -161,6 +161,9 @@ class GardenaLawnMowerEntity(GardenaEntity, LawnMowerEntity):
                 translation_key="device_unavailable",
             )
         self.coordinator.check_command_throttle()
+        # Count before dispatch — failed PUTs still consume the server-side
+        # quota, so optimistic post-success counting would drift below reality.
+        self.coordinator.api_budget.increment()
         try:
             await self.coordinator.client.async_send_command(
                 service_id=device.mower.service_id,
@@ -180,4 +183,3 @@ class GardenaLawnMowerEntity(GardenaEntity, LawnMowerEntity):
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
-        self.coordinator.api_budget.increment()
