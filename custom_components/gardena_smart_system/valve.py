@@ -18,11 +18,11 @@ from homeassistant.components.valve import (
     ValveEntityFeature,
 )
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_platform as ep
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from aiogardenasmart import Device, GardenaAuthenticationError, GardenaException, ValveService
+from aiogardenasmart import Device, ValveService
 
 from . import GardenaConfigEntry
 from .const import DEFAULT_WATERING_MINUTES, OPT_DEFAULT_WATERING_MINUTES
@@ -171,29 +171,13 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
                 translation_domain="gardena_smart_system",
                 translation_key="device_unavailable",
             )
-        self.coordinator.check_command_throttle()
-        # Count before dispatch — failed PUTs still consume the server-side
-        # quota, so optimistic post-success counting would drift below reality.
-        self.coordinator.api_budget.increment()
-        try:
-            await self.coordinator.client.async_send_command(
-                service_id=self._service_id,
-                control_type=ControlType.VALVE,
-                command=command,
-                **params,
-            )
-        except GardenaAuthenticationError as err:
-            raise ConfigEntryAuthFailed(
-                translation_domain="gardena_smart_system",
-                translation_key="command_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
-        except GardenaException as err:
-            raise HomeAssistantError(
-                translation_domain="gardena_smart_system",
-                translation_key="command_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
+        await self._async_execute_command(
+            self.coordinator.client.async_send_command,
+            service_id=self._service_id,
+            control_type=ControlType.VALVE,
+            command=command,
+            **params,
+        )
         self._apply_optimistic_state(command, params)
 
     def _apply_optimistic_state(self, command: str, params: dict[str, int]) -> None:

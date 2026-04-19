@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Any, cast
+from collections.abc import Awaitable, Callable
+from typing import Any, ClassVar, cast
 
 from aioautomower.const import MowerActivity, MowerState
-from aioautomower.exceptions import AutomowerAuthenticationError, AutomowerException
 from homeassistant.components.lawn_mower import LawnMowerEntity
 from homeassistant.components.lawn_mower.const import (
     LawnMowerActivity,
     LawnMowerEntityFeature,
 )
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import (
     AddEntitiesCallback,
     async_get_current_platform,
@@ -90,6 +90,18 @@ class AutomowerLawnMowerEntity(AutomowerEntity, LawnMowerEntity):
     )
     _attr_translation_key = "automower"
 
+    # Maps the internal command name to the matching AutomowerClient method name.
+    # Keeping this as a name-lookup (not a direct method reference) avoids
+    # capturing an unbound class attribute at import time and keeps the mapping
+    # purely declarative.
+    _COMMAND_METHODS: ClassVar[dict[str, str]] = {
+        "start": "async_start",
+        "pause": "async_pause",
+        "park_until_next_schedule": "async_park_until_next_schedule",
+        "park_until_further_notice": "async_park_until_further_notice",
+        "resume_schedule": "async_resume_schedule",
+    }
+
     def __init__(self, coordinator: AutomowerCoordinator, device: AutomowerDevice) -> None:
         """Initialize the lawn mower entity."""
         super().__init__(coordinator, device, "automower")
@@ -134,30 +146,7 @@ class AutomowerLawnMowerEntity(AutomowerEntity, LawnMowerEntity):
                 translation_domain="gardena_smart_system",
                 translation_key="device_unavailable",
             )
-        self.coordinator.check_command_throttle()
-        # Count before dispatch — see note in valve.py._async_send_command.
-        self.coordinator.api_budget.increment()
-        try:
-            client = self.coordinator.client
-            if command == "start":
-                await client.async_start(device.mower_id, **kwargs)
-            elif command == "pause":
-                await client.async_pause(device.mower_id)
-            elif command == "park_until_next_schedule":
-                await client.async_park_until_next_schedule(device.mower_id)
-            elif command == "park_until_further_notice":
-                await client.async_park_until_further_notice(device.mower_id)
-            elif command == "resume_schedule":
-                await client.async_resume_schedule(device.mower_id)
-        except AutomowerAuthenticationError as err:
-            raise ConfigEntryAuthFailed(
-                translation_domain="gardena_smart_system",
-                translation_key="command_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
-        except AutomowerException as err:
-            raise HomeAssistantError(
-                translation_domain="gardena_smart_system",
-                translation_key="command_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
+        method: Callable[..., Awaitable[Any]] = getattr(
+            self.coordinator.client, self._COMMAND_METHODS[command]
+        )
+        await self._async_execute_command(method, device.mower_id, **kwargs)

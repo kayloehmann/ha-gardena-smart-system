@@ -104,13 +104,16 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
             on_error=on_error,
         )
 
-    _MQTT_ACTIONS: ClassVar[set[str]] = {
-        "start_watering",
-        "stop_watering",
-        "park",
-        "resume",
-        "turn_on",
-        "turn_off",
+    # Dispatch table for inbound MQTT commands.
+    # Value = (control_type, command, needs_duration_param).
+    # Adding a new action is a single-line change here.
+    _MQTT_DISPATCH: ClassVar[dict[str, tuple[str, str, bool]]] = {
+        "start_watering": ("VALVE_CONTROL", "START_SECONDS_TO_OVERRIDE", True),
+        "stop_watering": ("VALVE_CONTROL", "STOP_UNTIL_NEXT_TASK", False),
+        "turn_on": ("POWER_SOCKET_CONTROL", "START_SECONDS_TO_OVERRIDE", True),
+        "turn_off": ("POWER_SOCKET_CONTROL", "STOP_UNTIL_NEXT_TASK", False),
+        "park": ("MOWER_CONTROL", "PARK_UNTIL_FURTHER_NOTICE", False),
+        "resume": ("MOWER_CONTROL", "START_DONT_OVERRIDE", False),
     }
 
     async def _async_handle_mqtt_command(self, device_id: str, payload: dict[str, Any]) -> None:
@@ -119,7 +122,8 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
         Expected payload: {"action": "start_watering", "duration": 30, "service_id": "..."}
         """
         action = payload.get("action", "")
-        if action not in self._MQTT_ACTIONS:
+        spec = self._MQTT_DISPATCH.get(action)
+        if spec is None:
             _LOGGER.warning(
                 "Unknown MQTT action '%s' for device %s",
                 action,
@@ -129,6 +133,7 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
 
         service_id = payload.get("service_id", device_id)
         duration = payload.get("duration")
+        control_type, command, needs_duration = spec
 
         try:
             self.check_command_throttle()
@@ -138,47 +143,14 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
 
         # Count before dispatch — any failed PUT still counts against quota.
         self._api_budget.increment()
+
+        kwargs: dict[str, int] = {}
+        if needs_duration:
+            minutes = int(duration) if duration else 60
+            kwargs["seconds"] = minutes * 60
+
         try:
-            if action == "start_watering":
-                minutes = int(duration) if duration else 60
-                await self._client.async_send_command(
-                    service_id,
-                    "VALVE_CONTROL",
-                    "START_SECONDS_TO_OVERRIDE",
-                    seconds=minutes * 60,
-                )
-            elif action == "stop_watering":
-                await self._client.async_send_command(
-                    service_id,
-                    "VALVE_CONTROL",
-                    "STOP_UNTIL_NEXT_TASK",
-                )
-            elif action == "turn_on":
-                minutes = int(duration) if duration else 60
-                await self._client.async_send_command(
-                    service_id,
-                    "POWER_SOCKET_CONTROL",
-                    "START_SECONDS_TO_OVERRIDE",
-                    seconds=minutes * 60,
-                )
-            elif action == "turn_off":
-                await self._client.async_send_command(
-                    service_id,
-                    "POWER_SOCKET_CONTROL",
-                    "STOP_UNTIL_NEXT_TASK",
-                )
-            elif action == "park":
-                await self._client.async_send_command(
-                    service_id,
-                    "MOWER_CONTROL",
-                    "PARK_UNTIL_FURTHER_NOTICE",
-                )
-            elif action == "resume":
-                await self._client.async_send_command(
-                    service_id,
-                    "MOWER_CONTROL",
-                    "START_DONT_OVERRIDE",
-                )
+            await self._client.async_send_command(service_id, control_type, command, **kwargs)
             _LOGGER.info(
                 "MQTT command '%s' executed for %s",
                 action,

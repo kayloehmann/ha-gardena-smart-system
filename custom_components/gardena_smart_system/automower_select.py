@@ -5,10 +5,9 @@ from __future__ import annotations
 from typing import cast
 
 from aioautomower.const import HeadlightMode
-from aioautomower.exceptions import AutomowerAuthenticationError, AutomowerException
 from homeassistant.components.select import SelectEntity
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from aioautomower import AutomowerDevice
@@ -84,21 +83,8 @@ class AutomowerHeadlightSelect(AutomowerEntity, SelectEntity):
                 translation_domain="gardena_smart_system",
                 translation_key="device_unavailable",
             )
-        self.coordinator.check_command_throttle()
-        mode = option.upper()
-        # Count before dispatch — see note in valve.py._async_send_command.
-        self.coordinator.api_budget.increment()
-        try:
-            await self.coordinator.client.async_set_headlight_mode(device.mower_id, mode)
-        except AutomowerAuthenticationError as err:
-            raise ConfigEntryAuthFailed(
-                translation_domain="gardena_smart_system",
-                translation_key="command_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
-        except AutomowerException as err:
-            raise HomeAssistantError(
-                translation_domain="gardena_smart_system",
-                translation_key="command_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
+        await self._async_execute_command(
+            self.coordinator.client.async_set_headlight_mode,
+            device.mower_id,
+            option.upper(),
+        )

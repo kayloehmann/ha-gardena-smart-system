@@ -12,11 +12,11 @@ import voluptuous as vol
 from aiogardenasmart.const import ControlType, PowerSocketActivity
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_platform as ep
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from aiogardenasmart import Device, GardenaAuthenticationError, GardenaException
+from aiogardenasmart import Device
 
 from . import GardenaConfigEntry
 from .const import (
@@ -128,29 +128,13 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
                 translation_domain="gardena_smart_system",
                 translation_key="device_unavailable",
             )
-        self.coordinator.check_command_throttle()
-        # Count before dispatch — failed PUTs still consume the server-side
-        # quota, so optimistic post-success counting would drift below reality.
-        self.coordinator.api_budget.increment()
-        try:
-            await self.coordinator.client.async_send_command(
-                service_id=device.power_socket.service_id,
-                control_type=ControlType.POWER_SOCKET,
-                command=command,
-                **params,
-            )
-        except GardenaAuthenticationError as err:
-            raise ConfigEntryAuthFailed(
-                translation_domain="gardena_smart_system",
-                translation_key="command_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
-        except GardenaException as err:
-            raise HomeAssistantError(
-                translation_domain="gardena_smart_system",
-                translation_key="command_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
+        await self._async_execute_command(
+            self.coordinator.client.async_send_command,
+            service_id=device.power_socket.service_id,
+            control_type=ControlType.POWER_SOCKET,
+            command=command,
+            **params,
+        )
         self._apply_optimistic_state(command, params)
 
     def _apply_optimistic_state(self, command: str, params: dict[str, int]) -> None:

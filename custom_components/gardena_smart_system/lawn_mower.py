@@ -15,13 +15,13 @@ from homeassistant.components.lawn_mower.const import (
     LawnMowerEntityFeature,
 )
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import (
     AddEntitiesCallback,
     async_get_current_platform,
 )
 
-from aiogardenasmart import Device, GardenaAuthenticationError, GardenaException
+from aiogardenasmart import Device
 
 from . import GardenaConfigEntry
 from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
@@ -160,26 +160,10 @@ class GardenaLawnMowerEntity(GardenaEntity, LawnMowerEntity):
                 translation_domain="gardena_smart_system",
                 translation_key="device_unavailable",
             )
-        self.coordinator.check_command_throttle()
-        # Count before dispatch — failed PUTs still consume the server-side
-        # quota, so optimistic post-success counting would drift below reality.
-        self.coordinator.api_budget.increment()
-        try:
-            await self.coordinator.client.async_send_command(
-                service_id=device.mower.service_id,
-                control_type=ControlType.MOWER,
-                command=command,
-                **params,
-            )
-        except GardenaAuthenticationError as err:
-            raise ConfigEntryAuthFailed(
-                translation_domain="gardena_smart_system",
-                translation_key="command_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
-        except GardenaException as err:
-            raise HomeAssistantError(
-                translation_domain="gardena_smart_system",
-                translation_key="command_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
+        await self._async_execute_command(
+            self.coordinator.client.async_send_command,
+            service_id=device.mower.service_id,
+            control_type=ControlType.MOWER,
+            command=command,
+            **params,
+        )

@@ -2,6 +2,16 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.11.0] - 2026-04-19
+
+### Changed
+- **Command path unified in the entity base classes.** `valve.py`, `switch.py`, `lawn_mower.py`, `automower_button.py`, `automower_switch.py`, `automower_select.py`, `automower_number.py`, and `automower_lawn_mower.py` previously each duplicated the same throttle → budget-increment → try/except-auth/exception → raise-translated-error boilerplate around every API call — ~25 lines per call site, ten call sites. The shared pattern now lives in `GardenaEntity._async_execute_command` (Gardena side) and `AutomowerEntity._async_execute_command` (Automower side), with per-platform exception mapping. Call sites now read as a single line: `await self._async_execute_command(client_method, *args, **kwargs)`. Net change: **~180 lines of duplication removed**. Behaviour is unchanged — the pessimistic budget-increment-before-await guarantee from v1.10.4 is preserved.
+- **MQTT command handler rewritten as a dispatch table.** `GardenaCoordinator._async_handle_mqtt_command` used a six-branch `if/elif` cascade with near-identical `await self._client.async_send_command(…)` calls. Replaced with `_MQTT_DISPATCH: dict[str, tuple[control_type, command, needs_duration]]` and a single dispatch call — adding a new MQTT action is now a single-line change. The redundant `_MQTT_ACTIONS` set is removed (membership is now `in self._MQTT_DISPATCH`).
+- `automower_lawn_mower.py` command handler also gets the same treatment: the five-branch `if/elif` inside the try/except is replaced with `_COMMAND_METHODS: dict[str, str]` and a `getattr` lookup against the client.
+
+### Developer Notes
+- Pure refactor release. No functional or UI-visible change; all existing tests pass unchanged as the behavioural contract (throttle first, count second, dispatch third, on-success state update) is identical to v1.10.4.
+
 ## [1.10.4] - 2026-04-19
 
 ### Fixed

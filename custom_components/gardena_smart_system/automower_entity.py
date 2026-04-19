@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
+from typing import Any
 
+from aioautomower.exceptions import AutomowerAuthenticationError, AutomowerException
+from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -69,3 +73,31 @@ class AutomowerEntity(CoordinatorEntity[AutomowerCoordinator]):
         self._was_available = is_available
 
         return is_available
+
+    async def _async_execute_command(
+        self,
+        method: Callable[..., Awaitable[Any]],
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        """Run an Automower API command through throttle, budget, and exception mapping.
+
+        Mirrors ``GardenaEntity._async_execute_command`` but with
+        Automower-specific exception types. See that method for the rationale.
+        """
+        self.coordinator.check_command_throttle()
+        self.coordinator.api_budget.increment()
+        try:
+            await method(*args, **kwargs)
+        except AutomowerAuthenticationError as err:
+            raise ConfigEntryAuthFailed(
+                translation_domain="gardena_smart_system",
+                translation_key="command_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        except AutomowerException as err:
+            raise HomeAssistantError(
+                translation_domain="gardena_smart_system",
+                translation_key="command_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err

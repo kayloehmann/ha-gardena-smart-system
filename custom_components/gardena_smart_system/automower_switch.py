@@ -5,10 +5,9 @@ from __future__ import annotations
 from typing import Any, cast
 
 from aioautomower.const import HeadlightMode
-from aioautomower.exceptions import AutomowerAuthenticationError, AutomowerException
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from aioautomower import AutomowerDevice
@@ -105,23 +104,9 @@ class AutomowerHeadlightSwitch(AutomowerEntity, SwitchEntity):
                 translation_domain="gardena_smart_system",
                 translation_key="device_unavailable",
             )
-        self.coordinator.check_command_throttle()
-        # Count before dispatch — see note in valve.py._async_send_command.
-        self.coordinator.api_budget.increment()
-        try:
-            await self.coordinator.client.async_set_headlight_mode(device.mower_id, mode)
-        except AutomowerAuthenticationError as err:
-            raise ConfigEntryAuthFailed(
-                translation_domain="gardena_smart_system",
-                translation_key="command_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
-        except AutomowerException as err:
-            raise HomeAssistantError(
-                translation_domain="gardena_smart_system",
-                translation_key="command_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
+        await self._async_execute_command(
+            self.coordinator.client.async_set_headlight_mode, device.mower_id, mode
+        )
 
 
 class AutomowerStayOutZoneSwitch(AutomowerEntity, SwitchEntity):
@@ -168,25 +153,12 @@ class AutomowerStayOutZoneSwitch(AutomowerEntity, SwitchEntity):
                 translation_domain="gardena_smart_system",
                 translation_key="device_unavailable",
             )
-        self.coordinator.check_command_throttle()
-        # Count before dispatch — see note in valve.py._async_send_command.
-        self.coordinator.api_budget.increment()
-        try:
-            await self.coordinator.client.async_set_stay_out_zone(
-                device.mower_id, self._zone_id, enabled
-            )
-        except AutomowerAuthenticationError as err:
-            raise ConfigEntryAuthFailed(
-                translation_domain="gardena_smart_system",
-                translation_key="command_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
-        except AutomowerException as err:
-            raise HomeAssistantError(
-                translation_domain="gardena_smart_system",
-                translation_key="command_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
+        await self._async_execute_command(
+            self.coordinator.client.async_set_stay_out_zone,
+            device.mower_id,
+            self._zone_id,
+            enabled,
+        )
 
 
 class AutomowerWorkAreaSwitch(AutomowerEntity, SwitchEntity):
@@ -233,22 +205,9 @@ class AutomowerWorkAreaSwitch(AutomowerEntity, SwitchEntity):
                 translation_domain="gardena_smart_system",
                 translation_key="device_unavailable",
             )
-        self.coordinator.check_command_throttle()
-        # Count before dispatch — see note in valve.py._async_send_command.
-        self.coordinator.api_budget.increment()
-        try:
-            await self.coordinator.client.async_set_work_area_enabled(
-                device.mower_id, self._work_area_id, enabled
-            )
-        except AutomowerAuthenticationError as err:
-            raise ConfigEntryAuthFailed(
-                translation_domain="gardena_smart_system",
-                translation_key="command_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
-        except AutomowerException as err:
-            raise HomeAssistantError(
-                translation_domain="gardena_smart_system",
-                translation_key="command_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
+        await self._async_execute_command(
+            self.coordinator.client.async_set_work_area_enabled,
+            device.mower_id,
+            self._work_area_id,
+            enabled,
+        )

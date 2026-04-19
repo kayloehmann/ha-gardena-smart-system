@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
+from typing import Any
 
+from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from aiogardenasmart import Device
+from aiogardenasmart import Device, GardenaAuthenticationError, GardenaException
 
 from .const import DOMAIN
 from .coordinator import GardenaCoordinator
@@ -85,3 +88,34 @@ class GardenaEntity(CoordinatorEntity[GardenaCoordinator]):
         self._was_available = is_available
 
         return is_available
+
+    async def _async_execute_command(
+        self,
+        method: Callable[..., Awaitable[Any]],
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        """Run an API command through throttle, budget, and exception mapping.
+
+        Each callsite previously duplicated the throttle/increment/try-except
+        boilerplate. Centralising it here keeps the command path uniform: the
+        budget is counted *before* the await (pessimistic accounting — see
+        v1.10.4 fix), auth failures trigger reauth, and all other API errors
+        surface as translated HomeAssistantError.
+        """
+        self.coordinator.check_command_throttle()
+        self.coordinator.api_budget.increment()
+        try:
+            await method(*args, **kwargs)
+        except GardenaAuthenticationError as err:
+            raise ConfigEntryAuthFailed(
+                translation_domain="gardena_smart_system",
+                translation_key="command_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        except GardenaException as err:
+            raise HomeAssistantError(
+                translation_domain="gardena_smart_system",
+                translation_key="command_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
