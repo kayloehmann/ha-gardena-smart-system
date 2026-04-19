@@ -34,8 +34,8 @@ async def async_setup_entry(
 
     @callback
     def _async_add_new_entities() -> None:
-        if coordinator.data is None:
-            return  # type: ignore[unreachable]
+        if not coordinator.data:
+            return
         new_entities: list[SwitchEntity] = []
         for device in coordinator.data.values():
             # Headlight switch

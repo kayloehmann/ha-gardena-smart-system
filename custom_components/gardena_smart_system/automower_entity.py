@@ -55,24 +55,24 @@ class AutomowerEntity(CoordinatorEntity[AutomowerCoordinator]):
     @property
     def _device(self) -> AutomowerDevice | None:
         """Return the current device state from the coordinator."""
-        if self.coordinator.data is None:
-            return None  # type: ignore[unreachable]
-        return self.coordinator.data.get(self._mower_id)
+        return (self.coordinator.data or {}).get(self._mower_id)
 
     @property
     def available(self) -> bool:
         """Return True only when coordinator has data and device is connected."""
         device = self._device
-        is_available = False if device is None else super().available and device.is_connected
+        return False if device is None else super().available and device.is_connected
 
-        if self._was_available is not None and is_available != self._was_available:
-            if is_available:
+    def _handle_coordinator_update(self) -> None:
+        """Log device online/offline transitions on every coordinator update."""
+        current = self.available
+        if self._was_available is not None and current != self._was_available:
+            if current:
                 _LOGGER.info("Device %s is back online", self._device_name)
             else:
                 _LOGGER.warning("Device %s is offline", self._device_name)
-        self._was_available = is_available
-
-        return is_available
+        self._was_available = current
+        super()._handle_coordinator_update()
 
     async def _async_execute_command(
         self,

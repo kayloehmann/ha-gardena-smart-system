@@ -2,6 +2,15 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.12.2] - 2026-04-19
+
+### Changed
+- **`available` property is now side-effect free.** Device online/offline transitions were logged inside the property, which Home Assistant reads every time a UI client reads an entity attribute — so the log message and internal state mutation fired far more often than the actual transition. The transition-logging moved to `_handle_coordinator_update`, which runs exactly once per coordinator update. Applies to both `GardenaEntity` and `AutomowerEntity`.
+- **`# type: ignore[unreachable]` guards removed across 17 files.** The pattern `if coordinator.data is None: return  # type: ignore[unreachable]` lied to mypy — `DataUpdateCoordinator.data` is genuinely `None` during `async_config_entry_first_refresh`. Replaced with the equivalent truthy check `if not coordinator.data: return` (and the `_device` property uses `(self.coordinator.data or {}).get(…)`), which mypy understands without any ignores.
+- **MQTT command-handler tasks now carry a name.** Inbound MQTT commands dispatched as `hass.async_create_task(…)` now include `name=f"gardena_mqtt_command_{device_id}"` for easier tracing.
+- **WebSocket-connect lock cleaned up.** The `.locked()` pre-check (TOCTOU-prone) was replaced with an unconditional acquire plus a `self._ws_connected` double-check under the lock. Strictly race-free; behaviour identical.
+- **Config-flow error tuple precomputed.** `_GARDENA_ERROR_TYPES = tuple(_GARDENA_ERROR_MAP)` at module level replaces three per-call `tuple(_GARDENA_ERROR_MAP)` rebuilds.
+
 ## [1.12.1] - 2026-04-19
 
 ### Security

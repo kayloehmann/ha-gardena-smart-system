@@ -190,7 +190,10 @@ class MqttBridge:
 
             _LOGGER.debug("MQTT command for %s: %s", device_id, payload)
             if self._command_handler is not None:
-                self._hass.async_create_task(self._command_handler(device_id, payload))
+                self._hass.async_create_task(
+                    self._command_handler(device_id, payload),
+                    name=f"gardena_mqtt_command_{device_id}",
+                )
 
         self._unsub_command = await mqtt.async_subscribe(self._hass, topic, _on_command)
         _LOGGER.debug("Subscribed to MQTT commands on %s", topic)

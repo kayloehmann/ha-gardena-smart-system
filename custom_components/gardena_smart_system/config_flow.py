@@ -70,6 +70,8 @@ _GARDENA_ERROR_MAP: dict[type[Exception], str] = {
     GardenaRateLimitError: "rate_limited",
     GardenaConnectionError: "cannot_connect",
 }
+# Precomputed tuple for ``except`` — avoids rebuilding on every call.
+_GARDENA_ERROR_TYPES: tuple[type[Exception], ...] = tuple(_GARDENA_ERROR_MAP)
 
 
 class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -108,7 +110,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
             auth = GardenaAuth(client_id, client_secret, session)
             try:
                 await auth.async_ensure_valid_token()
-            except tuple(_GARDENA_ERROR_MAP) as err:
+            except _GARDENA_ERROR_TYPES as err:
                 errors["base"] = _GARDENA_ERROR_MAP.get(type(err), "unknown")
             except Exception:
                 _LOGGER.exception("Unexpected error during credential test")
@@ -436,7 +438,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                     [{"id": loc.location_id, "name": loc.name} for loc in locations],
                     "",
                 )
-            except tuple(_GARDENA_ERROR_MAP) as err:
+            except _GARDENA_ERROR_TYPES as err:
                 return [], _GARDENA_ERROR_MAP.get(type(err), "unknown")
             except Exception:
                 _LOGGER.exception("Unexpected error during Gardena credential test")

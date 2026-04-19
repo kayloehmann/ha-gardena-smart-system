@@ -340,8 +340,8 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
 
         Devices must be absent for _STALE_THRESHOLD consecutive polls before removal.
         """
-        if self.data is None:
-            return  # type: ignore[unreachable]
+        if not self.data:
+            return
 
         stale_ids = set(self.data) - set(fresh_devices)
 
@@ -447,14 +447,11 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             )
             return
 
-        if self._ws_connect_lock.locked():
-            _LOGGER.debug(
-                "%s WebSocket connect already in progress, skipping",
-                self._config.api_label,
-            )
-            return
-
         async with self._ws_connect_lock:
+            # Double-check under the lock: a parallel caller may have finished
+            # the connect while we were queued.
+            if self._ws_connected:
+                return
             await self._async_start_websocket_locked(devices)
 
     async def _async_start_websocket_locked(self, devices: dict[str, DeviceT]) -> None:
