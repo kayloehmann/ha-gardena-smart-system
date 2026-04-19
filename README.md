@@ -147,7 +147,7 @@ Remaining duration sensors (valve and power socket) display a **live countdown**
 |--------|-------------|
 | Power | `outlet` |
 
-Created for Gardena Smart Power Adapter devices. Supports turn on (indefinitely), turn off, and timed on via the `turn_on_for` service.
+Created for Gardena Smart Power Adapter devices. Supports turn on (indefinitely), turn off, and timed on via the `turn_on_for` service. The switch applies an **optimistic local state update** immediately after a successful API call, so the HA toggle flips instantly instead of waiting for the confirming WebSocket event — and the entity renders as a single toggle rather than two separate on/off buttons.
 
 ### Gardena Lawn Mower
 
@@ -540,6 +540,7 @@ Each button press or automation action is one API call. A token-bucket throttle 
 | **Adaptive polling interval** | When WebSocket is connected: **1-hour** health-check only. When WebSocket drops: **5-minute** polling (matches sensor hardware update rate, uses ~86% of monthly budget at worst). |
 | **Graduated rate limit backoff** | If any API call returns HTTP 429 — including token refresh and WebSocket URL requests — polling backs off exponentially (5 min → 10 → 20 → 40 → 60 min max) and resets after a successful response. |
 | **Command throttling (token bucket)** | A token bucket of **10 commands** refills at 1 token per **5 seconds**. This allows small bursts (e.g. opening several irrigation valves in a row) while keeping the long-term steady-state rate at ≤1 command / 5 s to protect the monthly API quota. |
+| **Auto-stop safety net** | Once the monthly API budget drops below **5 % remaining** (fewer than 500 of the 10 000 requests), the coordinator automatically pauses REST polls, WebSocket (re)connect attempts, and user-issued commands — the latter return a translated error (`api_budget_exhausted`). Normal operation resumes automatically on the next calendar month, or the user can create a fresh Husqvarna application to reset the budget. Protects against runaway scenarios (e.g. an unforeseen reconnect storm) from exhausting the quota 100 % and getting the API key hard-blocked for the rest of the month. |
 | **Independent budgets** | Both the Gardena API and the Automower API allow ~10,000 requests/month each. Using one does not affect the other. |
 
 ### Tips for Avoiding Rate Limits
@@ -557,6 +558,7 @@ Each button press or automation action is one API call. A token-bucket throttle 
 3. Existing entity states remain available (cached from the last successful update and WebSocket messages).
 4. Commands may fail until the rate limit resets.
 5. After a successful API response, the backoff counter resets and the normal polling interval is restored automatically.
+6. If the monthly budget has been almost fully consumed (< 5 % remaining), the **auto-stop safety net** takes over: polls, WS reconnects, and commands are refused until the calendar month rolls over. The **API budget remaining** hub sensor surfaces the current percentage so you can build an automation that warns you well before the auto-stop triggers.
 
 ## MQTT State Bridge
 
@@ -632,7 +634,7 @@ Publish a JSON payload to `{prefix}/{device_id}/command`:
 This indicates the WebSocket connection to the Husqvarna cloud has failed. The integration continues to work via polling but updates will be delayed.
 
 - A **watchdog timer** monitors the WebSocket connection and detects silent failures within 5 minutes. When triggered, it forces a reconnect and an immediate data refresh.
-- The integration also **automatically reconnects** with exponential backoff (30s → 1m → 2m → 5m → 10m → 30m). No manual action is required.
+- The integration also **automatically reconnects** with graduated backoff (60 s → 5 min → 15 min, 3 attempts). After 3 consecutive failures the circuit breaker activates a 15-minute cooldown (30 min after 5 failures, 60 min after 7+). REST polling continues uninterrupted during the cooldown. No manual action is required.
 - The repair issue resolves itself once reconnected.
 - If it persists, check your Home Assistant host's internet connection or the [Husqvarna service status](https://status.husqvarnagroup.cloud) for outages.
 
@@ -666,7 +668,7 @@ This integration targets the [Home Assistant Integration Quality Scale](https://
 
 Key quality features:
 
-- **99% test coverage** across 572 automated tests
+- **99% test coverage** across 588 automated tests
 - **mypy --strict** passes with zero errors on all 23 source files
 - **PEP 561** compliant (`py.typed` markers on both client libraries)
 - **Full async** codebase — no blocking I/O in the event loop
