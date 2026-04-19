@@ -81,7 +81,7 @@ class GardenaAuth:
             # we were waiting.  mypy's flow analysis cannot see the concurrent
             # mutation, so it flags the body as unreachable.
             if self.is_token_valid:
-                assert self._access_token is not None  # type: ignore[unreachable]
+                assert self._access_token is not None
                 return self._access_token
 
             if self._refresh_token:

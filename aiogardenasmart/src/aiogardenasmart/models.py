@@ -19,7 +19,8 @@ def _attr_timestamp(data: dict[str, Any], key: str) -> str | None:
     obj = data.get(key)
     if obj is None:
         return None
-    return obj.get("timestamp")
+    value = obj.get("timestamp")
+    return str(value) if value is not None else None
 
 
 @dataclass

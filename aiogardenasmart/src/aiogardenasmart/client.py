@@ -49,6 +49,18 @@ class GardenaClient:
         """Initialize with an auth manager and an injected session."""
         self._auth = auth
         self._websession = websession
+        # Static header parts don't change across requests; only Authorization
+        # varies per token refresh. Building these once avoids repeated dict
+        # construction on every call.
+        self._static_headers: dict[str, str] = {
+            "Authorization-Provider": AUTHORIZATION_PROVIDER,
+            "X-Api-Key": auth.client_id,
+            "Accept": CONTENT_TYPE_JSON_API,
+        }
+        self._static_headers_with_content_type: dict[str, str] = {
+            **self._static_headers,
+            "Content-Type": CONTENT_TYPE_JSON_API,
+        }
 
     async def _async_headers(self, include_content_type: bool = False) -> dict[str, str]:
         """Build authenticated request headers.
@@ -58,15 +70,10 @@ class GardenaClient:
                 required for POST/PUT requests with a body.
         """
         token = await self._auth.async_ensure_valid_token()
-        headers: dict[str, str] = {
-            "Authorization": f"Bearer {token}",
-            "Authorization-Provider": AUTHORIZATION_PROVIDER,
-            "X-Api-Key": self._auth.client_id,
-            "Accept": CONTENT_TYPE_JSON_API,
-        }
-        if include_content_type:
-            headers["Content-Type"] = CONTENT_TYPE_JSON_API
-        return headers
+        base = (
+            self._static_headers_with_content_type if include_content_type else self._static_headers
+        )
+        return {"Authorization": f"Bearer {token}", **base}
 
     async def _async_request(
         self,
@@ -223,22 +230,13 @@ def _parse_devices(response: dict[str, Any], location_id: str) -> dict[str, Devi
 
         # Derive the base device ID (valve IDs look like "uuid:1")
         base_device_id = item_id.split(":")[0]
+        device = devices.setdefault(
+            base_device_id,
+            Device(device_id=base_device_id, location_id=location_id),
+        )
 
         if item_type == "DEVICE":
-            if base_device_id not in devices:
-                devices[base_device_id] = Device(
-                    device_id=base_device_id,
-                    location_id=location_id,
-                )
             continue
-
-        # Ensure the parent Device exists
-        if base_device_id not in devices:
-            devices[base_device_id] = Device(
-                device_id=base_device_id,
-                location_id=location_id,
-            )
-        device = devices[base_device_id]
 
         if item_type == ServiceType.COMMON:
             device.common = CommonService.from_api(item)

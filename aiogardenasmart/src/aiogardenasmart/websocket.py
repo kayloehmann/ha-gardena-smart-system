@@ -192,6 +192,18 @@ class GardenaWebSocket:
             await self._ws.send_str(pong)
 
 
+# Dispatch table: service_type -> (attribute name on Device, service class).
+# Singleton services are stored as a direct attribute; valves live in a dict
+# keyed by item_id and are handled separately.
+_SINGLETON_SERVICES: dict[str, tuple[str, type[Any]]] = {
+    ServiceType.COMMON: ("common", CommonService),
+    ServiceType.MOWER: ("mower", MowerService),
+    ServiceType.VALVE_SET: ("valve_set", ValveSetService),
+    ServiceType.SENSOR: ("sensor", SensorService),
+    ServiceType.POWER_SOCKET: ("power_socket", PowerSocketService),
+}
+
+
 def _apply_service_update(
     device: Device,
     service_type: str,
@@ -199,38 +211,20 @@ def _apply_service_update(
     data: dict[str, Any],
 ) -> None:
     """Apply an incoming service update to the appropriate service on the device."""
-    if service_type == ServiceType.COMMON:
-        if device.common:
-            device.common.update_from_api(data)
-        else:
-            device.common = CommonService.from_api(data)
-
-    elif service_type == ServiceType.MOWER:
-        if device.mower:
-            device.mower.update_from_api(data)
-        else:
-            device.mower = MowerService.from_api(data)
-
-    elif service_type == ServiceType.VALVE:
-        if item_id in device.valves:
-            device.valves[item_id].update_from_api(data)
+    if service_type == ServiceType.VALVE:
+        valve = device.valves.get(item_id)
+        if valve is not None:
+            valve.update_from_api(data)
         else:
             device.valves[item_id] = ValveService.from_api(data)
+        return
 
-    elif service_type == ServiceType.VALVE_SET:
-        if device.valve_set:
-            device.valve_set.update_from_api(data)
-        else:
-            device.valve_set = ValveSetService.from_api(data)
-
-    elif service_type == ServiceType.SENSOR:
-        if device.sensor:
-            device.sensor.update_from_api(data)
-        else:
-            device.sensor = SensorService.from_api(data)
-
-    elif service_type == ServiceType.POWER_SOCKET:
-        if device.power_socket:
-            device.power_socket.update_from_api(data)
-        else:
-            device.power_socket = PowerSocketService.from_api(data)
+    spec = _SINGLETON_SERVICES.get(service_type)
+    if spec is None:
+        return
+    attr_name, service_cls = spec
+    current = getattr(device, attr_name)
+    if current is not None:
+        current.update_from_api(data)
+    else:
+        setattr(device, attr_name, service_cls.from_api(data))
