@@ -2,6 +2,11 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.12.4] - 2026-04-20
+
+### Fixed
+- **Availability transition baseline now seeded in `async_added_to_hass`.** The v1.12.2 move of transition logging from the `available` property into `_handle_coordinator_update` left `_was_available` as `None` through the initial state write (which no longer has a side effect). The first real offline/online transition then matched the "initial check" early-return and was silently swallowed. Both `GardenaEntity` and `AutomowerEntity` now prime `_was_available = self.available` in `async_added_to_hass`.
+
 ## [1.12.3] - 2026-04-20
 
 ### Fixed

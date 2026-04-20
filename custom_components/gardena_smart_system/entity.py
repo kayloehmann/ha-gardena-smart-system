@@ -6,6 +6,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from homeassistant.core import callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -78,6 +79,12 @@ class GardenaEntity(CoordinatorEntity[GardenaCoordinator]):
         device = self._device
         return False if device is None else super().available and device.is_online
 
+    async def async_added_to_hass(self) -> None:
+        """Seed the availability baseline so the first transition logs."""
+        await super().async_added_to_hass()
+        self._was_available = self.available
+
+    @callback
     def _handle_coordinator_update(self) -> None:
         """Log device online/offline transitions on every coordinator update.
 
