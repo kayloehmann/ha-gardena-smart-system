@@ -16,11 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: astral-sh/ruff-action@v3.6.1
+      - uses: astral-sh/ruff-action@v4.0.0
         with:
           args: check custom_components/ tests/
           src: "."
-      - uses: astral-sh/ruff-action@v3.6.1
+      - uses: astral-sh/ruff-action@v4.0.0
         with:
           args: format --check custom_components/ tests/
           src: "."
