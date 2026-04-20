@@ -2,6 +2,11 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.12.3] - 2026-04-20
+
+### Fixed
+- **Restored fast-path skip in `_async_start_websocket`.** v1.12.2 removed the `.locked()` pre-check, which changed the behavior of a concurrent second caller from "skip immediately" to "queue on the lock". The existing `test_concurrent_ws_connect_skipped` test deadlocked under the new semantics (the test held `connect_release` until after the second call, which now blocked on the lock instead of early-returning). Both the `.locked()` pre-check **and** the `self._ws_connected` double-check under the lock are now in place — TOCTOU-safe and preserves the original skip semantics.
+
 ## [1.12.2] - 2026-04-19
 
 ### Changed

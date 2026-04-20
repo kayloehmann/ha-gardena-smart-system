@@ -12,5 +12,5 @@
   "quality_scale": "platinum",
   "requirements": ["aiogardenasmart==0.1.9"],
   "single_config_entry": false,
-  "version": "1.12.2"
+  "version": "1.12.3"
 }

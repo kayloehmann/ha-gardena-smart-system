@@ -447,9 +447,16 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             )
             return
 
+        if self._ws_connect_lock.locked():
+            _LOGGER.debug(
+                "%s WebSocket connect already in progress, skipping",
+                self._config.api_label,
+            )
+            return
+
         async with self._ws_connect_lock:
-            # Double-check under the lock: a parallel caller may have finished
-            # the connect while we were queued.
+            # Double-check under the lock: a prior caller may have completed
+            # the connect between our locked() check and lock acquisition.
             if self._ws_connected:
                 return
             await self._async_start_websocket_locked(devices)
