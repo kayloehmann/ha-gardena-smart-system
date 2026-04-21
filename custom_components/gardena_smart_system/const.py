@@ -46,6 +46,32 @@ COMMAND_BURST_CAPACITY = 10
 WS_WATCHDOG_TIMEOUT_SECONDS = 300
 WS_WATCHDOG_CHECK_INTERVAL = timedelta(seconds=60)
 
+# WebSocket handshake kill-switch: after this many consecutive 4xx handshake
+# rejections (403 / 410 / 429) the WS subsystem is suspended for
+# WS_KILL_SWITCH_COOLDOWN. This protects the REST rate-limit budget when the
+# server is persistently rejecting signed WS URLs — typically a symptom of an
+# account-level block no amount of client retry logic can recover from.
+# Reset only when an actual device update is received (confirming the stream
+# is healthy), not on the synchronous ws_connect() returning.
+WS_HANDSHAKE_DENIAL_THRESHOLD = 5
+WS_KILL_SWITCH_COOLDOWN = timedelta(hours=1)
+WS_HANDSHAKE_DENIAL_STATUSES = frozenset({403, 410, 429})
+
+# Rate-limit reset: require this many consecutive successful polls before
+# clearing the _rate_limit_hits counter. Without this, a single successful
+# response resets the backoff ladder — so a persistent rate-limit scenario
+# produces a saw-tooth pattern of #1 → #2 → … → #6 → reset → #1 → … rather
+# than holding at the maximum backoff.
+RATE_LIMIT_RESET_SUCCESS_THRESHOLD = 3
+
+# WebSocket repair-issue threshold: only surface a HA repair notification once
+# the WS has failed this many times in a row. A single transient drop (which
+# auto-reconnects in seconds) would otherwise create visible noise for users
+# — see issue #17. This threshold aligns with the first cooldown step in
+# `_WS_COOLDOWN_SCHEDULE`, so the issue appears together with the first user-
+# visible slowdown rather than on every micro-blip.
+WS_REPAIR_ISSUE_THRESHOLD = 3
+
 # ── API budget tracking ──────────────────────────────────────────
 API_BUDGET_MONTHLY = 10_000
 STORAGE_VERSION_API_BUDGET = 1

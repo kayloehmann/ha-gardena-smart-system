@@ -380,12 +380,21 @@ class TestRateLimitBackoffFromAuth:
             # Should be capped at 1 hour
             assert coordinator.update_interval == timedelta(hours=1)
 
-    async def test_rate_limit_resets_on_successful_poll(
+    async def test_rate_limit_resets_only_after_stability_window(
         self,
         hass: HomeAssistant,
         mock_config_entry: MockConfigEntry,
     ) -> None:
-        """After a successful _async_update_data, rate_limit_hits resets to 0."""
+        """Rate-limit counter holds until RATE_LIMIT_RESET_SUCCESS_THRESHOLD hits.
+
+        A single successful poll after a backoff is NOT proof the API has
+        recovered; without this guard a persistently blocked key produced a
+        saw-tooth log of hundreds of warnings per day.
+        """
+        from custom_components.gardena_smart_system.const import (
+            RATE_LIMIT_RESET_SUCCESS_THRESHOLD,
+        )
+
         devices = _make_mock_devices()
         mock_client, mock_auth, mock_ws = _setup_mocks(devices)
 
@@ -400,15 +409,55 @@ class TestRateLimitBackoffFromAuth:
 
             coordinator = mock_config_entry.runtime_data
 
-            # Manually bump rate limit hits
+            # Simulate being deep in the backoff ladder
             coordinator._rate_limit_hits = 5
+            coordinator._rate_limit_consecutive_successes = 0
             coordinator.update_interval = timedelta(hours=1)
 
-            # Trigger a successful update
-            await coordinator.async_refresh()
+            # First N-1 successes: counter still non-zero
+            for _ in range(RATE_LIMIT_RESET_SUCCESS_THRESHOLD - 1):
+                await coordinator._async_update_data()
+                assert coordinator._rate_limit_hits == 5
+
+            # The Nth success clears the counter
+            await coordinator._async_update_data()
+            assert coordinator._rate_limit_hits == 0
+            assert coordinator._rate_limit_consecutive_successes == 0
+
+    async def test_rate_limit_success_counter_resets_on_new_429(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """A fresh 429 wipes progress toward the stability threshold."""
+        from aiogardenasmart.exceptions import GardenaRateLimitError
+
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
             await hass.async_block_till_done()
 
-            assert coordinator._rate_limit_hits == 0
+            coordinator = mock_config_entry.runtime_data
+            coordinator._rate_limit_hits = 3
+            coordinator._rate_limit_consecutive_successes = 2
+
+            # A new 429 should zero the success counter so the backoff does
+            # not collapse on the next lucky success.
+            mock_client.async_get_devices = AsyncMock(
+                side_effect=GardenaRateLimitError("429")
+            )
+            with pytest.raises(Exception):
+                await coordinator._async_update_data()
+
+            assert coordinator._rate_limit_consecutive_successes == 0
+            assert coordinator._rate_limit_hits == 4
 
 
 class TestCustomPollIntervalWithWs:
@@ -482,3 +531,171 @@ class TestCustomPollIntervalWithWs:
                 await coordinator._async_update_data()
 
             assert coordinator.update_interval == timedelta(minutes=10)
+
+
+class TestWsHandshakeKillSwitch:
+    """Fix 4: after N 4xx WS handshake rejections, suspend WS reconnects."""
+
+    def _make_handshake_error(self, status: int) -> aiohttp.WSServerHandshakeError:
+        """Build a WSServerHandshakeError that mimics the real 410 shape."""
+        request_info = aiohttp.RequestInfo(
+            url=MagicMock(),
+            method="GET",
+            headers=MagicMock(),
+            real_url=MagicMock(),
+        )
+        return aiohttp.WSServerHandshakeError(
+            request_info=request_info,
+            history=(),
+            status=status,
+            message="Invalid response status",
+        )
+
+    async def test_handshake_denial_increments_counter(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """Each 4xx WS handshake error bumps the denial counter."""
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = mock_config_entry.runtime_data
+
+            for expected in (1, 2, 3):
+                coordinator._on_ws_error(self._make_handshake_error(410))
+                assert coordinator._ws_handshake_denials == expected
+
+    async def test_handshake_denial_activates_kill_switch_at_threshold(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """At WS_HANDSHAKE_DENIAL_THRESHOLD, the kill-switch cooldown engages."""
+        from custom_components.gardena_smart_system.const import (
+            WS_HANDSHAKE_DENIAL_THRESHOLD,
+            WS_KILL_SWITCH_COOLDOWN,
+        )
+
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = mock_config_entry.runtime_data
+
+            for _ in range(WS_HANDSHAKE_DENIAL_THRESHOLD):
+                coordinator._on_ws_error(self._make_handshake_error(410))
+
+            import time as _time
+
+            remaining = coordinator._ws_kill_switch_until - _time.monotonic()
+            assert remaining > 0
+            assert remaining <= WS_KILL_SWITCH_COOLDOWN.total_seconds()
+
+    async def test_kill_switch_skips_ws_connect(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """An active kill-switch short-circuits _async_start_websocket."""
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = mock_config_entry.runtime_data
+            coordinator._ws_connected = False
+            coordinator._cached_ws_url = None
+            mock_client.async_get_websocket_url.reset_mock()
+
+            import time as _time
+
+            coordinator._ws_kill_switch_until = _time.monotonic() + 3600
+
+            await coordinator._async_start_websocket(devices)
+
+            # No REST call for a new WS URL — the budget is protected.
+            mock_client.async_get_websocket_url.assert_not_called()
+
+    async def test_non_4xx_ws_error_does_not_count_as_denial(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """A generic connection error is not a handshake denial."""
+        from aiogardenasmart.exceptions import GardenaConnectionError
+
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = mock_config_entry.runtime_data
+            coordinator._on_ws_error(GardenaConnectionError("tcp reset"))
+
+            assert coordinator._ws_handshake_denials == 0
+            assert coordinator._ws_kill_switch_until == 0.0
+
+    async def test_device_update_clears_denials(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """A real device update (proof of healthy stream) clears the kill-switch."""
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = mock_config_entry.runtime_data
+
+            # Pre-load the counters as if we were deep in denial territory.
+            import time as _time
+
+            coordinator._ws_handshake_denials = 7
+            coordinator._ws_kill_switch_until = _time.monotonic() + 3600
+
+            # Simulate an incoming device update
+            dev = next(iter(devices.values()))
+            coordinator._on_device_update(dev.device_id, dev)
+
+            assert coordinator._ws_handshake_denials == 0
+            assert coordinator._ws_kill_switch_until == 0.0

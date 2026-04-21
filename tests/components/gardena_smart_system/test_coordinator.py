@@ -26,6 +26,7 @@ from custom_components.gardena_smart_system.const import (
     RATE_LIMIT_COOLDOWN,
     SCAN_INTERVAL,
     SCAN_INTERVAL_WS_CONNECTED,
+    WS_REPAIR_ISSUE_THRESHOLD,
 )
 from custom_components.gardena_smart_system.coordinator import GardenaCoordinator
 
@@ -165,11 +166,18 @@ class TestStartWebSocket:
     async def test_websocket_reconnect_clears_repair_issue(
         self, hass: HomeAssistant, coordinator: GardenaCoordinator
     ) -> None:
-        # Create the repair issue first
-        coordinator._on_ws_error(RuntimeError("lost"))
+        # Create the repair issue first — requires WS_REPAIR_ISSUE_THRESHOLD
+        # failures in a row since v1.12.5 (issue #17).
+        for _ in range(WS_REPAIR_ISSUE_THRESHOLD):
+            coordinator._on_ws_error(RuntimeError("lost"))
+            coordinator._cancel_ws_reconnect()
 
         issue_reg = ir.async_get(hass)
         assert issue_reg.async_get_issue(DOMAIN, "websocket_connection_failed") is not None
+
+        # Clear the circuit-breaker cooldown so _async_start_websocket proceeds
+        # (3 failures engage the first cooldown step).
+        coordinator._ws_cooldown_until = 0.0
 
         # Reconnect should clear it
         coordinator._client = AsyncMock()
@@ -285,16 +293,29 @@ class TestStaleDevices:
 
 
 class TestRepairIssues:
-    def test_ws_error_creates_repair_issue(
+    def test_ws_error_creates_repair_issue_after_threshold(
         self, hass: HomeAssistant, coordinator: GardenaCoordinator
     ) -> None:
-        coordinator._on_ws_error(RuntimeError("connection dropped"))
+        """Issue #17: repair issue only appears after N consecutive drops."""
+        for _ in range(WS_REPAIR_ISSUE_THRESHOLD):
+            coordinator._on_ws_error(RuntimeError("connection dropped"))
+            coordinator._cancel_ws_reconnect()
 
         issue_reg = ir.async_get(hass)
         issue = issue_reg.async_get_issue(DOMAIN, "websocket_connection_failed")
         assert issue is not None
         assert issue.severity == ir.IssueSeverity.WARNING
         assert issue.is_fixable
+
+    def test_single_transient_ws_drop_does_not_create_repair_issue(
+        self, hass: HomeAssistant, coordinator: GardenaCoordinator
+    ) -> None:
+        """A single WS drop should not be user-visible (issue #17)."""
+        coordinator._on_ws_error(RuntimeError("brief drop"))
+        coordinator._cancel_ws_reconnect()
+
+        issue_reg = ir.async_get(hass)
+        assert issue_reg.async_get_issue(DOMAIN, "websocket_connection_failed") is None
 
     def test_ws_error_sets_connected_false(self, coordinator: GardenaCoordinator) -> None:
         coordinator._ws_connected = True
@@ -418,8 +439,17 @@ class TestRateLimitBackoff:
     async def test_successful_fetch_resets_backoff_counter(
         self, coordinator: GardenaCoordinator
     ) -> None:
-        """After a successful fetch, the next rate limit starts at 5 min again."""
+        """After N consecutive successes the ladder restarts at 5 min.
+
+        A single success after a long cooldown is no longer proof of
+        recovery — the counter only clears after
+        RATE_LIMIT_RESET_SUCCESS_THRESHOLD successful polls.
+        """
         from aiogardenasmart.exceptions import GardenaRateLimitError
+
+        from custom_components.gardena_smart_system.const import (
+            RATE_LIMIT_RESET_SUCCESS_THRESHOLD,
+        )
 
         coordinator._client = AsyncMock()
         coordinator._client.async_get_devices = AsyncMock(side_effect=GardenaRateLimitError("429"))
@@ -430,11 +460,12 @@ class TestRateLimitBackoff:
                 await coordinator._async_update_data()
         assert coordinator.update_interval == timedelta(minutes=10)
 
-        # Successful fetch resets counter
+        # N successful fetches required to clear the backoff ladder.
         devices = {"dev-1": MagicMock()}
         coordinator._client.async_get_devices = AsyncMock(return_value=devices)
         with patch.object(coordinator, "_async_start_websocket", new_callable=AsyncMock):
-            await coordinator._async_update_data()
+            for _ in range(RATE_LIMIT_RESET_SUCCESS_THRESHOLD):
+                await coordinator._async_update_data()
 
         # Next rate limit starts at 5min again
         coordinator._client.async_get_devices = AsyncMock(side_effect=GardenaRateLimitError("429"))
@@ -495,7 +526,9 @@ class TestWebSocketAuthReauth:
     def test_ws_non_auth_error_still_creates_repair_issue(
         self, hass: HomeAssistant, coordinator: GardenaCoordinator
     ) -> None:
-        coordinator._on_ws_error(RuntimeError("network error"))
+        for _ in range(WS_REPAIR_ISSUE_THRESHOLD):
+            coordinator._on_ws_error(RuntimeError("network error"))
+            coordinator._cancel_ws_reconnect()
 
         issue_reg = ir.async_get(hass)
         assert issue_reg.async_get_issue(DOMAIN, "websocket_connection_failed") is not None

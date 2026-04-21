@@ -2,6 +2,16 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.12.5] - 2026-04-21
+
+### Fixed
+- **WebSocket handshake kill-switch for server-side denials.** Signed WS URLs rejected by the Husqvarna/AWS gateway with HTTP `410`/`403`/`429` at handshake were previously treated like any other transient `ClientError`: the reconnect loop fetched a fresh WS URL from REST (burning rate-limit budget), got rejected again, retried, and so on. A persistent account block produced 91 WS handshake failures and 478 rate-limit warnings in 12 hours (see `base_coordinator.py:594`). After `WS_HANDSHAKE_DENIAL_THRESHOLD` consecutive 4xx handshake rejections the WS subsystem is now suspended for `WS_KILL_SWITCH_COOLDOWN` (1 h); REST polling continues. A loud log line points the user at rotating the Developer Portal application. The counter only clears when a real device update confirms the stream is healthy — `ws_connect()` returning synchronously is not enough, because the listen task may fail milliseconds later.
+- **`_rate_limit_hits` no longer resets on the first successful poll.** A single 200 response after a 60-min cooldown is not proof the API has recovered. The counter now clears only after `RATE_LIMIT_RESET_SUCCESS_THRESHOLD` consecutive successes; a fresh 429 zeros progress toward that threshold. Eliminates the saw-tooth `#1 → #2 → … → #6 → reset → #1` pattern in the logs during persistent-block scenarios.
+- **Repair notification no longer fires on transient WS drops (issue #17).** Every `_on_ws_error` call used to create a HA repair issue, so a single brief disconnect (auto-reconnected in seconds) surfaced a visible WARNING in the UI that then disappeared on its own, while a genuine outage left it pinned for hours — matching matthias1403's exact symptoms. The issue is now only created once `_ws_consecutive_failures` reaches `WS_REPAIR_ISSUE_THRESHOLD` (3, aligned with the first `_WS_COOLDOWN_SCHEDULE` step) or the handshake kill-switch is active. Successful reconnects still clear the issue as before.
+
+### Added
+- `WS_HANDSHAKE_DENIAL_THRESHOLD`, `WS_KILL_SWITCH_COOLDOWN`, `WS_HANDSHAKE_DENIAL_STATUSES`, `RATE_LIMIT_RESET_SUCCESS_THRESHOLD`, `WS_REPAIR_ISSUE_THRESHOLD` constants in `const.py`.
+
 ## [1.12.4] - 2026-04-20
 
 ### Fixed

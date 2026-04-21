@@ -35,7 +35,12 @@ from .const import (
     OPT_MQTT_SUBSCRIBE_COMMANDS,
     OPT_MQTT_TOPIC_PREFIX,
     OPT_POLL_INTERVAL_MINUTES,
+    RATE_LIMIT_RESET_SUCCESS_THRESHOLD,
     STORAGE_VERSION_API_BUDGET,
+    WS_HANDSHAKE_DENIAL_STATUSES,
+    WS_HANDSHAKE_DENIAL_THRESHOLD,
+    WS_KILL_SWITCH_COOLDOWN,
+    WS_REPAIR_ISSUE_THRESHOLD,
     WS_WATCHDOG_CHECK_INTERVAL,
     WS_WATCHDOG_TIMEOUT_SECONDS,
 )
@@ -196,6 +201,11 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             else None
         )
         self._rate_limit_hits: int = 0
+        # Count consecutive successful polls so the rate-limit backoff only
+        # resets after the API has been stable for a while. A single successful
+        # poll after an hour-long cooldown does not mean the server is happy
+        # again.
+        self._rate_limit_consecutive_successes: int = 0
         self._ws_reconnect_task: asyncio.Task[None] | None = None
         self._mqtt_bridge: MqttBridge | None = None
         # Throttle for bridge start retries: HA may load the MQTT integration
@@ -212,6 +222,13 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         # (observed as HTTP 410 on signed single-use URLs).
         self._ws_consecutive_failures: int = 0
         self._ws_cooldown_until: float = 0.0
+        # Kill-switch for persistent server-side WS denial (HTTP 4xx at
+        # handshake). Unlike _ws_consecutive_failures this is NOT reset when
+        # ws_connect() synchronously returns — it stays set until a real
+        # device update proves the stream is healthy, preventing the reset
+        # race where every attempt starts with counter=0.
+        self._ws_handshake_denials: int = 0
+        self._ws_kill_switch_until: float = 0.0
         self._api_budget = ApiBudgetTracker(
             Store(hass, STORAGE_VERSION_API_BUDGET, f"{DOMAIN}.{entry.entry_id}.api_budget"),
         )
@@ -289,12 +306,25 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         except cfg.connection_error_type as err:
             raise UpdateFailed(f"Cannot connect to {cfg.api_label} API: {err}") from err
 
-        # Reset rate-limit counter and restore normal polling interval.
+        # Rate-limit reset: only clear the backoff ladder after
+        # RATE_LIMIT_RESET_SUCCESS_THRESHOLD consecutive successful polls. A
+        # single success right after a 60-min cooldown is not proof that the
+        # API has recovered, and eagerly resetting produced a saw-tooth
+        # pattern (see GH issue: 478 rate-limit warnings / 12 h).
         # Custom poll interval only applies to REST fallback — when WebSocket
         # is active, data arrives via push and only a 6-hour health check is
         # needed.  Using a short custom interval with WS connected would burn
         # through the API rate limit budget for no benefit.
-        self._rate_limit_hits = 0
+        if self._rate_limit_hits > 0:
+            self._rate_limit_consecutive_successes += 1
+            if self._rate_limit_consecutive_successes >= RATE_LIMIT_RESET_SUCCESS_THRESHOLD:
+                _LOGGER.info(
+                    "%s API stable after %d consecutive successes, clearing rate-limit backoff",
+                    cfg.api_label,
+                    self._rate_limit_consecutive_successes,
+                )
+                self._rate_limit_hits = 0
+                self._rate_limit_consecutive_successes = 0
         if self._ws_connected:
             normal_interval = cfg.scan_interval_ws
         elif self._custom_poll_interval is not None:
@@ -413,7 +443,14 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             )
 
     def _reset_ws_failures(self) -> None:
-        """Clear the WS failure counter and cooldown after a successful connect."""
+        """Clear the WS failure counter and cooldown after a successful connect.
+
+        Does NOT reset the handshake-denial kill-switch — that survives until
+        a real device update arrives (_on_device_update), because
+        ws_connect() returning synchronously is not proof the handshake
+        succeeded: the listen task may still fail milliseconds later with a
+        WSServerHandshakeError.
+        """
         if self._ws_consecutive_failures:
             _LOGGER.debug(
                 "%s WebSocket connected — resetting failure counter (was %d)",
@@ -422,6 +459,17 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             )
         self._ws_consecutive_failures = 0
         self._ws_cooldown_until = 0.0
+
+    def _clear_ws_handshake_denials(self) -> None:
+        """Clear the handshake-denial kill-switch after a real device update."""
+        if self._ws_handshake_denials:
+            _LOGGER.debug(
+                "%s WebSocket stream healthy — clearing %d handshake denial(s)",
+                self._config.api_label,
+                self._ws_handshake_denials,
+            )
+        self._ws_handshake_denials = 0
+        self._ws_kill_switch_until = 0.0
 
     async def _async_start_websocket(self, devices: dict[str, DeviceT]) -> None:
         """Start the WebSocket for real-time updates.
@@ -444,6 +492,14 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
                 "%s WebSocket in cooldown for %.0fs, skipping connect",
                 self._config.api_label,
                 self._ws_cooldown_until - now,
+            )
+            return
+
+        if now < self._ws_kill_switch_until:
+            _LOGGER.debug(
+                "%s WebSocket kill-switch active for %.0f more min, skipping connect",
+                self._config.api_label,
+                (self._ws_kill_switch_until - now) / 60,
             )
             return
 
@@ -516,6 +572,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             # Invalidate cached URL so the next attempt fetches a fresh one
             self._cached_ws_url = None
             self._record_ws_failure()
+            self._record_ws_handshake_denial(err)
             return
 
         self._ws_connected = True
@@ -535,6 +592,11 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
 
     def _on_device_update(self, device_id: str, device: DeviceT) -> None:
         """Called by the WebSocket client when a device state changes."""
+        # A real device update is the earliest reliable proof that the WS
+        # stream is actually working — not just that ws_connect() returned
+        # synchronously. Clear the handshake-denial kill-switch here.
+        if self._ws_handshake_denials:
+            self._clear_ws_handshake_denials()
         if self.data is not None:
             self.data[device_id] = device
         if self._mqtt_bridge is not None and self._mqtt_bridge.is_active:
@@ -560,22 +622,67 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             return
 
         self._record_ws_failure()
+        self._record_ws_handshake_denial(err)
 
-        ir.async_create_issue(
-            self.hass,
-            DOMAIN,
-            cfg.ws_issue_key,
-            is_fixable=True,
-            is_persistent=False,
-            severity=ir.IssueSeverity.WARNING,
-            translation_key="websocket_connection_failed",
-        )
+        # Only surface a HA repair notification once the WS has failed
+        # WS_REPAIR_ISSUE_THRESHOLD times in a row or the kill-switch is
+        # engaged. A single transient drop auto-reconnects in seconds and
+        # should not be user-visible (see issue #17).
+        kill_switch_active = time.monotonic() < self._ws_kill_switch_until
+        if (
+            self._ws_consecutive_failures >= WS_REPAIR_ISSUE_THRESHOLD
+            or kill_switch_active
+        ):
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                cfg.ws_issue_key,
+                is_fixable=True,
+                is_persistent=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key="websocket_connection_failed",
+            )
         _LOGGER.warning(
             "%s WebSocket connection lost, falling back to polling: %s",
             cfg.api_label,
             err,
         )
+        # Only schedule reconnect if the kill-switch isn't active — otherwise
+        # the loop would burn REST calls fetching WS URLs for attempts that
+        # are all going to be skipped anyway.
+        if time.monotonic() < self._ws_kill_switch_until:
+            return
         self._schedule_ws_reconnect()
+
+    def _record_ws_handshake_denial(self, err: Exception) -> None:
+        """Track HTTP 4xx rejections at the WS handshake and trigger kill-switch.
+
+        4xx at handshake (typically 410 for signed-URL "Gone", 403 for
+        forbidden, 429 for rate-limit at the gateway) consistently indicates
+        a server-side denial that client retry logic cannot recover from.
+        After WS_HANDSHAKE_DENIAL_THRESHOLD such events in a row we suspend
+        the WS subsystem for WS_KILL_SWITCH_COOLDOWN and log a loud hint
+        about key rotation.
+        """
+        status = getattr(err, "status", None)
+        if status not in WS_HANDSHAKE_DENIAL_STATUSES:
+            return
+        cfg = self._config
+        self._ws_handshake_denials += 1
+        if self._ws_handshake_denials < WS_HANDSHAKE_DENIAL_THRESHOLD:
+            return
+        self._ws_kill_switch_until = time.monotonic() + WS_KILL_SWITCH_COOLDOWN.total_seconds()
+        _LOGGER.warning(
+            "%s WebSocket handshake rejected %d times in a row (HTTP %s), "
+            "suspending WS reconnect for %d min. This usually indicates the "
+            "Husqvarna API key has been blocked — rotate the Application in "
+            "the Developer Portal (https://developer.husqvarnagroup.cloud/) "
+            "and re-authenticate the integration. REST polling continues.",
+            cfg.api_label,
+            self._ws_handshake_denials,
+            status,
+            int(WS_KILL_SWITCH_COOLDOWN.total_seconds()) // 60,
+        )
 
     def _apply_rate_limit_backoff(self, err: Exception) -> None:
         """Apply exponential backoff for a rate-limit error.
@@ -586,6 +693,9 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         """
         cfg = self._config
         self._rate_limit_hits += 1
+        # A fresh 429 invalidates any prior run of stability — the counter
+        # towards RATE_LIMIT_RESET_SUCCESS_THRESHOLD restarts from zero.
+        self._rate_limit_consecutive_successes = 0
         backoff = min(
             cfg.rate_limit_cooldown,
             timedelta(minutes=5) * (2 ** (self._rate_limit_hits - 1)),
@@ -625,9 +735,16 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             await asyncio.sleep(delay)
             if self._ws_connected:
                 return  # reconnected by a poll cycle
-            if time.monotonic() < self._ws_cooldown_until:
+            now = time.monotonic()
+            if now < self._ws_cooldown_until:
                 _LOGGER.debug(
                     "%s WebSocket circuit breaker active, aborting reconnect loop",
+                    cfg.api_label,
+                )
+                return
+            if now < self._ws_kill_switch_until:
+                _LOGGER.debug(
+                    "%s WebSocket kill-switch active, aborting reconnect loop",
                     cfg.api_label,
                 )
                 return

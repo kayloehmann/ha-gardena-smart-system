@@ -1625,9 +1625,10 @@ class TestAutomowerCoordinatorWebSocket:
     async def test_on_ws_error_creates_repair_issue(
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
     ) -> None:
-        """Lines 194-197: WS error handler sets repair issue."""
+        """Lines 194-197: WS error handler sets repair issue after threshold."""
         from custom_components.gardena_smart_system.const import (
             AUTOMOWER_SCAN_INTERVAL,
+            WS_REPAIR_ISSUE_THRESHOLD,
         )
 
         device = make_mock_automower_device()
@@ -1637,8 +1638,10 @@ class TestAutomowerCoordinatorWebSocket:
             coordinator = automower_config_entry.runtime_data
             assert coordinator._ws_connected is True
 
-            # Simulate WS error
-            coordinator._on_ws_error(Exception("connection lost"))
+            # Issue #17: only surface the repair issue after N consecutive drops.
+            for _ in range(WS_REPAIR_ISSUE_THRESHOLD):
+                coordinator._on_ws_error(Exception("connection lost"))
+                coordinator._cancel_ws_reconnect()
 
             assert coordinator._ws_connected is False
             assert coordinator.update_interval == AUTOMOWER_SCAN_INTERVAL
@@ -1652,19 +1655,27 @@ class TestAutomowerCoordinatorWebSocket:
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
     ) -> None:
         """Successful WS reconnect deletes the repair issue."""
+        from custom_components.gardena_smart_system.const import (
+            WS_REPAIR_ISSUE_THRESHOLD,
+        )
+
         device = make_mock_automower_device()
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices):
             coordinator = automower_config_entry.runtime_data
 
-            # Create the issue first via WS error
-            coordinator._on_ws_error(Exception("connection lost"))
+            # Create the issue first via repeated WS errors (issue #17 threshold)
+            for _ in range(WS_REPAIR_ISSUE_THRESHOLD):
+                coordinator._on_ws_error(Exception("connection lost"))
+                coordinator._cancel_ws_reconnect()
             issue_reg = ir.async_get(hass)
             issue_id = "automower_websocket_connection_failed"
             assert issue_reg.async_get_issue(DOMAIN, issue_id) is not None
 
-            # Reconnect clears the issue (line 214)
+            # Reconnect clears the issue (line 214). Clear cooldown first —
+            # the 3rd failure activates the first circuit-breaker step.
+            coordinator._ws_cooldown_until = 0.0
             coordinator._ws_connected = False
             await coordinator._async_start_websocket(devices)
 
