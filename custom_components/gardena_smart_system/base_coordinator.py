@@ -133,6 +133,34 @@ class ApiBudgetTracker:
         self._check_month_rollover()
         return self.remaining_percent < API_BUDGET_STOP_PERCENT
 
+    async def async_reset(self) -> None:
+        """Zero the counter and persist immediately.
+
+        Intended for use when the user rotates to a fresh Husqvarna
+        Application (new client_id) — the server-side quota is fresh, so the
+        local mirror must be cleared too, otherwise `is_exhausted` would
+        still fire and the `hub_api_budget_remaining` sensor would lie until
+        the next calendar-month rollover.
+        """
+        self._month = dt_util.now().strftime("%Y-%m")
+        self._count = 0
+        await self._store.async_save({"month": self._month, "request_count": 0})
+
+
+async def async_reset_api_budget_store(hass: HomeAssistant, entry_id: str) -> None:
+    """Reset the persisted API-budget counter for a config entry.
+
+    Called from the config-flow's reauth/reconfigure steps when the user
+    supplies a new client_id. Safe to call even before the coordinator has
+    been instantiated — it writes directly to the backing Store.
+    """
+    store: Store[dict[str, Any]] = Store(
+        hass, STORAGE_VERSION_API_BUDGET, f"{DOMAIN}.{entry_id}.api_budget"
+    )
+    await store.async_save(
+        {"month": dt_util.now().strftime("%Y-%m"), "request_count": 0}
+    )
+
 
 @dataclass(frozen=True)
 class CoordinatorConfig:

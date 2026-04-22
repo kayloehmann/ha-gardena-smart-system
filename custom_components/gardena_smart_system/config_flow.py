@@ -59,6 +59,7 @@ from .const import (
     OPT_MQTT_TOPIC_PREFIX,
     OPT_POLL_INTERVAL_MINUTES,
 )
+from .base_coordinator import async_reset_api_budget_store
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -229,6 +230,8 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                 _, error = await self._async_test_gardena(session, client_id, client_secret)
 
             if not error:
+                if client_id != entry.data.get(CONF_CLIENT_ID):
+                    await async_reset_api_budget_store(self.hass, entry.entry_id)
                 return self.async_update_reload_and_abort(
                     entry,
                     data={
@@ -279,6 +282,8 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
             if api_type == API_TYPE_AUTOMOWER:
                 error = await self._async_test_automower(session, client_id, client_secret)
                 if not error:
+                    if client_id != entry.data.get(CONF_CLIENT_ID):
+                        await async_reset_api_budget_store(self.hass, entry.entry_id)
                     return self.async_update_reload_and_abort(
                         entry,
                         data={
@@ -299,6 +304,8 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                     location_id = (
                         locations[0]["id"] if locations else entry.data.get(CONF_LOCATION_ID, "")
                     )
+                    if client_id != entry.data.get(CONF_CLIENT_ID):
+                        await async_reset_api_budget_store(self.hass, entry.entry_id)
                     return self.async_update_reload_and_abort(
                         entry,
                         data={
@@ -340,6 +347,8 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
         """Allow picking a different location during reconfiguration."""
         if user_input is not None:
             entry = self._get_reconfigure_entry()
+            if self._client_id != entry.data.get(CONF_CLIENT_ID):
+                await async_reset_api_budget_store(self.hass, entry.entry_id)
             return self.async_update_reload_and_abort(
                 entry,
                 data={

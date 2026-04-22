@@ -2,6 +2,14 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.12.6] - 2026-04-21
+
+### Fixed
+- **API-budget counter now resets on client-ID rotation.** `ApiBudgetTracker` only rolls over at the calendar-month boundary, which is correct for a stable key — but a user rotating to a new Husqvarna Application (fresh server-side quota) was left with the old counter until the 1st of the next month, so `hub_api_budget_remaining` lied and the `is_exhausted` auto-stop could still fire on a fresh budget. Reauth and reconfigure now detect a changed `CONF_CLIENT_ID` and zero the persisted counter via `async_reset_api_budget_store` before reloading. Same-key reauth (just refreshing a rotated secret) preserves the counter.
+
+### Added
+- `ApiBudgetTracker.async_reset()` and module-level `async_reset_api_budget_store(hass, entry_id)` helpers in `base_coordinator.py`.
+
 ## [1.12.5] - 2026-04-21
 
 ### Fixed

@@ -367,6 +367,102 @@ class TestReconfigureFlow:
         assert result["errors"]["base"] == "cannot_connect"
 
 
+class TestApiBudgetResetOnClientIdChange:
+    """Budget store is wiped when the user supplies a fresh Husqvarna Application."""
+
+    _PATCH_RESET = (
+        "custom_components.gardena_smart_system.config_flow."
+        "async_reset_api_budget_store"
+    )
+
+    async def test_reauth_new_client_id_resets_budget(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        mock_config_entry.add_to_hass(hass)
+        result = await mock_config_entry.start_reauth_flow(hass)
+
+        mock_client = AsyncMock()
+        mock_client.async_get_locations = AsyncMock(return_value=[make_mock_location()])
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(self._PATCH_RESET, new_callable=AsyncMock) as mock_reset,
+        ):
+            await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {CONF_CLIENT_ID: "rotated-id", CONF_CLIENT_SECRET: "new-secret"},
+            )
+
+        mock_reset.assert_awaited_once_with(hass, mock_config_entry.entry_id)
+
+    async def test_reauth_same_client_id_preserves_budget(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        mock_config_entry.add_to_hass(hass)
+        result = await mock_config_entry.start_reauth_flow(hass)
+
+        mock_client = AsyncMock()
+        mock_client.async_get_locations = AsyncMock(return_value=[make_mock_location()])
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(self._PATCH_RESET, new_callable=AsyncMock) as mock_reset,
+        ):
+            await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                # Same client_id as ENTRY_DATA — just a new secret.
+                {CONF_CLIENT_ID: MOCK_CLIENT_ID, CONF_CLIENT_SECRET: "rotated-secret"},
+            )
+
+        mock_reset.assert_not_awaited()
+
+    async def test_reconfigure_single_location_resets_on_new_client_id(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        mock_config_entry.add_to_hass(hass)
+        result = await mock_config_entry.start_reconfigure_flow(hass)
+
+        mock_client = AsyncMock()
+        mock_client.async_get_locations = AsyncMock(return_value=[make_mock_location()])
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(self._PATCH_RESET, new_callable=AsyncMock) as mock_reset,
+        ):
+            await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {CONF_CLIENT_ID: "rotated-id", CONF_CLIENT_SECRET: "new-secret"},
+            )
+
+        mock_reset.assert_awaited_once_with(hass, mock_config_entry.entry_id)
+
+    async def test_reconfigure_multi_location_resets_on_new_client_id(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        mock_config_entry.add_to_hass(hass)
+        result = await mock_config_entry.start_reconfigure_flow(hass)
+
+        loc1 = make_mock_location("loc-a", "Front Garden")
+        loc2 = make_mock_location("loc-b", "Back Garden")
+        mock_client = AsyncMock()
+        mock_client.async_get_locations = AsyncMock(return_value=[loc1, loc2])
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(self._PATCH_RESET, new_callable=AsyncMock) as mock_reset,
+        ):
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {CONF_CLIENT_ID: "rotated-id", CONF_CLIENT_SECRET: "new-secret"},
+            )
+            # Reset is deferred to the location-selection step
+            mock_reset.assert_not_awaited()
+
+            await hass.config_entries.flow.async_configure(
+                result["flow_id"],
+                {CONF_LOCATION_ID: "loc-b"},
+            )
+
+            mock_reset.assert_awaited_once_with(hass, mock_config_entry.entry_id)
+
+
 class TestOptionsFlow:
     """Test the options flow for Gardena Smart System."""
 

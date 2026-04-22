@@ -1045,6 +1045,63 @@ class TestApiBudgetTracker:
 
         assert isinstance(coordinator.api_budget, ApiBudgetTracker)
 
+    async def test_async_reset_clears_counter_and_persists(
+        self, hass: HomeAssistant
+    ) -> None:
+        """Reset zeros the counter and writes to the Store immediately."""
+        from homeassistant.helpers.storage import Store
+
+        from custom_components.gardena_smart_system.base_coordinator import (
+            ApiBudgetTracker,
+        )
+
+        store: Store = Store(hass, 1, "test_budget_reset")
+        tracker = ApiBudgetTracker(store)
+        await tracker.async_load()
+        tracker.increment(1234)
+        assert tracker.request_count == 1234
+
+        await tracker.async_reset()
+
+        assert tracker.request_count == 0
+        # Re-hydrate from disk to prove the reset was persisted
+        tracker2 = ApiBudgetTracker(store)
+        await tracker2.async_load()
+        assert tracker2.request_count == 0
+
+    async def test_module_reset_helper_overwrites_entry_store(
+        self, hass: HomeAssistant
+    ) -> None:
+        """`async_reset_api_budget_store` wipes the file used by an entry's tracker."""
+        from homeassistant.helpers.storage import Store
+
+        from custom_components.gardena_smart_system.base_coordinator import (
+            ApiBudgetTracker,
+            async_reset_api_budget_store,
+        )
+        from custom_components.gardena_smart_system.const import (
+            DOMAIN,
+            STORAGE_VERSION_API_BUDGET,
+        )
+
+        entry_id = "abc123"
+        store_key = f"{DOMAIN}.{entry_id}.api_budget"
+        store: Store = Store(hass, STORAGE_VERSION_API_BUDGET, store_key)
+
+        # Seed: an existing tracker with some usage
+        tracker = ApiBudgetTracker(store)
+        await tracker.async_load()
+        tracker.increment(999)
+        # Force the delayed save so it hits disk before we reset
+        await store.async_save({"month": tracker.month, "request_count": 999})
+
+        await async_reset_api_budget_store(hass, entry_id)
+
+        # A freshly loaded tracker must see 0, confirming the reset persisted
+        fresh_tracker = ApiBudgetTracker(store)
+        await fresh_tracker.async_load()
+        assert fresh_tracker.request_count == 0
+
     async def test_poll_increments_budget(self, coordinator: GardenaCoordinator) -> None:
         devices = {"dev-1": make_mock_device()}
         coordinator._client = AsyncMock()
