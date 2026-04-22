@@ -36,6 +36,7 @@ from homeassistant.helpers.selector import (
 
 from aiogardenasmart import GardenaAuth, GardenaClient
 
+from .base_coordinator import async_reset_api_budget_store
 from .const import (
     API_TYPE_AUTOMOWER,
     API_TYPE_GARDENA,
@@ -59,7 +60,6 @@ from .const import (
     OPT_MQTT_TOPIC_PREFIX,
     OPT_POLL_INTERVAL_MINUTES,
 )
-from .base_coordinator import async_reset_api_budget_store
 
 _LOGGER = logging.getLogger(__name__)
 
