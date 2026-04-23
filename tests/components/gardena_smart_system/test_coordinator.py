@@ -1045,9 +1045,7 @@ class TestApiBudgetTracker:
 
         assert isinstance(coordinator.api_budget, ApiBudgetTracker)
 
-    async def test_async_reset_clears_counter_and_persists(
-        self, hass: HomeAssistant
-    ) -> None:
+    async def test_async_reset_clears_counter_and_persists(self, hass: HomeAssistant) -> None:
         """Reset zeros the counter and writes to the Store immediately."""
         from homeassistant.helpers.storage import Store
 
@@ -1069,9 +1067,7 @@ class TestApiBudgetTracker:
         await tracker2.async_load()
         assert tracker2.request_count == 0
 
-    async def test_module_reset_helper_overwrites_entry_store(
-        self, hass: HomeAssistant
-    ) -> None:
+    async def test_module_reset_helper_overwrites_entry_store(self, hass: HomeAssistant) -> None:
         """`async_reset_api_budget_store` wipes the file used by an entry's tracker."""
         from homeassistant.helpers.storage import Store
 

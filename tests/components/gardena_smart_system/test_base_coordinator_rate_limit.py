@@ -450,9 +450,7 @@ class TestRateLimitBackoffFromAuth:
 
             # A new 429 should zero the success counter so the backoff does
             # not collapse on the next lucky success.
-            mock_client.async_get_devices = AsyncMock(
-                side_effect=GardenaRateLimitError("429")
-            )
+            mock_client.async_get_devices = AsyncMock(side_effect=GardenaRateLimitError("429"))
             with pytest.raises(Exception):
                 await coordinator._async_update_data()
 

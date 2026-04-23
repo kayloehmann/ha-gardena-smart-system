@@ -370,10 +370,7 @@ class TestReconfigureFlow:
 class TestApiBudgetResetOnClientIdChange:
     """Budget store is wiped when the user supplies a fresh Husqvarna Application."""
 
-    _PATCH_RESET = (
-        "custom_components.gardena_smart_system.config_flow."
-        "async_reset_api_budget_store"
-    )
+    _PATCH_RESET = "custom_components.gardena_smart_system.config_flow.async_reset_api_budget_store"
 
     async def test_reauth_new_client_id_resets_budget(
         self, hass: HomeAssistant, mock_config_entry: object

@@ -157,9 +157,7 @@ async def async_reset_api_budget_store(hass: HomeAssistant, entry_id: str) -> No
     store: Store[dict[str, Any]] = Store(
         hass, STORAGE_VERSION_API_BUDGET, f"{DOMAIN}.{entry_id}.api_budget"
     )
-    await store.async_save(
-        {"month": dt_util.now().strftime("%Y-%m"), "request_count": 0}
-    )
+    await store.async_save({"month": dt_util.now().strftime("%Y-%m"), "request_count": 0})
 
 
 @dataclass(frozen=True)
@@ -657,10 +655,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         # engaged. A single transient drop auto-reconnects in seconds and
         # should not be user-visible (see issue #17).
         kill_switch_active = time.monotonic() < self._ws_kill_switch_until
-        if (
-            self._ws_consecutive_failures >= WS_REPAIR_ISSUE_THRESHOLD
-            or kill_switch_active
-        ):
+        if self._ws_consecutive_failures >= WS_REPAIR_ISSUE_THRESHOLD or kill_switch_active:
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
