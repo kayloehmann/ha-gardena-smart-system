@@ -499,7 +499,7 @@
     },
     "husqvarna_application_blocked": {
       "title": "Husqvarna-Application blockiert",
-      "description": "Die Husqvarna-Cloud hat den WebSocket-Handshake für deine Application wiederholt abgelehnt (HTTP 410/403/429). In der Regel bedeutet das, dass die Application serverseitig gesperrt wurde — häufig nach einer Phase mit hohem Request-Aufkommen. REST-Polling und WebSocket-Reconnects sind pausiert, um das verbleibende API-Kontingent zu schonen.\n\nSo stellst du Echtzeit-Updates wieder her:\n\n1. Öffne das [Husqvarna Developer Portal](https://developer.husqvarnagroup.cloud/) und erstelle eine **neue** Application (oder rotiere die bestehende).\n2. Öffne in Home Assistant das Überlauf-Menü dieser Integration und wähle **Neu konfigurieren**. Trage die neue Client ID und das Secret ein.\n\nDie Integration nimmt den Betrieb automatisch wieder auf, sobald der nächste WebSocket-Handshake erfolgreich ist."
+      "description": "Die Husqvarna-Cloud hat den WebSocket-Handshake für deine Application wiederholt abgelehnt (HTTP 410/403/429). In der Regel bedeutet das, dass die Application serverseitig gesperrt wurde — häufig nach einer Phase mit hohem Request-Aufkommen. REST-Polling und WebSocket-Reconnects sind pausiert, um das verbleibende API-Kontingent zu schonen.\n\nSo stellst du Echtzeit-Updates wieder her:\n\n1. Öffne das Husqvarna Developer Portal (siehe „Mehr erfahren“ unten) und erstelle eine **neue** Application (oder rotiere die bestehende).\n2. Öffne in Home Assistant das Überlauf-Menü dieser Integration und wähle **Neu konfigurieren**. Trage die neue Client ID und das Secret ein.\n\nDie Integration nimmt den Betrieb automatisch wieder auf, sobald der nächste WebSocket-Handshake erfolgreich ist."
     }
   }
 }
