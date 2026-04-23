@@ -171,6 +171,7 @@ class CoordinatorConfig:
     rate_limit_cooldown: timedelta
     default_poll_minutes: int
     ws_issue_key: str
+    app_blocked_issue_key: str
     auth_error_type: type[Exception]
     connection_error_type: type[Exception]
     rate_limit_error_type: type[Exception]
@@ -315,6 +316,23 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
                 f"({self._api_budget.request_count}/{self._api_budget.budget} requests "
                 f"used this month); polling paused until the next calendar month"
             )
+        # Kill-switch skip: when the WS handshake has been denied persistently
+        # (HTTP 410/403/429), the Husqvarna Application is server-side blocked
+        # and REST polling will hit the same 429. Burning the quota does not
+        # help — hold off until the cooldown expires (and re-auth has happened,
+        # which clears the kill-switch via _on_device_update).
+        now_m = time.monotonic()
+        if now_m < self._ws_kill_switch_until:
+            remaining = self._ws_kill_switch_until - now_m
+            cooldown = timedelta(seconds=remaining)
+            if self.update_interval != cooldown:
+                self.update_interval = cooldown
+            _LOGGER.debug(
+                "%s WebSocket kill-switch active for %.0f more min, skipping poll",
+                cfg.api_label,
+                remaining / 60,
+            )
+            return self.data or {}
         # Count the request before it is sent — the server-side quota counts
         # every attempt, including the ones that fail. An optimistic increment
         # after success would slowly drift the local counter below the true
@@ -488,14 +506,16 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
 
     def _clear_ws_handshake_denials(self) -> None:
         """Clear the handshake-denial kill-switch after a real device update."""
+        cfg = self._config
         if self._ws_handshake_denials:
             _LOGGER.debug(
                 "%s WebSocket stream healthy — clearing %d handshake denial(s)",
-                self._config.api_label,
+                cfg.api_label,
                 self._ws_handshake_denials,
             )
         self._ws_handshake_denials = 0
         self._ws_kill_switch_until = 0.0
+        ir.async_delete_issue(self.hass, DOMAIN, cfg.app_blocked_issue_key)
 
     async def _async_start_websocket(self, devices: dict[str, DeviceT]) -> None:
         """Start the WebSocket for real-time updates.
@@ -650,12 +670,15 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         self._record_ws_failure()
         self._record_ws_handshake_denial(err)
 
-        # Only surface a HA repair notification once the WS has failed
-        # WS_REPAIR_ISSUE_THRESHOLD times in a row or the kill-switch is
-        # engaged. A single transient drop auto-reconnects in seconds and
-        # should not be user-visible (see issue #17).
+        # Only surface the milder WS-lost repair notification once the WS has
+        # failed WS_REPAIR_ISSUE_THRESHOLD times in a row. A single transient
+        # drop auto-reconnects in seconds and should not be user-visible (see
+        # issue #17). The kill-switch path creates a more severe
+        # husqvarna_application_blocked issue instead (in
+        # _record_ws_handshake_denial), so we skip this one when kill-switch
+        # is active to avoid stacking two issues for the same root cause.
         kill_switch_active = time.monotonic() < self._ws_kill_switch_until
-        if self._ws_consecutive_failures >= WS_REPAIR_ISSUE_THRESHOLD or kill_switch_active:
+        if self._ws_consecutive_failures >= WS_REPAIR_ISSUE_THRESHOLD and not kill_switch_active:
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
@@ -700,11 +723,26 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             "suspending WS reconnect for %d min. This usually indicates the "
             "Husqvarna API key has been blocked — rotate the Application in "
             "the Developer Portal (https://developer.husqvarnagroup.cloud/) "
-            "and re-authenticate the integration. REST polling continues.",
+            "and re-authenticate the integration. REST polling is also paused "
+            "during the cooldown to protect the API budget.",
             cfg.api_label,
             self._ws_handshake_denials,
             status,
             int(WS_KILL_SWITCH_COOLDOWN.total_seconds()) // 60,
+        )
+        # The milder ws_connection_failed issue would be redundant next to the
+        # app-blocked one (same root cause, stronger call to action).
+        ir.async_delete_issue(self.hass, DOMAIN, cfg.ws_issue_key)
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            cfg.app_blocked_issue_key,
+            is_fixable=False,
+            is_persistent=True,
+            severity=ir.IssueSeverity.ERROR,
+            translation_key="husqvarna_application_blocked",
+            translation_placeholders={"api_label": cfg.api_label},
+            learn_more_url="https://developer.husqvarnagroup.cloud/",
         )
 
     def _apply_rate_limit_backoff(self, err: Exception) -> None:
@@ -848,8 +886,10 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             _LOGGER.debug("Error disconnecting stale WebSocket, ignoring")
         self._ws = None
 
-        # Trigger immediate data refresh + reconnect
-        await self.async_request_refresh()
+        # The regular coordinator loop will pick this up on its next tick and
+        # trigger a REST poll + WS reconnect. Calling async_request_refresh()
+        # here would double the API calls per watchdog event.
+        self._schedule_ws_reconnect()
 
     # ── MQTT bridge ──────────────────────────────────────────────────────
 

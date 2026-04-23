@@ -884,10 +884,16 @@ class TestWebSocketWatchdog:
         # Should not raise
         await coordinator._async_ws_watchdog_check()
 
-    async def test_watchdog_triggers_refresh_after_disconnect(
+    async def test_watchdog_schedules_reconnect_without_extra_poll(
         self, hass: HomeAssistant, coordinator: GardenaCoordinator
     ) -> None:
-        """After watchdog disconnect, an immediate data refresh is requested."""
+        """Watchdog triggers WS reconnect but does NOT force an extra REST poll.
+
+        The previous implementation called async_request_refresh() which
+        doubled the API-call cost per watchdog event. The reconnect loop alone
+        is enough — REST state catches up on the next scheduled coordinator
+        tick (update_interval is lowered to scan_interval by the watchdog).
+        """
         ws = AsyncMock()
         coordinator._ws = ws
         coordinator._ws_connected = True
@@ -898,11 +904,13 @@ class TestWebSocketWatchdog:
             patch.object(
                 coordinator, "async_request_refresh", new_callable=AsyncMock
             ) as mock_refresh,
+            patch.object(coordinator, "_schedule_ws_reconnect") as mock_schedule,
         ):
             ws.last_message_time = 400.0
             await coordinator._async_ws_watchdog_check()
 
-        mock_refresh.assert_called_once()
+        mock_refresh.assert_not_called()
+        mock_schedule.assert_called_once()
 
 
 class TestApiBudgetTracker:

@@ -697,3 +697,116 @@ class TestWsHandshakeKillSwitch:
 
             assert coordinator._ws_handshake_denials == 0
             assert coordinator._ws_kill_switch_until == 0.0
+
+    async def test_kill_switch_skips_rest_polling(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """An active kill-switch skips REST polling to protect the API budget.
+
+        When the Husqvarna app is server-side blocked (persistent 410 on WS),
+        REST calls will hit the same 429. Polling must pause for the cooldown
+        window — not burn budget confirming what we already know.
+        """
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = mock_config_entry.runtime_data
+            stale_data = {"old": "state"}
+            coordinator.data = stale_data  # type: ignore[assignment]
+            mock_client.async_get_devices.reset_mock()
+
+            import time as _time
+
+            coordinator._ws_kill_switch_until = _time.monotonic() + 1800
+
+            result = await coordinator._async_update_data()
+
+            mock_client.async_get_devices.assert_not_called()
+            # Stale data is preserved — entities don't flap to unavailable
+            assert result is stale_data
+            # Next tick is scheduled at roughly the kill-switch cooldown
+            assert coordinator.update_interval is not None
+            assert coordinator.update_interval >= timedelta(minutes=25)
+
+    async def test_kill_switch_activation_creates_app_blocked_issue(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """When the kill-switch engages, surface an ERROR-severity repair issue."""
+        from homeassistant.helpers import issue_registry as ir
+
+        from custom_components.gardena_smart_system.const import WS_HANDSHAKE_DENIAL_THRESHOLD
+
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = mock_config_entry.runtime_data
+
+            for _ in range(WS_HANDSHAKE_DENIAL_THRESHOLD):
+                coordinator._on_ws_error(self._make_handshake_error(410))
+                coordinator._cancel_ws_reconnect()
+
+            issue_reg = ir.async_get(hass)
+            issue = issue_reg.async_get_issue(DOMAIN, "husqvarna_application_blocked")
+            assert issue is not None
+            assert issue.severity == ir.IssueSeverity.ERROR
+            assert issue.is_fixable is False
+            # The milder ws_connection_failed issue is superseded
+            assert issue_reg.async_get_issue(DOMAIN, "websocket_connection_failed") is None
+
+    async def test_device_update_clears_app_blocked_issue(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """A real device update clears the husqvarna_application_blocked issue."""
+        from homeassistant.helpers import issue_registry as ir
+
+        from custom_components.gardena_smart_system.const import WS_HANDSHAKE_DENIAL_THRESHOLD
+
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = mock_config_entry.runtime_data
+
+            for _ in range(WS_HANDSHAKE_DENIAL_THRESHOLD):
+                coordinator._on_ws_error(self._make_handshake_error(410))
+                coordinator._cancel_ws_reconnect()
+
+            issue_reg = ir.async_get(hass)
+            assert issue_reg.async_get_issue(DOMAIN, "husqvarna_application_blocked") is not None
+
+            dev = next(iter(devices.values()))
+            coordinator._on_device_update(dev.device_id, dev)
+
+            assert issue_reg.async_get_issue(DOMAIN, "husqvarna_application_blocked") is None

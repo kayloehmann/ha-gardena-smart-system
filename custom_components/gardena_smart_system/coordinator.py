@@ -43,6 +43,7 @@ _GARDENA_CONFIG = CoordinatorConfig(
     rate_limit_cooldown=RATE_LIMIT_COOLDOWN,
     default_poll_minutes=DEFAULT_POLL_INTERVAL_GARDENA,
     ws_issue_key="websocket_connection_failed",
+    app_blocked_issue_key="husqvarna_application_blocked",
     auth_error_type=GardenaAuthenticationError,
     connection_error_type=GardenaConnectionError,
     rate_limit_error_type=GardenaRateLimitError,

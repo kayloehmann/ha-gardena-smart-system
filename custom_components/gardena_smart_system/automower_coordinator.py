@@ -41,6 +41,7 @@ _AUTOMOWER_CONFIG = CoordinatorConfig(
     rate_limit_cooldown=AUTOMOWER_RATE_LIMIT_COOLDOWN,
     default_poll_minutes=DEFAULT_POLL_INTERVAL_AUTOMOWER,
     ws_issue_key="automower_websocket_connection_failed",
+    app_blocked_issue_key="automower_husqvarna_application_blocked",
     auth_error_type=AutomowerAuthenticationError,
     connection_error_type=AutomowerConnectionError,
     rate_limit_error_type=AutomowerRateLimitError,

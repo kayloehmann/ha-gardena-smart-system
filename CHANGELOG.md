@@ -2,6 +2,16 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.12.7] - 2026-04-23
+
+### Fixed
+- **WS handshake kill-switch now also pauses REST polling.** The v1.12.5 kill-switch suspended WS reconnect attempts but left the 5-min REST polling loop running — so a persistently blocked Husqvarna Application (HTTP 410 on signed WS URLs) still burned ~288 REST calls/day hitting the same server-side 429. With this change, `_async_update_data` short-circuits while `_ws_kill_switch_until` is in the future and sets `update_interval` to the remaining cooldown, preserving the last known device state for entities. Real recovery — a fresh Application + reauth → successful WS handshake → device update — clears the kill-switch and resumes normal polling immediately.
+- **Watchdog no longer double-charges the API budget per event.** `_async_ws_watchdog_check` force-disconnected the stale WS and then called `async_request_refresh()`, which triggered a full REST poll + WS-URL fetch. That was two API calls where one reconnect-scheduling call would do. The watchdog now just schedules a reconnect; the coordinator's regular tick (now on `scan_interval`, set by the watchdog) picks up fresh REST state on its own schedule.
+
+### Added
+- **`husqvarna_application_blocked` repair issue** raised when the handshake kill-switch engages. ERROR-severity, non-fixable, persistent — points the user directly at the [Husqvarna Developer Portal](https://developer.husqvarnagroup.cloud/) to rotate the Application and re-authenticate. Supersedes the milder `websocket_connection_failed` issue while active (no issue stacking for the same root cause). Cleared automatically by the next real device update on a successful reconnect.
+- `CoordinatorConfig.app_blocked_issue_key` field, set to `husqvarna_application_blocked` (Gardena) / `automower_husqvarna_application_blocked` (Automower) so both sub-systems can surface separate notifications.
+
 ## [1.12.6] - 2026-04-21
 
 ### Fixed
