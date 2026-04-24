@@ -493,6 +493,10 @@
           }
         }
       }
+    },
+    "husqvarna_application_blocked": {
+      "title": "Husqvarna rakendus blokeeritud",
+      "description": "Husqvarna pilv on korduvalt keeldunud sinu rakenduse WebSocket-i käepigistusest (HTTP 410/403/429). Tavaliselt tähendab see, et rakendus on serveris blokeeritud — sageli pärast kõrge päringumahu perioodi. REST küsitlemine ja WebSocket-i taasühendused on peatatud, et kaitsta ülejäänud API-kvooti.\n\nReaalajas uuenduste taastamiseks:\n\n1. Ava Husqvarna Developer Portal (vt „Lisateave“ allpool) ja loo **uus** rakendus (või vaheta olemasolev välja).\n2. Home Assistantis ava selle integratsiooni menüü ja vali **Konfigureeri uuesti**. Sisesta uus Client ID ja Secret.\n\nIntegratsioon jätkab tööd automaatselt, kui järgmine WebSocket-i käepigistus õnnestub."
     }
   }
 }

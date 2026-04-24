@@ -493,6 +493,10 @@
           }
         }
       }
+    },
+    "husqvarna_application_blocked": {
+      "title": "Husqvarna programa užblokuota",
+      "description": "Husqvarna debesis pakartotinai atmetė jūsų programos WebSocket handshake (HTTP 410/403/429). Paprastai tai reiškia, kad programa buvo užblokuota serverio pusėje — dažnai po didelio užklausų kiekio laikotarpio. REST apklausa ir WebSocket pakartotiniai prisijungimai sustabdyti, kad būtų apsaugota likusi API kvota.\n\nKad atkurtumėte realaus laiko naujinimus:\n\n1. Atidarykite Husqvarna Developer Portal (žr. „Sužinoti daugiau“ žemiau) ir sukurkite **naują** programą (arba pakeiskite esamą).\n2. Programoje Home Assistant atidarykite šios integracijos meniu ir pasirinkite **Konfigūruoti iš naujo**. Įveskite naują Client ID ir Secret.\n\nIntegracija automatiškai atsinaujina, kai kitas WebSocket handshake pavyksta."
     }
   }
 }

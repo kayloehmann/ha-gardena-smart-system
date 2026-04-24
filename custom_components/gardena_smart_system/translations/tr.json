@@ -493,6 +493,10 @@
           }
         }
       }
+    },
+    "husqvarna_application_blocked": {
+      "title": "Husqvarna uygulaması engellendi",
+      "description": "Husqvarna bulutu, uygulamanın WebSocket el sıkışmasını defalarca reddetti (HTTP 410/403/429). Bu genellikle uygulamanın sunucu tarafında engellendiği anlamına gelir — genellikle yüksek istek hacmine sahip bir dönemden sonra. Kalan API kotasını korumak için REST yoklama ve WebSocket yeniden bağlantıları duraklatıldı.\n\nGerçek zamanlı güncellemeleri geri yüklemek için:\n\n1. Husqvarna Developer Portal'ı aç (aşağıdaki „Daha fazla bilgi“ bölümüne bak) ve **yeni** bir uygulama oluştur (veya mevcut olanı yenile).\n2. Home Assistant'ta bu entegrasyonun taşma menüsünü aç ve **Yeniden yapılandır**'ı seç. Yeni Client ID ve Secret'i gir.\n\nBir sonraki WebSocket el sıkışması başarılı olduğunda entegrasyon otomatik olarak devam eder."
     }
   }
 }

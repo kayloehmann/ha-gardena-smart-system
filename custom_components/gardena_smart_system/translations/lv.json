@@ -493,6 +493,10 @@
           }
         }
       }
+    },
+    "husqvarna_application_blocked": {
+      "title": "Husqvarna lietojumprogramma bloķēta",
+      "description": "Husqvarna mākonis atkārtoti noraidīja tavas lietojumprogrammas WebSocket handshake (HTTP 410/403/429). Parasti tas nozīmē, ka lietojumprogramma ir bloķēta servera pusē — bieži pēc liela pieprasījumu apjoma perioda. REST aptauja un WebSocket atkārtotie savienojumi ir apturēti, lai aizsargātu atlikušo API kvotu.\n\nLai atjaunotu reāllaika atjauninājumus:\n\n1. Atver Husqvarna Developer Portal (skat. „Uzzināt vairāk“ zemāk) un izveido **jaunu** lietojumprogrammu (vai rotē esošo).\n2. Home Assistant atver šīs integrācijas izvēlni un izvēlies **Pārkonfigurēt**. Ievadi jauno Client ID un Secret.\n\nIntegrācija automātiski atjaunojas, kad nākamais WebSocket handshake ir veiksmīgs."
     }
   }
 }

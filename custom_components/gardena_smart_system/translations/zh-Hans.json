@@ -493,6 +493,10 @@
           }
         }
       }
+    },
+    "husqvarna_application_blocked": {
+      "title": "Husqvarna 应用已被封锁",
+      "description": "Husqvarna 云端已多次拒绝你的应用的 WebSocket 握手(HTTP 410/403/429)。这通常意味着该应用已被服务器端封锁——通常发生在请求量较高的时段之后。为了保护剩余的 API 配额,REST 轮询和 WebSocket 重连已暂停。\n\n恢复实时更新:\n\n1. 打开 Husqvarna Developer Portal(参见下方“了解更多”)并创建一个**新的**应用(或轮换现有应用)。\n2. 在 Home Assistant 中打开此集成的溢出菜单,选择**重新配置**。输入新的 Client ID 和 Secret。\n\n下一次 WebSocket 握手成功后,集成将自动恢复。"
     }
   }
 }

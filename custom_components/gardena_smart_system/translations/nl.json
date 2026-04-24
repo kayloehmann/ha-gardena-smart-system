@@ -493,6 +493,10 @@
           }
         }
       }
+    },
+    "husqvarna_application_blocked": {
+      "title": "Husqvarna-applicatie geblokkeerd",
+      "description": "De Husqvarna-cloud heeft de WebSocket-handshake voor jouw applicatie herhaaldelijk geweigerd (HTTP 410/403/429). Dit betekent meestal dat de applicatie serverzijdig is geblokkeerd — vaak na een periode met veel verzoeken. REST-polling en WebSocket-herverbindingen zijn gepauzeerd om het resterende API-quotum te beschermen.\n\nOm realtime-updates te herstellen:\n\n1. Open het Husqvarna Developer Portal (zie „Meer informatie“ hieronder) en maak een **nieuwe** applicatie aan (of roteer de bestaande).\n2. Open in Home Assistant het overloopmenu van deze integratie en kies **Herconfigureren**. Voer het nieuwe Client ID en Secret in.\n\nDe integratie wordt automatisch hervat zodra de volgende WebSocket-handshake slaagt."
     }
   }
 }

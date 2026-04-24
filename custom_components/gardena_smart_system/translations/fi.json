@@ -493,6 +493,10 @@
           }
         }
       }
+    },
+    "husqvarna_application_blocked": {
+      "title": "Husqvarna-sovellus estetty",
+      "description": "Husqvarna-pilvi on toistuvasti hylännyt sovelluksesi WebSocket-kättelyn (HTTP 410/403/429). Tämä tarkoittaa yleensä, että sovellus on estetty palvelinpuolella — usein suuren pyyntömäärän jakson jälkeen. REST-kysely ja WebSocket-uudelleenyhteydet on keskeytetty jäljellä olevan API-kiintiön suojaamiseksi.\n\nReaaliaikaisten päivitysten palauttamiseksi:\n\n1. Avaa Husqvarna Developer Portal (katso ”Lue lisää” alla) ja luo **uusi** sovellus (tai vaihda olemassa oleva).\n2. Avaa Home Assistantissa tämän integraation valikko ja valitse **Määritä uudelleen**. Syötä uusi Client ID ja Secret.\n\nIntegraatio jatkuu automaattisesti, kun seuraava WebSocket-kättely onnistuu."
     }
   }
 }

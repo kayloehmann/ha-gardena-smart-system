@@ -493,6 +493,10 @@
           }
         }
       }
+    },
+    "husqvarna_application_blocked": {
+      "title": "Husqvarna aplikacija blokirana",
+      "description": "Husqvarna oblak je ponovno odbio WebSocket handshake za tvoju aplikaciju (HTTP 410/403/429). To obično znači da je aplikacija blokirana na poslužitelju — često nakon razdoblja s velikim brojem zahtjeva. REST polling i WebSocket ponovna povezivanja su pauzirana kako bi se zaštitila preostala API kvota.\n\nZa vraćanje ažuriranja u stvarnom vremenu:\n\n1. Otvori Husqvarna Developer Portal (vidi „Saznaj više“ ispod) i stvori **novu** aplikaciju (ili rotiraj postojeću).\n2. U Home Assistant-u otvori izbornik ove integracije i odaberi **Ponovno konfiguriraj**. Unesi novi Client ID i Secret.\n\nIntegracija se automatski nastavlja kada sljedeći WebSocket handshake uspije."
     }
   }
 }

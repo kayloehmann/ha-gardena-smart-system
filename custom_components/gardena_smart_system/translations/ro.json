@@ -493,6 +493,10 @@
           }
         }
       }
+    },
+    "husqvarna_application_blocked": {
+      "title": "Aplicația Husqvarna blocată",
+      "description": "Cloudul Husqvarna a respins în mod repetat handshake-ul WebSocket pentru aplicația ta (HTTP 410/403/429). De obicei acest lucru înseamnă că aplicația a fost blocată pe server — adesea după o perioadă cu un volum mare de cereri. Pollingul REST și reconectările WebSocket sunt suspendate pentru a proteja cota API rămasă.\n\nPentru a restaura actualizările în timp real:\n\n1. Deschide Husqvarna Developer Portal (vezi „Află mai multe“ mai jos) și creează o aplicație **nouă** (sau rotește-o pe cea existentă).\n2. În Home Assistant, deschide meniul acestei integrări și alege **Reconfigurează**. Introdu noul Client ID și Secret.\n\nIntegrarea se reia automat când următorul handshake WebSocket reușește."
     }
   }
 }
