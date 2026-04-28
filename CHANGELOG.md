@@ -2,6 +2,21 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.12.8] - 2026-04-28
+
+### Fixed
+- **Kill-switch and rate-limit ladder now persist across config-entry reloads.** When `async_config_entry_first_refresh` raised `UpdateFailed` from a 429, Home Assistant tore the coordinator down and rebuilt it on the next setup retry — and every rebuild started `_ws_handshake_denials` and `_rate_limit_hits` at zero. The 5-denial threshold therefore stayed unreachable while the integration was stuck in a setup-retry loop, and each retry burned another quota call confirming what the in-memory state had just forgotten. State now lives in a dedicated HA `Store` (`{domain}.{entry_id}.rate_limit_state`) and is loaded BEFORE the first refresh, so a fresh coordinator immediately sees the kill-switch and short-circuits without an API call. Also migrates `_ws_kill_switch_until` from `time.monotonic()` (which resets on process start) to wall-clock UTC, so a "1-hour cooldown" actually means an hour even across an HA restart.
+- **WS reconnect loop and `_on_ws_error` consult the persisted kill-switch.** Same root cause as above — every code path that checked `now < self._ws_kill_switch_until` now goes through `RateLimitState.is_kill_switch_active()`, so survival across restarts is consistent.
+
+### Added
+- **`RateLimitState` persistence class** in `base_coordinator.py` (debounced saves via `Store.async_delay_save`, mirrors `ApiBudgetTracker`). Tracks `rate_limit_hits`, `last_429_at`, `ws_handshake_denials`, `kill_switch_until`, and `last_success_at` as wall-clock UTC ISO strings.
+- **Application-block detector.** When `rate_limit_hits >= APPLICATION_BLOCKED_RATE_LIMIT_THRESHOLD` (10) AND `last_success_at` is older than `APPLICATION_BLOCKED_NO_SUCCESS_HOURS` (24) — or is `None`, i.e. the Application has never worked — the existing `husqvarna_application_blocked` Repair issue is raised. A 429 ladder running for a full day with no success is no longer a transient problem to back off through; it points at a server-side block that only key rotation fixes. Cleared automatically by `RATE_LIMIT_RESET_SUCCESS_THRESHOLD` consecutive successful polls.
+- **`async_reset_rate_limit_state_store(hass, entry_id)` helper**, called from all four `async_reset_api_budget_store` sites in the config flow (reauth + 3× reconfigure). When the user rotates to a new Husqvarna Application, the persisted block state is wiped so the new client_id starts from a clean slate — otherwise the old kill-switch would still gate the new key's first poll.
+- `STORAGE_VERSION_RATE_LIMIT_STATE`, `RATE_LIMIT_STATE_SAVE_DELAY_SECONDS`, `APPLICATION_BLOCKED_RATE_LIMIT_THRESHOLD`, `APPLICATION_BLOCKED_NO_SUCCESS_HOURS` constants in `const.py`.
+
+### Changed
+- `_ws_consecutive_failures` and `_ws_cooldown_until` (the 15/30/60-min reconnect ladder) deliberately stay in-memory on `time.monotonic()`. Persisting them across an HA restart would punish the user for a process bounce, and the ladder is short enough that a fresh process losing it is fine.
+
 ## [1.12.7] - 2026-04-23
 
 ### Fixed

@@ -36,6 +36,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: GardenaConfigEntry) -> b
 
         am_coordinator = AutomowerCoordinator(hass, entry, session)
         await am_coordinator.api_budget.async_load()
+        # Load persisted rate-limit state BEFORE first refresh — otherwise a
+        # restart while the kill-switch is engaged would still issue an API
+        # call (and likely a 429), defeating the kill-switch's whole purpose.
+        await am_coordinator.rate_limit_state.async_load()
         await am_coordinator.async_config_entry_first_refresh()
         entry.runtime_data = am_coordinator
         await hass.config_entries.async_forward_entry_setups(entry, AUTOMOWER_PLATFORMS)
@@ -44,6 +48,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GardenaConfigEntry) -> b
 
         gd_coordinator = GardenaCoordinator(hass, entry, session)
         await gd_coordinator.api_budget.async_load()
+        await gd_coordinator.rate_limit_state.async_load()
         await gd_coordinator.async_config_entry_first_refresh()
         entry.runtime_data = gd_coordinator
         await hass.config_entries.async_forward_entry_setups(entry, GARDENA_PLATFORMS)

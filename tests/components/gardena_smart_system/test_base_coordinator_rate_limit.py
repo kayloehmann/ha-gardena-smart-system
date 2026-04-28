@@ -295,7 +295,7 @@ class TestRateLimitBackoffFromAuth:
             await coordinator._async_start_websocket(devices)
 
             # Backoff should have been applied
-            assert coordinator._rate_limit_hits == 1
+            assert coordinator.rate_limit_state.rate_limit_hits == 1
             assert coordinator.update_interval == timedelta(minutes=5)
 
     async def test_multiple_rate_limits_increase_backoff_exponentially(
@@ -410,18 +410,19 @@ class TestRateLimitBackoffFromAuth:
             coordinator = mock_config_entry.runtime_data
 
             # Simulate being deep in the backoff ladder
-            coordinator._rate_limit_hits = 5
+            for _ in range(5):
+                coordinator.rate_limit_state.record_rate_limit()
             coordinator._rate_limit_consecutive_successes = 0
             coordinator.update_interval = timedelta(hours=1)
 
             # First N-1 successes: counter still non-zero
             for _ in range(RATE_LIMIT_RESET_SUCCESS_THRESHOLD - 1):
                 await coordinator._async_update_data()
-                assert coordinator._rate_limit_hits == 5
+                assert coordinator.rate_limit_state.rate_limit_hits == 5
 
             # The Nth success clears the counter
             await coordinator._async_update_data()
-            assert coordinator._rate_limit_hits == 0
+            assert coordinator.rate_limit_state.rate_limit_hits == 0
             assert coordinator._rate_limit_consecutive_successes == 0
 
     async def test_rate_limit_success_counter_resets_on_new_429(
@@ -445,7 +446,8 @@ class TestRateLimitBackoffFromAuth:
             await hass.async_block_till_done()
 
             coordinator = mock_config_entry.runtime_data
-            coordinator._rate_limit_hits = 3
+            for _ in range(3):
+                coordinator.rate_limit_state.record_rate_limit()
             coordinator._rate_limit_consecutive_successes = 2
 
             # A new 429 should zero the success counter so the backoff does
@@ -455,7 +457,7 @@ class TestRateLimitBackoffFromAuth:
                 await coordinator._async_update_data()
 
             assert coordinator._rate_limit_consecutive_successes == 0
-            assert coordinator._rate_limit_hits == 4
+            assert coordinator.rate_limit_state.rate_limit_hits == 4
 
 
 class TestCustomPollIntervalWithWs:
@@ -571,7 +573,7 @@ class TestWsHandshakeKillSwitch:
 
             for expected in (1, 2, 3):
                 coordinator._on_ws_error(self._make_handshake_error(410))
-                assert coordinator._ws_handshake_denials == expected
+                assert coordinator.rate_limit_state.ws_handshake_denials == expected
 
     async def test_handshake_denial_activates_kill_switch_at_threshold(
         self,
@@ -601,11 +603,10 @@ class TestWsHandshakeKillSwitch:
             for _ in range(WS_HANDSHAKE_DENIAL_THRESHOLD):
                 coordinator._on_ws_error(self._make_handshake_error(410))
 
-            import time as _time
-
-            remaining = coordinator._ws_kill_switch_until - _time.monotonic()
-            assert remaining > 0
-            assert remaining <= WS_KILL_SWITCH_COOLDOWN.total_seconds()
+            remaining = coordinator.rate_limit_state.kill_switch_remaining()
+            assert remaining is not None
+            assert remaining.total_seconds() > 0
+            assert remaining.total_seconds() <= WS_KILL_SWITCH_COOLDOWN.total_seconds()
 
     async def test_kill_switch_skips_ws_connect(
         self,
@@ -630,9 +631,7 @@ class TestWsHandshakeKillSwitch:
             coordinator._cached_ws_url = None
             mock_client.async_get_websocket_url.reset_mock()
 
-            import time as _time
-
-            coordinator._ws_kill_switch_until = _time.monotonic() + 3600
+            coordinator.rate_limit_state.activate_kill_switch(timedelta(hours=1))
 
             await coordinator._async_start_websocket(devices)
 
@@ -662,8 +661,8 @@ class TestWsHandshakeKillSwitch:
             coordinator = mock_config_entry.runtime_data
             coordinator._on_ws_error(GardenaConnectionError("tcp reset"))
 
-            assert coordinator._ws_handshake_denials == 0
-            assert coordinator._ws_kill_switch_until == 0.0
+            assert coordinator.rate_limit_state.ws_handshake_denials == 0
+            assert coordinator.rate_limit_state.kill_switch_until is None
 
     async def test_device_update_clears_denials(
         self,
@@ -686,17 +685,16 @@ class TestWsHandshakeKillSwitch:
             coordinator = mock_config_entry.runtime_data
 
             # Pre-load the counters as if we were deep in denial territory.
-            import time as _time
-
-            coordinator._ws_handshake_denials = 7
-            coordinator._ws_kill_switch_until = _time.monotonic() + 3600
+            for _ in range(7):
+                coordinator.rate_limit_state.record_handshake_denial()
+            coordinator.rate_limit_state.activate_kill_switch(timedelta(hours=1))
 
             # Simulate an incoming device update
             dev = next(iter(devices.values()))
             coordinator._on_device_update(dev.device_id, dev)
 
-            assert coordinator._ws_handshake_denials == 0
-            assert coordinator._ws_kill_switch_until == 0.0
+            assert coordinator.rate_limit_state.ws_handshake_denials == 0
+            assert coordinator.rate_limit_state.kill_switch_until is None
 
     async def test_kill_switch_skips_rest_polling(
         self,
@@ -726,9 +724,7 @@ class TestWsHandshakeKillSwitch:
             coordinator.data = stale_data  # type: ignore[assignment]
             mock_client.async_get_devices.reset_mock()
 
-            import time as _time
-
-            coordinator._ws_kill_switch_until = _time.monotonic() + 1800
+            coordinator.rate_limit_state.activate_kill_switch(timedelta(minutes=30))
 
             result = await coordinator._async_update_data()
 
@@ -809,4 +805,308 @@ class TestWsHandshakeKillSwitch:
             dev = next(iter(devices.values()))
             coordinator._on_device_update(dev.device_id, dev)
 
+            assert issue_reg.async_get_issue(DOMAIN, "husqvarna_application_blocked") is None
+
+
+class TestRateLimitStatePersistence:
+    """Persistence regression: in-memory-only kill-switch was wiped by setup retries.
+
+    Before this fix, a `ConfigEntryNotReady` from a 429 caused HA to tear the
+    coordinator down and rebuild it on the next retry tick — and every rebuild
+    started `_ws_handshake_denials` and `_rate_limit_hits` at zero.  Threshold
+    was therefore unreachable while the integration was stuck retrying setup.
+    These tests pin the new behaviour: the state lives on disk and is consulted
+    BEFORE any API call on the new coordinator.
+    """
+
+    async def test_kill_switch_survives_coordinator_recreation(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """Activating the kill-switch and reloading reads the same expiry back."""
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = mock_config_entry.runtime_data
+            coordinator.rate_limit_state.activate_kill_switch(timedelta(hours=1))
+            # Force the debounced save to flush so the next coordinator can
+            # read it back. async_delay_save's flush is automatic on unload,
+            # but here we want a deterministic snapshot.
+            await coordinator.rate_limit_state._store.async_save(
+                coordinator.rate_limit_state._snapshot()
+            )
+
+            await hass.config_entries.async_unload(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            new_coordinator = mock_config_entry.runtime_data
+            assert new_coordinator is not coordinator
+            assert new_coordinator.rate_limit_state.is_kill_switch_active() is True
+
+    async def test_first_refresh_skips_api_call_when_kill_switch_active(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """First refresh after restart must NOT hit the API while kill-switch is live.
+
+        Pre-fix: each setup retry burned one quota call confirming what the
+        persisted state already knows — that the Application is blocked.
+        """
+        from homeassistant.helpers.storage import Store
+
+        # Pre-seed the store as if a previous coordinator instance had already
+        # tripped the kill-switch.  Use a wall-clock UTC ISO timestamp so the
+        # value survives a fresh process (monotonic would not).
+        from homeassistant.util import dt as dt_util
+
+        from custom_components.gardena_smart_system.const import (
+            DOMAIN as GS_DOMAIN,
+        )
+        from custom_components.gardena_smart_system.const import (
+            STORAGE_VERSION_RATE_LIMIT_STATE,
+        )
+
+        until = (dt_util.utcnow() + timedelta(hours=1)).isoformat()
+        mock_config_entry.add_to_hass(hass)
+        seed_store: Store[dict[str, object]] = Store(
+            hass,
+            STORAGE_VERSION_RATE_LIMIT_STATE,
+            f"{GS_DOMAIN}.{mock_config_entry.entry_id}.rate_limit_state",
+        )
+        await seed_store.async_save(
+            {
+                "rate_limit_hits": 5,
+                "last_429_at": dt_util.utcnow().isoformat(),
+                "ws_handshake_denials": 5,
+                "kill_switch_until": until,
+                "last_success_at": None,
+            }
+        )
+
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            # The coordinator is up but the first refresh must have observed
+            # the persisted kill-switch and short-circuited.
+            mock_client.async_get_devices.assert_not_called()
+            mock_client.async_get_websocket_url.assert_not_called()
+
+    async def test_record_success_updates_last_success_at(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """A successful poll stamps `last_success_at` for the block detector."""
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = mock_config_entry.runtime_data
+            assert coordinator.rate_limit_state.last_success_at is not None
+
+    async def test_reset_helper_wipes_persisted_state(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """`async_reset_rate_limit_state_store` clears the on-disk state.
+
+        Used by the config-flow reauth/reconfigure path so that a new
+        Application starts from a clean slate — otherwise the kill-switch
+        from the OLD Application would still gate the NEW one's first poll.
+        """
+        from custom_components.gardena_smart_system.base_coordinator import (
+            async_reset_rate_limit_state_store,
+        )
+
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = mock_config_entry.runtime_data
+            coordinator.rate_limit_state.activate_kill_switch(timedelta(hours=1))
+            for _ in range(3):
+                coordinator.rate_limit_state.record_rate_limit()
+
+            await async_reset_rate_limit_state_store(hass, mock_config_entry.entry_id)
+
+            # New coordinator after reload should observe a clean slate.
+            await hass.config_entries.async_reload(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            fresh = mock_config_entry.runtime_data
+            assert fresh.rate_limit_state.is_kill_switch_active() is False
+            assert fresh.rate_limit_state.rate_limit_hits == 0
+
+
+class TestApplicationBlockDetector:
+    """Persistent 429 + no-success window must surface the rotate-key Repair."""
+
+    async def test_repeated_429s_without_success_raise_app_blocked_issue(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """Hitting the 429 ladder past threshold with no success surfaces the issue.
+
+        Without `last_success_at` ever being set, the detector treats the high
+        hit count as proof that this Application has never worked — surfacing
+        the issue immediately so the user knows to rotate.
+        """
+        from aiogardenasmart.exceptions import GardenaRateLimitError
+        from homeassistant.helpers import issue_registry as ir
+
+        from custom_components.gardena_smart_system.const import (
+            APPLICATION_BLOCKED_RATE_LIMIT_THRESHOLD,
+        )
+
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = mock_config_entry.runtime_data
+            # Wipe the success record from setup — we want to exercise the
+            # "never succeeded with this key" branch of the detector.
+            coordinator.rate_limit_state._last_success_at = None
+
+            mock_client.async_get_devices = AsyncMock(side_effect=GardenaRateLimitError("429"))
+
+            for _ in range(APPLICATION_BLOCKED_RATE_LIMIT_THRESHOLD):
+                with pytest.raises(Exception):
+                    await coordinator._async_update_data()
+
+            issue_reg = ir.async_get(hass)
+            issue = issue_reg.async_get_issue(DOMAIN, "husqvarna_application_blocked")
+            assert issue is not None
+            assert issue.severity == ir.IssueSeverity.ERROR
+
+    async def test_app_blocked_issue_cleared_after_recovery(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """Three consecutive successes after the issue is raised clear it.
+
+        The user's API recovering (e.g. they did rotate the key) is the
+        all-clear. Linked to RATE_LIMIT_RESET_SUCCESS_THRESHOLD so we don't
+        flap on a single lucky response.
+        """
+        from aiogardenasmart.exceptions import GardenaRateLimitError
+        from homeassistant.helpers import issue_registry as ir
+
+        from custom_components.gardena_smart_system.const import (
+            APPLICATION_BLOCKED_RATE_LIMIT_THRESHOLD,
+            RATE_LIMIT_RESET_SUCCESS_THRESHOLD,
+        )
+
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = mock_config_entry.runtime_data
+            coordinator.rate_limit_state._last_success_at = None
+
+            mock_client.async_get_devices = AsyncMock(side_effect=GardenaRateLimitError("429"))
+            for _ in range(APPLICATION_BLOCKED_RATE_LIMIT_THRESHOLD):
+                with pytest.raises(Exception):
+                    await coordinator._async_update_data()
+
+            issue_reg = ir.async_get(hass)
+            assert issue_reg.async_get_issue(DOMAIN, "husqvarna_application_blocked") is not None
+
+            # API recovers
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            for _ in range(RATE_LIMIT_RESET_SUCCESS_THRESHOLD):
+                await coordinator._async_update_data()
+
+            assert issue_reg.async_get_issue(DOMAIN, "husqvarna_application_blocked") is None
+            assert coordinator.rate_limit_state.rate_limit_hits == 0
+
+    async def test_block_detector_idle_under_threshold(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """A handful of 429s without crossing the threshold must NOT raise the issue.
+
+        Otherwise transient gateway hiccups would flap the Repair issue on
+        and off and train users to ignore it.
+        """
+        from aiogardenasmart.exceptions import GardenaRateLimitError
+        from homeassistant.helpers import issue_registry as ir
+
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = mock_config_entry.runtime_data
+            mock_client.async_get_devices = AsyncMock(side_effect=GardenaRateLimitError("429"))
+
+            for _ in range(3):
+                with pytest.raises(Exception):
+                    await coordinator._async_update_data()
+
+            issue_reg = ir.async_get(hass)
             assert issue_reg.async_get_issue(DOMAIN, "husqvarna_application_blocked") is None

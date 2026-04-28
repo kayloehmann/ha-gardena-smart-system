@@ -76,6 +76,25 @@ WS_REPAIR_ISSUE_THRESHOLD = 3
 API_BUDGET_MONTHLY = 10_000
 STORAGE_VERSION_API_BUDGET = 1
 BUDGET_SAVE_DELAY_SECONDS = 60
+
+# ── Rate-limit state persistence ─────────────────────────────────
+# `_rate_limit_hits`, `_ws_handshake_denials`, and `_ws_kill_switch_until` were
+# in-memory only — they were lost every time the coordinator was rebuilt
+# (config-entry setup retry on UpdateFailed, HA restart). That made the kill-
+# switch effectively unreachable while the integration was stuck in a setup-
+# retry loop, because each retry started the counters from zero. Persisting
+# the state via Store so it survives both restarts and setup retries.
+STORAGE_VERSION_RATE_LIMIT_STATE = 1
+RATE_LIMIT_STATE_SAVE_DELAY_SECONDS = 5
+
+# ── Persistent application-block detector ────────────────────────
+# When the rate-limit ladder keeps firing AND no successful poll has happened
+# for a long time, the Husqvarna Application is almost certainly server-side
+# blocked. Surface the existing husqvarna_application_blocked Repair issue so
+# the user knows to rotate the Application — there is nothing client-side
+# retry logic can do at that point.
+APPLICATION_BLOCKED_RATE_LIMIT_THRESHOLD = 10
+APPLICATION_BLOCKED_NO_SUCCESS_HOURS = 24
 # Auto-stop safety threshold: once less than this percentage of the monthly
 # budget is left, the coordinator stops making polls/WS fetches and rejects
 # commands until the calendar month rolls over (or the user creates a fresh

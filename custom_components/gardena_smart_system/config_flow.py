@@ -36,7 +36,7 @@ from homeassistant.helpers.selector import (
 
 from aiogardenasmart import GardenaAuth, GardenaClient
 
-from .base_coordinator import async_reset_api_budget_store
+from .base_coordinator import async_reset_api_budget_store, async_reset_rate_limit_state_store
 from .const import (
     API_TYPE_AUTOMOWER,
     API_TYPE_GARDENA,
@@ -232,6 +232,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
             if not error:
                 if client_id != entry.data.get(CONF_CLIENT_ID):
                     await async_reset_api_budget_store(self.hass, entry.entry_id)
+                    await async_reset_rate_limit_state_store(self.hass, entry.entry_id)
                 return self.async_update_reload_and_abort(
                     entry,
                     data={
@@ -284,6 +285,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                 if not error:
                     if client_id != entry.data.get(CONF_CLIENT_ID):
                         await async_reset_api_budget_store(self.hass, entry.entry_id)
+                        await async_reset_rate_limit_state_store(self.hass, entry.entry_id)
                     return self.async_update_reload_and_abort(
                         entry,
                         data={
@@ -306,6 +308,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                     )
                     if client_id != entry.data.get(CONF_CLIENT_ID):
                         await async_reset_api_budget_store(self.hass, entry.entry_id)
+                        await async_reset_rate_limit_state_store(self.hass, entry.entry_id)
                     return self.async_update_reload_and_abort(
                         entry,
                         data={
@@ -349,6 +352,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
             entry = self._get_reconfigure_entry()
             if self._client_id != entry.data.get(CONF_CLIENT_ID):
                 await async_reset_api_budget_store(self.hass, entry.entry_id)
+                await async_reset_rate_limit_state_store(self.hass, entry.entry_id)
             return self.async_update_reload_and_abort(
                 entry,
                 data={
