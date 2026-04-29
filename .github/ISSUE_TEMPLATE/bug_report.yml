@@ -28,23 +28,55 @@ body:
         - label: I am running the **latest released version** of this integration. (Older versions are not supported.)
           required: true
 
-  - type: input
+  - type: dropdown
     id: integration_version
     attributes:
       label: Integration version (required)
       description: |
-        Exact version on disk. Run on your HA host:
+        Exact version on disk. Verify with:
         `cat /config/custom_components/gardena_smart_system/manifest.json | grep version`
-      placeholder: e.g. 1.12.8
+        — pick "Older …" if your version is below 1.12.0; please update before opening a bug report.
+      options:
+        - 1.12.8
+        - 1.12.7
+        - 1.12.6
+        - 1.12.5
+        - 1.12.4
+        - 1.12.3
+        - 1.12.2
+        - 1.12.1
+        - 1.12.0
+        - "Older (please update first)"
     validations:
       required: true
 
-  - type: input
+  - type: dropdown
     id: ha_version
     attributes:
-      label: Home Assistant version (required)
-      description: Settings → About. Include the Core version and the install type.
-      placeholder: e.g. Core 2026.4.3, HA OS 13.2
+      label: Home Assistant Core version (required)
+      description: |
+        Settings → About → Core. Pick the closest minor version (patch level usually doesn't matter).
+        This integration requires HA Core 2024.12 or newer.
+      options:
+        - 2026.5.x
+        - 2026.4.x
+        - 2026.3.x
+        - 2026.2.x
+        - 2026.1.x
+        - 2025.12.x
+        - 2025.11.x
+        - 2025.10.x
+        - 2025.9.x
+        - 2025.8.x
+        - 2025.7.x
+        - 2025.6.x
+        - 2025.5.x
+        - 2025.4.x
+        - 2025.3.x
+        - 2025.2.x
+        - 2025.1.x
+        - 2024.12.x
+        - "Older (unsupported — please update first)"
     validations:
       required: true
 
