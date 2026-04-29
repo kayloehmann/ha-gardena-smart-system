@@ -105,7 +105,11 @@ class GardenaWebSocket:
         except Exception as err:
             if not self._running:
                 return
-            _LOGGER.warning("Gardena WebSocket connection lost: %s", err)
+            # Library-level info — `_on_error` re-emits a user-facing log via
+            # the coordinator with severity that reflects whether the drop
+            # is transient or persistent. Logging WARN here as well meant
+            # one WS death produced three near-identical lines (#18).
+            _LOGGER.debug("Gardena WebSocket connection lost: %s", err)
             if self._on_error:
                 self._on_error(err)
 

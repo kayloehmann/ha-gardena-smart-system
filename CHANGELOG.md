@@ -2,6 +2,15 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.12.9] - 2026-04-29
+
+### Fixed
+- **WebSocket watchdog no longer kills healthy connections (#18).** `WS_WATCHDOG_TIMEOUT_SECONDS` was 300 s, based on the assumption that the Gardena API sends application-level `WEBSOCKET_PING` messages every ~2 min. That assumption holds for chatty accounts but fails for users whose devices stay quiet (no state changes, no app-level pings). aiohttp's `heartbeat=30` in `aiogardenasmart.websocket` already detects TCP-level connection death within ~60 s via WS protocol PING/PONG frames, but those frames don't surface as TEXT messages and don't update `last_message_time`. The result: a perfectly healthy WS got killed every 6 minutes, and the immediate reconnect frequently triggered HTTP 410 on the new signed URL because the server hadn't released the prior session — single-handedly burning ~240 reconnects/day = ~70 % of the monthly REST budget on connections that didn't need recycling. Bumped to 1800 s (30 min), well past any realistic app-level idle window. The WS-connected hourly REST health-check picks up "WS dead but TCP alive" on its next tick.
+- **Triple-logged WS-lost events deduplicated.** The same WS death produced three near-identical lines: `aiogardenasmart.websocket` WARN, `base_coordinator._on_ws_error` ERROR, `base_coordinator._on_ws_error` WARN ("falling back to polling"). Combined with the over-aggressive watchdog, the log was flooded for users whose WS was actually fine. The library line is now DEBUG (the coordinator owns the user-facing log); the user-facing line is DEBUG for transient drops and only escalates to WARN once `_ws_consecutive_failures` crosses `WS_REPAIR_ISSUE_THRESHOLD` — i.e. the same point at which the user-visible repair issue appears.
+
+### Changed
+- `WS_WATCHDOG_TIMEOUT_SECONDS`: 300 → 1800.
+
 ## [1.12.8] - 2026-04-28
 
 ### Fixed

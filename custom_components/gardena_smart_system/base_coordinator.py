@@ -901,7 +901,12 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
     def _on_ws_error(self, err: Exception) -> None:
         """Called when the WebSocket connection fails unrecoverably."""
         cfg = self._config
-        _LOGGER.error("%s WebSocket connection lost: %s", cfg.api_label, err)
+        # The same WS-lost event used to produce three log lines — an ERROR
+        # here, a WARN from `aiogardenasmart.websocket`, and another WARN
+        # below. Three lines per drop multiplied by an over-aggressive
+        # watchdog meant the log was flooded for users whose WS was actually
+        # fine (#18). The library line is now DEBUG; the user-facing line
+        # below adapts severity to "is this transient or persistent?".
         self._ws_connected = False
         self._ws = None
         self._cached_ws_url = None
@@ -924,7 +929,8 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         # _record_ws_handshake_denial), so we skip this one when kill-switch
         # is active to avoid stacking two issues for the same root cause.
         kill_switch_active = self._rate_limit_state.is_kill_switch_active()
-        if self._ws_consecutive_failures >= WS_REPAIR_ISSUE_THRESHOLD and not kill_switch_active:
+        persistent_failure = self._ws_consecutive_failures >= WS_REPAIR_ISSUE_THRESHOLD
+        if persistent_failure and not kill_switch_active:
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
@@ -934,7 +940,13 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
                 severity=ir.IssueSeverity.WARNING,
                 translation_key="websocket_connection_failed",
             )
-        _LOGGER.warning(
+        # Severity follows persistence: a single drop that auto-reconnects
+        # in 60 s is DEBUG noise, repeated drops escalate to WARN once the
+        # repair-issue threshold is crossed (matching the user-visible
+        # repair issue's appearance).
+        log_level = logging.WARNING if persistent_failure else logging.DEBUG
+        _LOGGER.log(
+            log_level,
             "%s WebSocket connection lost, falling back to polling: %s",
             cfg.api_label,
             err,

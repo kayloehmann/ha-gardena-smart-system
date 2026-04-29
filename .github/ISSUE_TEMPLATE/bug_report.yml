@@ -37,6 +37,7 @@ body:
         `cat /config/custom_components/gardena_smart_system/manifest.json | grep version`
         — pick "Older …" if your version is below 1.12.0; please update before opening a bug report.
       options:
+        - 1.12.9
         - 1.12.8
         - 1.12.7
         - 1.12.6

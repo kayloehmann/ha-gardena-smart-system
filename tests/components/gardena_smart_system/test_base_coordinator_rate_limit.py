@@ -1110,3 +1110,112 @@ class TestApplicationBlockDetector:
 
             issue_reg = ir.async_get(hass)
             assert issue_reg.async_get_issue(DOMAIN, "husqvarna_application_blocked") is None
+
+
+class TestWsLostLogSeverity:
+    """Severity of `WebSocket connection lost` log adapts to persistence (#18).
+
+    Pre-1.12.9 every WS death produced three near-identical log lines: the
+    library WARN, plus an ERROR and a WARN from the coordinator. With an
+    over-aggressive watchdog firing every 6 minutes (also #18), that
+    flooded the log even when the WS was actually fine — single-drop
+    transients carried the same weight as a persistent outage.
+
+    1.12.9 routes the user-facing line through `_LOGGER.log(level, ...)`:
+    DEBUG for the first WS_REPAIR_ISSUE_THRESHOLD-1 transient drops,
+    WARN once the threshold is crossed (which is exactly when the user-
+    visible repair issue also appears).
+    """
+
+    def _make_handshake_error(self, status: int) -> aiohttp.WSServerHandshakeError:
+        request_info = aiohttp.RequestInfo(
+            url=MagicMock(),
+            method="GET",
+            headers=MagicMock(),
+            real_url=MagicMock(),
+        )
+        return aiohttp.WSServerHandshakeError(
+            request_info=request_info,
+            history=(),
+            status=status,
+            message="Invalid response status",
+        )
+
+    async def test_first_drop_logs_at_debug(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """A single transient drop should not surface as a WARN."""
+        import logging as _logging
+
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = mock_config_entry.runtime_data
+
+            with caplog.at_level(
+                _logging.DEBUG, logger="custom_components.gardena_smart_system.base_coordinator"
+            ):
+                coordinator._on_ws_error(self._make_handshake_error(410))
+
+            relevant = [r for r in caplog.records if "falling back to polling" in r.getMessage()]
+            assert relevant, "expected at least one 'falling back to polling' log line"
+            assert all(r.levelno == _logging.DEBUG for r in relevant), (
+                f"first drop should log at DEBUG, got: "
+                f"{[(r.levelname, r.getMessage()) for r in relevant]}"
+            )
+
+    async def test_persistent_drops_escalate_to_warning(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Once consecutive failures cross WS_REPAIR_ISSUE_THRESHOLD, escalate."""
+        import logging as _logging
+
+        from custom_components.gardena_smart_system.const import WS_REPAIR_ISSUE_THRESHOLD
+
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = mock_config_entry.runtime_data
+
+            # Drive the consecutive-failure counter up to the threshold;
+            # _ws_consecutive_failures is reset whenever a fresh
+            # `_async_start_websocket_locked` call returns synchronously OK,
+            # so we set it directly here to isolate the log-level branch.
+            coordinator._ws_consecutive_failures = WS_REPAIR_ISSUE_THRESHOLD - 1
+
+            with caplog.at_level(
+                _logging.DEBUG, logger="custom_components.gardena_smart_system.base_coordinator"
+            ):
+                # _record_ws_failure inside _on_ws_error will increment to threshold.
+                coordinator._on_ws_error(self._make_handshake_error(410))
+
+            relevant = [r for r in caplog.records if "falling back to polling" in r.getMessage()]
+            assert relevant
+            assert any(r.levelno == _logging.WARNING for r in relevant), (
+                f"persistent drop should log at WARNING, got: "
+                f"{[(r.levelname, r.getMessage()) for r in relevant]}"
+            )
