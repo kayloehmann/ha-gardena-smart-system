@@ -1,0 +1,65 @@
+name: Feature Request
+description: Suggest a new feature or improvement.
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to suggest an improvement.
+
+        For broader brainstorming or "would this be a good idea?" questions, please use [Discussions](https://github.com/kayloehmann/ha-gardena-smart-system/discussions) instead.
+
+        Fields marked **(required)** must be filled in or the issue cannot be submitted.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      options:
+        - label: I have searched [existing issues](https://github.com/kayloehmann/ha-gardena-smart-system/issues?q=is%3Aissue) (open and closed) and could not find a duplicate.
+          required: true
+        - label: I have checked the [Wiki](https://github.com/kayloehmann/ha-gardena-smart-system/wiki) — what I want isn't already supported.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem this feature would solve (required)
+      description: What is the use case or pain point? Describe the situation, not the solution.
+      placeholder: |
+        I have X devices and want to do Y, but currently the integration doesn't expose Z…
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution (required)
+      description: How would you like the integration to behave? Be specific (entity name, attribute, service, …).
+    validations:
+      required: true
+
+  - type: dropdown
+    id: api_type
+    attributes:
+      label: Which API does this concern? (required)
+      options:
+        - Gardena Smart System API
+        - Automower Connect API
+        - Both
+        - Integration-internal (no API change)
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you tried, other integrations that solve this, related Husqvarna API endpoints, etc.
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Screenshots, links to Husqvarna API docs, mock-ups, or anything else useful.

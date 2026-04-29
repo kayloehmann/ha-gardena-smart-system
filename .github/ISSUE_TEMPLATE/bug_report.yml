@@ -1,0 +1,181 @@
+name: Bug Report
+description: Report a problem with the Gardena Smart System integration.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report a bug.
+
+        **Before submitting**, please check:
+        1. The [Troubleshooting guide](https://github.com/kayloehmann/ha-gardena-smart-system/wiki/Troubleshooting-EN) — most recurring 410/429 errors are caused by a server-side blocked Husqvarna Application and resolve by rotating it in the [Developer Portal](https://developer.husqvarnagroup.cloud/).
+        2. The [list of open issues](https://github.com/kayloehmann/ha-gardena-smart-system/issues) — your problem may already be tracked.
+        3. The [API Rate Limits page](https://github.com/kayloehmann/ha-gardena-smart-system/wiki/API-Rate-Limits-EN) if you see "Rate limited" or "WebSocket connection lost" in your logs.
+
+        Fields marked **(required)** must be filled in or the issue cannot be submitted.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Confirm you have done the basics. Reports without these will be closed.
+      options:
+        - label: I have read the [Troubleshooting wiki page](https://github.com/kayloehmann/ha-gardena-smart-system/wiki/Troubleshooting-EN).
+          required: true
+        - label: I have searched [existing issues](https://github.com/kayloehmann/ha-gardena-smart-system/issues?q=is%3Aissue) (open and closed) and could not find a duplicate.
+          required: true
+        - label: I am running the **latest released version** of this integration. (Older versions are not supported.)
+          required: true
+
+  - type: input
+    id: integration_version
+    attributes:
+      label: Integration version (required)
+      description: |
+        Exact version on disk. Run on your HA host:
+        `cat /config/custom_components/gardena_smart_system/manifest.json | grep version`
+      placeholder: e.g. 1.12.8
+    validations:
+      required: true
+
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version (required)
+      description: Settings → About. Include the Core version and the install type.
+      placeholder: e.g. Core 2026.4.3, HA OS 13.2
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install_type
+    attributes:
+      label: Home Assistant install type (required)
+      options:
+        - Home Assistant OS
+        - Home Assistant Container (Docker)
+        - Home Assistant Supervised
+        - Home Assistant Core (venv)
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: api_type
+    attributes:
+      label: Which API is affected? (required)
+      description: This integration handles two separate Husqvarna APIs with independent quotas.
+      options:
+        - Gardena Smart System API
+        - Automower Connect API
+        - Both
+    validations:
+      required: true
+
+  - type: textarea
+    id: devices
+    attributes:
+      label: Affected devices
+      description: |
+        Names and model types of the affected devices (no serial numbers, please).
+        Helpful: how many devices total, which ones misbehave.
+      placeholder: |
+        - smart Sensor "Front lawn" — sometimes shows unavailable
+        - smart Water Control "Patio" — commands fail
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug (required)
+      description: Clear, concise description of what is happening and what you expected to happen.
+      placeholder: |
+        What happens:
+        What you expected:
+        How often:
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce (required)
+      description: Numbered list. If the bug is intermittent, describe the conditions that make it appear.
+      placeholder: |
+        1. Restart Home Assistant
+        2. Open the Gardena entity
+        3. Press the "Open valve" button
+        4. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs (required)
+      description: |
+        **Debug logs** are required for runtime/connection bugs. Add this to `configuration.yaml` and restart HA, then reproduce the issue:
+
+        ```yaml
+        logger:
+          default: warning
+          logs:
+            custom_components.gardena_smart_system: debug
+            aiogardenasmart: debug
+        ```
+
+        Paste the relevant log lines below, or attach a `home-assistant.log` excerpt.
+        **Do NOT redact** the WebSocket auth tokens or device IDs unless you are certain — they are short-lived and the maintainers need them to diagnose 410 / handshake-denial issues.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics download (required)
+      description: |
+        **Settings → Devices & Services → Gardena Smart System → ⋮ menu → Download diagnostics**.
+
+        Sensitive data (credentials, GPS coordinates, serial numbers, device names) is automatically redacted.
+        Drag the JSON file into this textbox to attach it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you already tried?
+      description: |
+        Helps us avoid suggesting the obvious. Tick what applies and add detail.
+      placeholder: |
+        - Restarted HA
+        - Reloaded the integration
+        - Rotated the Husqvarna Application in the Developer Portal
+        - Reconfigured the integration with new credentials
+        - Removed and re-added the integration
+
+  - type: input
+    id: repair_issue
+    attributes:
+      label: Repair notification visible?
+      description: |
+        Settings → Repairs. If a yellow/red notification from this integration is shown, paste its **title** here.
+        Common ones: "WebSocket connection lost", "Husqvarna Application blocked".
+      placeholder: e.g. Husqvarna Application blocked
+
+  - type: input
+    id: api_budget_remaining
+    attributes:
+      label: API budget remaining (%)
+      description: |
+        Value of the diagnostic sensor `sensor.<entry>_api_budget_remaining`, or "N/A" if you don't have it.
+      placeholder: e.g. 87 %
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Screenshots, related issues, theories, anything else relevant.
