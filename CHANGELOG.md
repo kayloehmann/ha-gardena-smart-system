@@ -2,6 +2,11 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.12.10] - 2026-04-30
+
+### Changed
+- **Watchdog timeout: 1800 s → 14400 s (4 h) (#20).** v1.12.9 reduced the unnecessary watchdog-driven reconnects on quiet gardens by ~6× but didn't eliminate them: a low-activity garden still saw the watchdog trip every 30 min, force-disconnect a healthy WebSocket, and burn one REST call to fetch a fresh signed URL — ~48 unnecessary fetches/day, ~14 % of the 10 000 monthly REST budget. `_last_message_time` only advances on application-level Gardena messages; aiohttp's PING/PONG keeps the TCP connection alive but is handled internally and doesn't surface as a message, so the timestamp doesn't update on a quiet garden even though everything is fine. aiohttp's `heartbeat=30` is the real liveness check (TCP-level death detected in ~60 s); the application-level watchdog is a last-resort safety net for edge cases where aiohttp's heartbeat itself misbehaves, and 4 h is plenty for that role. Quiet-garden churn drops from ~48/day to ~6/day (~1.7 % of the monthly budget); chatty gardens are unaffected.
+
 ## [1.12.9] - 2026-04-29
 
 ### Fixed

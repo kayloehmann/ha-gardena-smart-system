@@ -843,7 +843,7 @@ class TestWebSocketWatchdog:
         coordinator._ws = ws
         coordinator._ws_connected = True
 
-        # silence=1s < WS_WATCHDOG_TIMEOUT_SECONDS(1800)
+        # silence=1s < WS_WATCHDOG_TIMEOUT_SECONDS(14400)
         _BASE = "custom_components.gardena_smart_system.base_coordinator.time"
         with patch(_BASE + ".monotonic", return_value=1000.0):
             ws.last_message_time = 999.0
@@ -863,10 +863,10 @@ class TestWebSocketWatchdog:
 
         # Patch time.monotonic in the module under test so the test is not
         # affected by freezegun or other time mocking in the HA test harness.
-        # silence=2400s > WS_WATCHDOG_TIMEOUT_SECONDS(1800)
+        # silence=18000s > WS_WATCHDOG_TIMEOUT_SECONDS(14400)
         _BASE = "custom_components.gardena_smart_system.base_coordinator.time"
         with (
-            patch(_BASE + ".monotonic", return_value=3000.0),
+            patch(_BASE + ".monotonic", return_value=18600.0),
             patch.object(coordinator, "async_request_refresh", new_callable=AsyncMock),
         ):
             ws.last_message_time = 600.0
@@ -898,9 +898,10 @@ class TestWebSocketWatchdog:
         coordinator._ws = ws
         coordinator._ws_connected = True
 
+        # silence=18000s > WS_WATCHDOG_TIMEOUT_SECONDS(14400)
         _BASE = "custom_components.gardena_smart_system.base_coordinator.time"
         with (
-            patch(_BASE + ".monotonic", return_value=3000.0),
+            patch(_BASE + ".monotonic", return_value=18600.0),
             patch.object(
                 coordinator, "async_request_refresh", new_callable=AsyncMock
             ) as mock_refresh,

@@ -46,20 +46,27 @@ COMMAND_BURST_CAPACITY = 10
 # a SECOND-LEVEL safety net for "TCP alive but app silent" — i.e. cases
 # where the Gardena server has logically forgotten about us.
 #
-# Previously set to 300 s under the assumption that the API sends app-level
-# `WEBSOCKET_PING` messages every ~2 min. That assumption holds for chatty
-# accounts but fails for users whose devices stay quiet (no state changes,
-# no app-level pings) — see issue #18: a perfectly healthy WS gets killed
-# every 6 min, and the immediate reconnect frequently triggers HTTP 410 on
-# the new signed URL because the server hasn't released the prior session.
-# That single-handedly burned ~240 reconnects/day = ~70 % of the monthly
-# REST budget on healthy connections.
+# History:
+#   300 s → killed healthy WS every 6 min on quiet gardens (issue #18,
+#           ~240 reconnects/day, ~70 % of monthly REST budget burned).
+#   1800 s → reduced to ~48 reconnects/day, but quiet gardens still saw
+#            the watchdog trip on schedule (issue #20).
+#   14400 s (current) → see below.
 #
-# 30 min is well past any realistic app-level idle window (Husqvarna's
-# product behaviour for a low-activity garden), keeps the safety net for
-# truly stuck WS sessions, and aligns with the WS-connected hourly health-
-# check poll which catches "WS dead but TCP alive" on the next REST tick.
-WS_WATCHDOG_TIMEOUT_SECONDS = 1800
+# `_last_message_time` only advances on application-level messages from the
+# Gardena server. aiohttp's PING/PONG is handled internally and does NOT
+# surface as a message, so on a low-activity garden (no state changes, no
+# server-side `WEBSOCKET_PING`) the timestamp doesn't update at all even
+# though the connection is healthy. There is no documented Husqvarna SLA
+# for `WEBSOCKET_PING` cadence, and field reports show idle windows well
+# past 30 min.
+#
+# 4 h is a deliberately conservative second-level safety net: it survives
+# any plausible quiet-garden idle period while still catching the rare
+# edge case where aiohttp's own heartbeat machinery misbehaves (library
+# bug, broken proxy, etc.) before the WS-connected hourly REST health-
+# check would notice via stale data.
+WS_WATCHDOG_TIMEOUT_SECONDS = 14400
 WS_WATCHDOG_CHECK_INTERVAL = timedelta(seconds=60)
 
 # WebSocket handshake kill-switch: after this many consecutive 4xx handshake
