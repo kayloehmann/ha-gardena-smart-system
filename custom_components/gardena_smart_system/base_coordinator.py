@@ -467,7 +467,6 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         # avoid log spam when MQTT is permanently unavailable.
         self._mqtt_bridge_next_check: float = 0.0
         self._ws_watchdog_unsub: CALLBACK_TYPE | None = None
-        self._cached_ws_url: str | None = None
         self._ws_connect_lock = asyncio.Lock()
         # WebSocket circuit breaker: consecutive failures trigger an escalating
         # cooldown during which no new WS connection attempts are made. Protects
@@ -813,37 +812,37 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         """Inner WebSocket start logic (must be called under _ws_connect_lock)."""
         cfg = self._config
 
-        # Reuse cached WS URL while the auth token is still valid
-        ws_url = self._cached_ws_url if self._auth.is_token_valid and self._cached_ws_url else None
-
-        if ws_url is None:
-            if self._ws_url_is_api_call:
-                # Increment before the call — failed attempts still count
-                # against the server-side monthly quota (see note in
-                # _async_update_data).
-                self._api_budget.increment()
-            try:
-                ws_url = await self._async_get_ws_url(devices)
-            except cfg.rate_limit_error_type as err:
-                self._apply_rate_limit_backoff(err)
-                self._record_ws_failure()
-                return
-            except cfg.auth_error_type as err:
-                _LOGGER.warning(
-                    "Could not obtain %s WebSocket URL (auth), will rely on polling: %s",
-                    cfg.api_label,
-                    err,
-                )
-                return
-            except cfg.connection_error_type as err:
-                _LOGGER.warning(
-                    "Could not obtain %s WebSocket URL, will rely on polling: %s",
-                    cfg.api_label,
-                    err,
-                )
-                self._record_ws_failure()
-                return
-            self._cached_ws_url = ws_url
+        # Always fetch a fresh WS URL. Gardena signs URLs as single-use; once
+        # one has been handed to ws_connect the server consumes it, and the
+        # next handshake against the same URL returns 410 Gone (#18, second
+        # wave: each watchdog-driven reconnect burned one cycle on a stale
+        # URL before recovering).
+        if self._ws_url_is_api_call:
+            # Increment before the call — failed attempts still count
+            # against the server-side monthly quota (see note in
+            # _async_update_data).
+            self._api_budget.increment()
+        try:
+            ws_url = await self._async_get_ws_url(devices)
+        except cfg.rate_limit_error_type as err:
+            self._apply_rate_limit_backoff(err)
+            self._record_ws_failure()
+            return
+        except cfg.auth_error_type as err:
+            _LOGGER.warning(
+                "Could not obtain %s WebSocket URL (auth), will rely on polling: %s",
+                cfg.api_label,
+                err,
+            )
+            return
+        except cfg.connection_error_type as err:
+            _LOGGER.warning(
+                "Could not obtain %s WebSocket URL, will rely on polling: %s",
+                cfg.api_label,
+                err,
+            )
+            self._record_ws_failure()
+            return
 
         self._ws = self._create_websocket(
             auth=self._auth,
@@ -861,8 +860,6 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
                 err,
             )
             self._ws = None
-            # Invalidate cached URL so the next attempt fetches a fresh one
-            self._cached_ws_url = None
             self._record_ws_failure()
             self._record_ws_handshake_denial(err)
             return
@@ -909,7 +906,6 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         # below adapts severity to "is this transient or persistent?".
         self._ws_connected = False
         self._ws = None
-        self._cached_ws_url = None
         self._stop_ws_watchdog()
         self.update_interval = self._custom_poll_interval or cfg.scan_interval
 

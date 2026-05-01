@@ -57,15 +57,22 @@ def _setup_mocks(mock_devices: dict[str, MagicMock]):
     return mock_client, mock_auth, mock_ws
 
 
-class TestWsUrlCaching:
-    """Fix 1: WebSocket URL is cached and reused while token is valid."""
+class TestWsUrlAlwaysFresh:
+    """Every WS (re)connect fetches a fresh signed URL.
 
-    async def test_ws_url_cached_on_first_connect(
+    Gardena signs WebSocket URLs as single-use: once handed to ws_connect, the
+    server consumes the URL and any later handshake against the same URL
+    returns 410 Gone. An earlier revision cached the URL and reused it on
+    reconnect, which produced a deterministic 410 on the first reconnect tick
+    after the watchdog forced a stale-WS disconnect (#18, second wave).
+    """
+
+    async def test_first_connect_fetches_ws_url(
         self,
         hass: HomeAssistant,
         mock_config_entry: MockConfigEntry,
     ) -> None:
-        """After first successful WS connect, the URL should be cached."""
+        """Initial setup performs exactly one WS URL fetch."""
         devices = _make_mock_devices()
         mock_client, mock_auth, mock_ws = _setup_mocks(devices)
 
@@ -78,16 +85,14 @@ class TestWsUrlCaching:
             await hass.config_entries.async_setup(mock_config_entry.entry_id)
             await hass.async_block_till_done()
 
-            coordinator = mock_config_entry.runtime_data
-            assert coordinator._cached_ws_url == "wss://test"
             mock_client.async_get_websocket_url.assert_called_once()
 
-    async def test_ws_url_reused_on_reconnect_with_valid_token(
+    async def test_reconnect_fetches_fresh_url_even_with_valid_token(
         self,
         hass: HomeAssistant,
         mock_config_entry: MockConfigEntry,
     ) -> None:
-        """On reconnect with valid token, the cached URL is reused (no new API call)."""
+        """Reconnect with still-valid token must NOT reuse the prior URL."""
         devices = _make_mock_devices()
         mock_client, mock_auth, mock_ws = _setup_mocks(devices)
 
@@ -103,52 +108,28 @@ class TestWsUrlCaching:
             coordinator = mock_config_entry.runtime_data
             assert mock_client.async_get_websocket_url.call_count == 1
 
-            # Simulate WS disconnect + reconnect attempt
+            # Token still valid — earlier code path would have reused the URL.
+            assert mock_auth.is_token_valid is True
             coordinator._ws_connected = False
             coordinator._ws = None
-            await coordinator._async_start_websocket(devices)
+            mock_client.async_get_websocket_url.return_value = "wss://fresh"
 
-            # URL should have been reused — no additional fetch
-            assert mock_client.async_get_websocket_url.call_count == 1
-
-    async def test_ws_url_refetched_when_token_expired(
-        self,
-        hass: HomeAssistant,
-        mock_config_entry: MockConfigEntry,
-    ) -> None:
-        """When the token is no longer valid, a fresh WS URL must be fetched."""
-        devices = _make_mock_devices()
-        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
-
-        with (
-            patch(_PATCH_CLIENT, return_value=mock_client),
-            patch(_PATCH_AUTH, return_value=mock_auth),
-            patch(_PATCH_WS, return_value=mock_ws),
-        ):
-            mock_config_entry.add_to_hass(hass)
-            await hass.config_entries.async_setup(mock_config_entry.entry_id)
-            await hass.async_block_till_done()
-
-            coordinator = mock_config_entry.runtime_data
-            assert mock_client.async_get_websocket_url.call_count == 1
-
-            # Expire the token
-            mock_auth.is_token_valid = False
-            coordinator._ws_connected = False
-            coordinator._ws = None
-
-            mock_client.async_get_websocket_url.return_value = "wss://new-url"
             await coordinator._async_start_websocket(devices)
 
             assert mock_client.async_get_websocket_url.call_count == 2
-            assert coordinator._cached_ws_url == "wss://new-url"
+            mock_ws.async_connect.assert_called_with("wss://fresh")
 
-    async def test_ws_url_cache_invalidated_on_connect_failure(
+    async def test_watchdog_disconnect_triggers_fresh_url_fetch(
         self,
         hass: HomeAssistant,
         mock_config_entry: MockConfigEntry,
     ) -> None:
-        """If WS connect fails with cached URL, the cache is cleared."""
+        """Regression for #18: watchdog→reconnect must fetch a fresh URL.
+
+        Before the fix, the watchdog cleared `_ws` but left the cached URL in
+        place. The reconnect handed the stale URL to ws_connect and got 410,
+        adding noise on top of an already-stale connection.
+        """
         devices = _make_mock_devices()
         mock_client, mock_auth, mock_ws = _setup_mocks(devices)
 
@@ -162,9 +143,43 @@ class TestWsUrlCaching:
             await hass.async_block_till_done()
 
             coordinator = mock_config_entry.runtime_data
-            assert coordinator._cached_ws_url == "wss://test"
+            assert mock_client.async_get_websocket_url.call_count == 1
 
-            # Simulate reconnect with failing connect
+            # Pretend the WS has been silent for longer than the watchdog
+            # timeout. ``last_message_time`` is monotonic — a far-past value
+            # forces the watchdog branch.
+            mock_ws.last_message_time = 1.0
+            await coordinator._async_ws_watchdog_check()
+
+            # Watchdog tore the connection down; we don't run the full
+            # reconnect-loop sleep, just the connect path it eventually
+            # triggers.
+            coordinator._cancel_ws_reconnect()
+            mock_client.async_get_websocket_url.return_value = "wss://fresh-after-watchdog"
+            await coordinator._async_start_websocket(devices)
+
+            assert mock_client.async_get_websocket_url.call_count == 2
+            mock_ws.async_connect.assert_called_with("wss://fresh-after-watchdog")
+
+    async def test_connect_failure_does_not_block_next_fetch(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: MockConfigEntry,
+    ) -> None:
+        """A failed connect leaves the coordinator ready to fetch a new URL."""
+        devices = _make_mock_devices()
+        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
+
+        with (
+            patch(_PATCH_CLIENT, return_value=mock_client),
+            patch(_PATCH_AUTH, return_value=mock_auth),
+            patch(_PATCH_WS, return_value=mock_ws),
+        ):
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            coordinator = mock_config_entry.runtime_data
             coordinator._ws_connected = False
             coordinator._ws = None
             mock_ws.async_connect = AsyncMock(side_effect=aiohttp.ClientError("Connection refused"))
@@ -172,34 +187,12 @@ class TestWsUrlCaching:
             with patch(_PATCH_WS, return_value=mock_ws):
                 await coordinator._async_start_websocket(devices)
 
-            assert coordinator._cached_ws_url is None
+            # Recovery attempt must perform a new URL fetch.
+            mock_ws.async_connect = AsyncMock()
+            with patch(_PATCH_WS, return_value=mock_ws):
+                await coordinator._async_start_websocket(devices)
 
-    async def test_ws_url_cache_invalidated_on_ws_error(
-        self,
-        hass: HomeAssistant,
-        mock_config_entry: MockConfigEntry,
-    ) -> None:
-        """When _on_ws_error is called, the cached URL is cleared."""
-        devices = _make_mock_devices()
-        mock_client, mock_auth, mock_ws = _setup_mocks(devices)
-
-        with (
-            patch(_PATCH_CLIENT, return_value=mock_client),
-            patch(_PATCH_AUTH, return_value=mock_auth),
-            patch(_PATCH_WS, return_value=mock_ws),
-        ):
-            mock_config_entry.add_to_hass(hass)
-            await hass.config_entries.async_setup(mock_config_entry.entry_id)
-            await hass.async_block_till_done()
-
-            coordinator = mock_config_entry.runtime_data
-            assert coordinator._cached_ws_url == "wss://test"
-
-            from aiogardenasmart.exceptions import GardenaConnectionError
-
-            coordinator._on_ws_error(GardenaConnectionError("lost"))
-
-            assert coordinator._cached_ws_url is None
+            assert mock_client.async_get_websocket_url.call_count >= 3
 
 
 class TestWsConnectGuard:
@@ -231,7 +224,6 @@ class TestWsConnectGuard:
             coordinator = mock_config_entry.runtime_data
             coordinator._ws_connected = False
             coordinator._ws = None
-            coordinator._cached_ws_url = None
 
             original_locked = coordinator._async_start_websocket_locked
 
@@ -287,7 +279,6 @@ class TestRateLimitBackoffFromAuth:
             # Simulate reconnect where WS URL fetch hits rate limit
             coordinator._ws_connected = False
             coordinator._ws = None
-            coordinator._cached_ws_url = None
             mock_client.async_get_websocket_url = AsyncMock(
                 side_effect=GardenaRateLimitError("429 Too Many Requests")
             )
@@ -321,7 +312,6 @@ class TestRateLimitBackoffFromAuth:
             coordinator = mock_config_entry.runtime_data
             coordinator._ws_connected = False
             coordinator._ws = None
-            coordinator._cached_ws_url = None
             mock_client.async_get_websocket_url = AsyncMock(
                 side_effect=GardenaRateLimitError("429")
             )
@@ -331,12 +321,10 @@ class TestRateLimitBackoffFromAuth:
             assert coordinator.update_interval == timedelta(minutes=5)
 
             # Hit 2: 10 min
-            coordinator._cached_ws_url = None
             await coordinator._async_start_websocket(devices)
             assert coordinator.update_interval == timedelta(minutes=10)
 
             # Hit 3: 20 min
-            coordinator._cached_ws_url = None
             await coordinator._async_start_websocket(devices)
             assert coordinator.update_interval == timedelta(minutes=20)
 
@@ -363,7 +351,6 @@ class TestRateLimitBackoffFromAuth:
             coordinator = mock_config_entry.runtime_data
             coordinator._ws_connected = False
             coordinator._ws = None
-            coordinator._cached_ws_url = None
             mock_client.async_get_websocket_url = AsyncMock(
                 side_effect=GardenaRateLimitError("429")
             )
@@ -372,7 +359,6 @@ class TestRateLimitBackoffFromAuth:
             # the backoff keeps escalating — this test isolates the cap logic
             # in _apply_rate_limit_backoff, not the WS circuit breaker.
             for _ in range(10):
-                coordinator._cached_ws_url = None
                 coordinator._ws_cooldown_until = 0.0
                 coordinator._ws_consecutive_failures = 0
                 await coordinator._async_start_websocket(devices)
@@ -628,7 +614,6 @@ class TestWsHandshakeKillSwitch:
 
             coordinator = mock_config_entry.runtime_data
             coordinator._ws_connected = False
-            coordinator._cached_ws_url = None
             mock_client.async_get_websocket_url.reset_mock()
 
             coordinator.rate_limit_state.activate_kill_switch(timedelta(hours=1))
