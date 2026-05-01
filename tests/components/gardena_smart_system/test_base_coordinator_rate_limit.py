@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -17,7 +18,7 @@ except ImportError:
         MockConfigEntry,  # type: ignore[no-redef]
     )
 
-from custom_components.gardena_smart_system.const import DOMAIN
+from custom_components.gardena_smart_system.const import DOMAIN, WS_WATCHDOG_TIMEOUT_SECONDS
 
 from .conftest import ENTRY_DATA, make_mock_device
 
@@ -146,9 +147,12 @@ class TestWsUrlAlwaysFresh:
             assert mock_client.async_get_websocket_url.call_count == 1
 
             # Pretend the WS has been silent for longer than the watchdog
-            # timeout. ``last_message_time`` is monotonic — a far-past value
-            # forces the watchdog branch.
-            mock_ws.last_message_time = 1.0
+            # timeout. ``last_message_time`` is a monotonic timestamp, so
+            # anchor it relative to ``time.monotonic()`` — using a literal
+            # like 1.0 fails on hosts whose monotonic clock has not run long
+            # enough (e.g. fresh CI containers) because the resulting silence
+            # window is shorter than WS_WATCHDOG_TIMEOUT_SECONDS.
+            mock_ws.last_message_time = time.monotonic() - WS_WATCHDOG_TIMEOUT_SECONDS - 1
             await coordinator._async_ws_watchdog_check()
 
             # Watchdog tore the connection down; we don't run the full
