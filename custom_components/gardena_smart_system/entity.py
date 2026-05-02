@@ -11,7 +11,13 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from aiogardenasmart import Device, GardenaAuthenticationError, GardenaException
+from aiogardenasmart import (
+    Device,
+    GardenaAuthenticationError,
+    GardenaConnectionError,
+    GardenaException,
+    GardenaRequestError,
+)
 
 from .const import DOMAIN
 from .coordinator import GardenaCoordinator
@@ -113,8 +119,9 @@ class GardenaEntity(CoordinatorEntity[GardenaCoordinator]):
         Each callsite previously duplicated the throttle/increment/try-except
         boilerplate. Centralising it here keeps the command path uniform: the
         budget is counted *before* the await (pessimistic accounting — see
-        v1.10.4 fix), auth failures trigger reauth, and all other API errors
-        surface as translated HomeAssistantError.
+        v1.10.4 fix), auth failures trigger reauth, transient upstream timeouts
+        surface a "may have happened, check state" message, and all other API
+        errors surface as translated HomeAssistantError.
         """
         self.coordinator.check_command_throttle()
         self.coordinator.api_budget.increment()
@@ -124,6 +131,29 @@ class GardenaEntity(CoordinatorEntity[GardenaCoordinator]):
             raise ConfigEntryAuthFailed(
                 translation_domain="gardena_smart_system",
                 translation_key="command_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        except GardenaRequestError as err:
+            # 502/503/504 from the upstream gateway: the request reached the
+            # Gardena edge but the backend timed out or was unavailable. The
+            # command may or may not have been processed — surface that
+            # uncertainty so users check device state instead of blindly
+            # retrying.
+            translation_key = (
+                "command_timeout" if err.status in (502, 503, 504) else "command_failed"
+            )
+            raise HomeAssistantError(
+                translation_domain="gardena_smart_system",
+                translation_key=translation_key,
+                translation_placeholders={"error": str(err)},
+            ) from err
+        except GardenaConnectionError as err:
+            # Network-level failure (DNS, connection refused, client timeout).
+            # Same uncertainty as 504 — a client-side timeout can still race a
+            # successful server-side write.
+            raise HomeAssistantError(
+                translation_domain="gardena_smart_system",
+                translation_key="command_timeout",
                 translation_placeholders={"error": str(err)},
             ) from err
         except GardenaException as err:

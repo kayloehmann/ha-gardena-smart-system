@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "Nije uspjelo slanje naredbe uređaju: {error}"
     },
+    "command_timeout": {
+      "message": "Gardena oblak nije odgovorio na vrijeme. Naredba je možda izvršena, a možda i nije — provjerite stanje uređaja prije ponovnog pokušaja. ({error})"
+    },
     "device_unavailable": {
       "message": "Uređaj trenutno nije dostupan."
     },

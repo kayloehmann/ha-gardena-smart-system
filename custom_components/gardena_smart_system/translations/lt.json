@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "Nepavyko išsiųsti komandos įrenginiui: {error}"
     },
+    "command_timeout": {
+      "message": "Gardena debesis neatsakė laiku. Komanda galėjo būti pristatyta arba ne — prieš bandydami iš naujo patikrinkite įrenginio būseną. ({error})"
+    },
     "device_unavailable": {
       "message": "Įrenginys šiuo metu nepasiekiamas."
     },

@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "Käsu saatmine seadmele ebaõnnestus: {error}"
     },
+    "command_timeout": {
+      "message": "Gardena pilv ei vastanud õigeaegselt. Käsk võis, kuid ei pruukinud kohale jõuda — enne uuesti proovimist kontrollige seadme olekut. ({error})"
+    },
     "device_unavailable": {
       "message": "Seade pole praegu saadaval."
     },

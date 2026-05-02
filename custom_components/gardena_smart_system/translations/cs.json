@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "Odeslání příkazu do zařízení se nezdařilo: {error}"
     },
+    "command_timeout": {
+      "message": "Cloud Gardena neodpověděl včas. Příkaz mohl, ale nemusel být doručen — před opakováním zkontrolujte stav zařízení. ({error})"
+    },
     "device_unavailable": {
       "message": "Zařízení je momentálně nedostupné."
     },

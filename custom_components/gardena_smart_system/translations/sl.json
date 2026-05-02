@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "Ukaza ni bilo mogoče poslati napravi: {error}"
     },
+    "command_timeout": {
+      "message": "Oblak Gardena ni pravočasno odgovoril. Ukaz je morda bil dostavljen ali pa ne — pred ponovnim poskusom preverite stanje naprave. ({error})"
+    },
     "device_unavailable": {
       "message": "Naprava trenutno ni na voljo."
     },

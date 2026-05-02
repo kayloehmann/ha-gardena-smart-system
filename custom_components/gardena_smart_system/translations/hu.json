@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "Nem sikerült parancsot küldeni az eszköznek: {error}"
     },
+    "command_timeout": {
+      "message": "A Gardena felhő nem válaszolt időben. Lehet, hogy a parancs továbbításra került, lehet, hogy nem — újrapróbálkozás előtt ellenőrizze az eszköz állapotát. ({error})"
+    },
     "device_unavailable": {
       "message": "Az eszköz jelenleg nem elérhető."
     },

@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "向裝置傳送命令失敗：{error}"
     },
+    "command_timeout": {
+      "message": "Gardena 雲端未及時回應。指令可能已送達也可能未送達 — 重試前請檢查裝置狀態。({error})"
+    },
     "device_unavailable": {
       "message": "裝置目前無法使用。"
     },

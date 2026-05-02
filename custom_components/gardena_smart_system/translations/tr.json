@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "Cihaza komut gönderilemedi: {error}"
     },
+    "command_timeout": {
+      "message": "Gardena bulutu zamanında yanıt vermedi. Komut iletilmiş veya iletilmemiş olabilir — yeniden denemeden önce cihaz durumunu kontrol edin. ({error})"
+    },
     "device_unavailable": {
       "message": "Cihaz şu anda kullanılamıyor."
     },

@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "Kunne ikke sende kommando til enheden: {error}"
     },
+    "command_timeout": {
+      "message": "Gardena-skyen svarede ikke i tide. Kommandoen kan eller kan ikke være blevet leveret — tjek enhedens tilstand, før du prøver igen. ({error})"
+    },
     "device_unavailable": {
       "message": "Enheden er i øjeblikket ikke tilgængelig."
     },

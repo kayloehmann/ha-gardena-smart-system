@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "Impossibile inviare il comando al dispositivo: {error}"
     },
+    "command_timeout": {
+      "message": "Il cloud Gardena non ha risposto in tempo. È possibile che il comando sia stato consegnato o meno — controlla lo stato del dispositivo prima di riprovare. ({error})"
+    },
     "device_unavailable": {
       "message": "Il dispositivo non è al momento disponibile."
     },

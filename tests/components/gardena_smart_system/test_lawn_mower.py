@@ -493,6 +493,72 @@ class TestLawnMowerErrorHandling:
                     blocking=True,
                 )
 
+    @pytest.mark.parametrize("status", [502, 503, 504])
+    async def test_gateway_timeout_uses_command_timeout_translation(
+        self, hass: HomeAssistant, mock_config_entry: object, status: int
+    ) -> None:
+        """5xx gateway responses surface the 'may have happened, check state' message."""
+        from aiogardenasmart.exceptions import GardenaRequestError
+
+        device = make_mock_device(has_sensor=False, has_mower=True)
+        devices = {device.device_id: device}
+
+        async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
+            mock_client.async_send_command.side_effect = GardenaRequestError(
+                status, "Endpoint request timed out"
+            )
+
+            with pytest.raises(HomeAssistantError) as exc_info:
+                await hass.services.async_call(
+                    "lawn_mower",
+                    "start_mowing",
+                    {"entity_id": "lawn_mower.my_sensor_mower"},
+                    blocking=True,
+                )
+            assert exc_info.value.translation_key == "command_timeout"
+
+    async def test_non_gateway_request_error_uses_command_failed_translation(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """4xx responses keep the original generic command_failed message."""
+        from aiogardenasmart.exceptions import GardenaRequestError
+
+        device = make_mock_device(has_sensor=False, has_mower=True)
+        devices = {device.device_id: device}
+
+        async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
+            mock_client.async_send_command.side_effect = GardenaRequestError(400, "Bad request")
+
+            with pytest.raises(HomeAssistantError) as exc_info:
+                await hass.services.async_call(
+                    "lawn_mower",
+                    "start_mowing",
+                    {"entity_id": "lawn_mower.my_sensor_mower"},
+                    blocking=True,
+                )
+            assert exc_info.value.translation_key == "command_failed"
+
+    async def test_connection_error_uses_command_timeout_translation(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Network-level failures share the 5xx 'check state' uncertainty."""
+        from aiogardenasmart.exceptions import GardenaConnectionError
+
+        device = make_mock_device(has_sensor=False, has_mower=True)
+        devices = {device.device_id: device}
+
+        async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
+            mock_client.async_send_command.side_effect = GardenaConnectionError("Connection reset")
+
+            with pytest.raises(HomeAssistantError) as exc_info:
+                await hass.services.async_call(
+                    "lawn_mower",
+                    "start_mowing",
+                    {"entity_id": "lawn_mower.my_sensor_mower"},
+                    blocking=True,
+                )
+            assert exc_info.value.translation_key == "command_timeout"
+
     async def test_command_when_device_unavailable_is_skipped(
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:

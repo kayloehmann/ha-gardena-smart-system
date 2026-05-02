@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "Nie udało się wysłać polecenia do urządzenia: {error}"
     },
+    "command_timeout": {
+      "message": "Chmura Gardena nie odpowiedziała na czas. Polecenie mogło, ale nie musiało zostać dostarczone — sprawdź stan urządzenia przed ponowną próbą. ({error})"
+    },
     "device_unavailable": {
       "message": "Urządzenie jest obecnie niedostępne."
     },

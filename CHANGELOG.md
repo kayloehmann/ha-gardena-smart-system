@@ -2,6 +2,11 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.12.12] - 2026-05-02
+
+### Changed
+- **Transient upstream timeouts surface a clearer message (#22).** When the Gardena cloud answered with HTTP 502/503/504 — or when the request hit a network-level timeout/connection error on our side — the user saw a raw `Failed to send command to device: HTTP 504: Endpoint request timed out`. That phrasing reads like our integration broke, hides the fact that the command may still have been processed server-side, and offers no recovery hint. Both buckets now route to a new `command_timeout` translation that says the cloud did not respond in time, the command may or may not have been delivered, and the user should check the device state before retrying. No retry is performed — a 504 can race a successful server-side write, and silently re-sending `start_mowing` would risk a double-start. Other 4xx/5xx keep the original `command_failed` message, since those are deterministic rejections rather than uncertain timeouts. Translations added for all 31 supported locales.
+
 ## [1.12.11] - 2026-05-02
 
 ### Fixed

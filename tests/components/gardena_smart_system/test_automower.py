@@ -30,6 +30,7 @@ from aioautomower.exceptions import (
     AutomowerConnectionError,
     AutomowerException,
     AutomowerRateLimitError,
+    AutomowerRequestError,
 )
 from aioautomower.models import (
     AutomowerDevice,
@@ -683,6 +684,63 @@ class TestAutomowerLawnMowerCommands:
                     {"entity_id": "lawn_mower.test_mower_mower"},
                     blocking=True,
                 )
+
+    @pytest.mark.parametrize("status", [502, 503, 504])
+    async def test_gateway_timeout_uses_command_timeout_translation(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry, status: int
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            mock_client.async_start.side_effect = AutomowerRequestError(
+                status, "Endpoint request timed out"
+            )
+
+            with pytest.raises(HomeAssistantError) as exc_info:
+                await hass.services.async_call(
+                    "lawn_mower",
+                    "start_mowing",
+                    {"entity_id": "lawn_mower.test_mower_mower"},
+                    blocking=True,
+                )
+            assert exc_info.value.translation_key == "command_timeout"
+
+    async def test_non_gateway_request_error_uses_command_failed_translation(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            mock_client.async_start.side_effect = AutomowerRequestError(400, "Bad request")
+
+            with pytest.raises(HomeAssistantError) as exc_info:
+                await hass.services.async_call(
+                    "lawn_mower",
+                    "start_mowing",
+                    {"entity_id": "lawn_mower.test_mower_mower"},
+                    blocking=True,
+                )
+            assert exc_info.value.translation_key == "command_failed"
+
+    async def test_connection_error_uses_command_timeout_translation(
+        self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
+    ) -> None:
+        device = make_mock_automower_device()
+        devices = {device.mower_id: device}
+
+        async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
+            mock_client.async_start.side_effect = AutomowerConnectionError("Connection reset")
+
+            with pytest.raises(HomeAssistantError) as exc_info:
+                await hass.services.async_call(
+                    "lawn_mower",
+                    "start_mowing",
+                    {"entity_id": "lawn_mower.test_mower_mower"},
+                    blocking=True,
+                )
+            assert exc_info.value.translation_key == "command_timeout"
 
 
 class TestAutomowerLawnMowerServiceActions:

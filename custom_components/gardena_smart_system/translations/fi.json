@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "Komennon lähettäminen laitteelle epäonnistui: {error}"
     },
+    "command_timeout": {
+      "message": "Gardena-pilvi ei vastannut ajoissa. Komento on saattanut tulla perille tai ei — tarkista laitteen tila ennen uudelleenyritystä. ({error})"
+    },
     "device_unavailable": {
       "message": "Laite ei ole tällä hetkellä käytettävissä."
     },

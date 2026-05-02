@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "Kunde inte skicka kommando till enheten: {error}"
     },
+    "command_timeout": {
+      "message": "Gardena-molnet svarade inte i tid. Kommandot kan ha levererats eller inte — kontrollera enhetens status innan du försöker igen. ({error})"
+    },
     "device_unavailable": {
       "message": "Enheten är för närvarande inte tillgänglig."
     },

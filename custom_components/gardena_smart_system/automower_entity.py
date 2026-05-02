@@ -6,7 +6,12 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from aioautomower.exceptions import AutomowerAuthenticationError, AutomowerException
+from aioautomower.exceptions import (
+    AutomowerAuthenticationError,
+    AutomowerConnectionError,
+    AutomowerException,
+    AutomowerRequestError,
+)
 from homeassistant.core import callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -100,6 +105,21 @@ class AutomowerEntity(CoordinatorEntity[AutomowerCoordinator]):
             raise ConfigEntryAuthFailed(
                 translation_domain="gardena_smart_system",
                 translation_key="command_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
+        except AutomowerRequestError as err:
+            translation_key = (
+                "command_timeout" if err.status in (502, 503, 504) else "command_failed"
+            )
+            raise HomeAssistantError(
+                translation_domain="gardena_smart_system",
+                translation_key=translation_key,
+                translation_placeholders={"error": str(err)},
+            ) from err
+        except AutomowerConnectionError as err:
+            raise HomeAssistantError(
+                translation_domain="gardena_smart_system",
+                translation_key="command_timeout",
                 translation_placeholders={"error": str(err)},
             ) from err
         except AutomowerException as err:

@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "Opdracht kon niet naar het apparaat worden verzonden: {error}"
     },
+    "command_timeout": {
+      "message": "De Gardena-cloud reageerde niet op tijd. De opdracht is mogelijk wel of niet afgeleverd — controleer de apparaatstatus voordat je het opnieuw probeert. ({error})"
+    },
     "device_unavailable": {
       "message": "Het apparaat is momenteel niet beschikbaar."
     },

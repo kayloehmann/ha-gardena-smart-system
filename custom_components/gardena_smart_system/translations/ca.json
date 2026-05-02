@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "No s'ha pogut enviar l'ordre al dispositiu: {error}"
     },
+    "command_timeout": {
+      "message": "El núvol de Gardena no ha respost a temps. És possible que l'ordre s'hagi lliurat o no; comprova l'estat del dispositiu abans de tornar-ho a intentar. ({error})"
+    },
     "device_unavailable": {
       "message": "El dispositiu no està disponible actualment."
     },

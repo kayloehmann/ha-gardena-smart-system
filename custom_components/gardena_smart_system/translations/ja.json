@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "デバイスへのコマンド送信に失敗しました: {error}"
     },
+    "command_timeout": {
+      "message": "Gardena クラウドが時間内に応答しませんでした。コマンドは実行された可能性も実行されていない可能性もあります — 再試行する前にデバイスの状態を確認してください。({error})"
+    },
     "device_unavailable": {
       "message": "デバイスは現在利用できません。"
     },

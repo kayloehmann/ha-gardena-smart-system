@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "Neizdevās nosūtīt komandu ierīcei: {error}"
     },
+    "command_timeout": {
+      "message": "Gardena mākonis neatbildēja laikā. Komanda varēja tikt nogādāta vai ne — pirms mēģināt vēlreiz, pārbaudiet ierīces stāvokli. ({error})"
+    },
     "device_unavailable": {
       "message": "Ierīce pašlaik nav pieejama."
     },

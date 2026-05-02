@@ -448,6 +448,9 @@
     "command_failed": {
       "message": "Failed to send command to device: {error}"
     },
+    "command_timeout": {
+      "message": "The Gardena cloud did not respond in time. The command may or may not have been delivered — check the device state before retrying. ({error})"
+    },
     "device_unavailable": {
       "message": "The device is currently unavailable."
     },

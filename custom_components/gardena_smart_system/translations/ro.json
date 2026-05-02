@@ -472,6 +472,9 @@
     "command_failed": {
       "message": "Trimiterea comenzii către dispozitiv a eșuat: {error}"
     },
+    "command_timeout": {
+      "message": "Cloudul Gardena nu a răspuns la timp. Este posibil ca această comandă să fi fost livrată sau nu — verificați starea dispozitivului înainte de a încerca din nou. ({error})"
+    },
     "device_unavailable": {
       "message": "Dispozitivul este momentan indisponibil."
     },
