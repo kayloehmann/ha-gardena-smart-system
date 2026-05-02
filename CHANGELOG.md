@@ -2,6 +2,11 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.12.11] - 2026-05-02
+
+### Fixed
+- **Stale single-use WS URL on watchdog reconnect (#23).** The watchdog forced a stale-WS disconnect and scheduled a reconnect, but left `_cached_ws_url` in place. Because the auth token was kept fresh by REST polling, the next reconnect tick reused the now-consumed signed URL and got HTTP 410, then recovered on the next attempt — predictable noise for every watchdog event (follow-up to #18). Gardena signs WS URLs as single-use, so the cache could never be a legitimate hit after a successful connect. The field is gone; one extra `POST /websocket` per reconnect is cheaper than the 410 round-trip it replaces.
+
 ## [1.12.10] - 2026-04-30
 
 ### Changed
