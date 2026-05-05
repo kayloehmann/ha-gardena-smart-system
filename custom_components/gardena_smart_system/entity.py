@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -19,10 +20,21 @@ from aiogardenasmart import (
     GardenaRequestError,
 )
 
-from .const import DOMAIN
+from .const import (
+    COMMAND_POLL_AFTER_TIMEOUT_SECONDS,
+    COMMAND_POLL_INTERVAL_SECONDS,
+    DEFAULT_AUTO_RETRY_ON_TIMEOUT,
+    DOMAIN,
+    OPT_AUTO_RETRY_ON_TIMEOUT,
+)
 from .coordinator import GardenaCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+# HTTP statuses where the gateway timed out / was unavailable. The same
+# uncertainty as a client-side timeout applies — the request may have reached
+# the device anyway.
+_GATEWAY_TIMEOUT_STATUSES = frozenset({502, 503, 504})
 
 
 def resolve_zone_placeholder(device: Device, service_id: str) -> str:
@@ -112,6 +124,7 @@ class GardenaEntity(CoordinatorEntity[GardenaCoordinator]):
         self,
         method: Callable[..., Awaitable[Any]],
         *args: Any,
+        expected_state_check: Callable[[], bool] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run an API command through throttle, budget, and exception mapping.
@@ -122,6 +135,18 @@ class GardenaEntity(CoordinatorEntity[GardenaCoordinator]):
         v1.10.4 fix), auth failures trigger reauth, transient upstream timeouts
         surface a "may have happened, check state" message, and all other API
         errors surface as translated HomeAssistantError.
+
+        ``expected_state_check`` (issue #22): a zero-arg callable that returns
+        ``True`` once the coordinator's cached state reflects the command's
+        target. When a client-side timeout / 502 / 503 / 504 hits — situations
+        where the request may still have been processed server-side — the
+        method polls this lambda for up to COMMAND_POLL_AFTER_TIMEOUT_SECONDS
+        before re-raising. The coordinator is updated by the WebSocket push;
+        polling here reads memory only, no extra REST calls.
+
+        If ``auto_retry_on_timeout`` is enabled in the config entry options
+        and polling yields no state change, the command is sent exactly once
+        more before giving up.
         """
         self.coordinator.check_command_throttle()
         self.coordinator.api_budget.increment()
@@ -134,31 +159,145 @@ class GardenaEntity(CoordinatorEntity[GardenaCoordinator]):
                 translation_placeholders={"error": str(err)},
             ) from err
         except GardenaRequestError as err:
-            # 502/503/504 from the upstream gateway: the request reached the
-            # Gardena edge but the backend timed out or was unavailable. The
-            # command may or may not have been processed — surface that
-            # uncertainty so users check device state instead of blindly
-            # retrying.
-            translation_key = (
-                "command_timeout" if err.status in (502, 503, 504) else "command_failed"
-            )
+            if err.status in _GATEWAY_TIMEOUT_STATUSES:
+                await self._async_handle_timeout(
+                    err,
+                    method,
+                    args,
+                    kwargs,
+                    expected_state_check=expected_state_check,
+                )
+                return
             raise HomeAssistantError(
                 translation_domain="gardena_smart_system",
-                translation_key=translation_key,
+                translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
         except GardenaConnectionError as err:
-            # Network-level failure (DNS, connection refused, client timeout).
-            # Same uncertainty as 504 — a client-side timeout can still race a
-            # successful server-side write.
-            raise HomeAssistantError(
-                translation_domain="gardena_smart_system",
-                translation_key="command_timeout",
-                translation_placeholders={"error": str(err)},
-            ) from err
+            await self._async_handle_timeout(
+                err,
+                method,
+                args,
+                kwargs,
+                expected_state_check=expected_state_check,
+            )
+            return
         except GardenaException as err:
             raise HomeAssistantError(
                 translation_domain="gardena_smart_system",
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
+
+    async def _async_handle_timeout(
+        self,
+        err: GardenaException,
+        method: Callable[..., Awaitable[Any]],
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+        *,
+        expected_state_check: Callable[[], bool] | None,
+    ) -> None:
+        """Decide whether an apparent client-side timeout actually failed.
+
+        Implements the issue #22 recovery path: poll the coordinator for the
+        expected target state, then optionally retry once when configured.
+        Always raises ``HomeAssistantError`` with the ``command_timeout``
+        translation key when the device cannot be confirmed in the target
+        state.
+        """
+        if expected_state_check is not None and await self._async_wait_for_expected_state(
+            expected_state_check
+        ):
+            _LOGGER.info(
+                "%s: command timed out client-side but device reached the expected"
+                " state via WebSocket push — treating as success (%s)",
+                self._device_name,
+                err,
+            )
+            return
+
+        if self._auto_retry_enabled():
+            _LOGGER.info(
+                "%s: command timed out and target state not yet observed,"
+                " auto-retry is enabled — sending command once more",
+                self._device_name,
+            )
+            try:
+                self.coordinator.check_command_throttle()
+                self.coordinator.api_budget.increment()
+                await method(*args, **kwargs)
+            except GardenaAuthenticationError as retry_err:
+                raise ConfigEntryAuthFailed(
+                    translation_domain="gardena_smart_system",
+                    translation_key="command_failed",
+                    translation_placeholders={"error": str(retry_err)},
+                ) from retry_err
+            except GardenaException as retry_err:
+                # Retry hit a fresh error: surface the most informative key.
+                # 5xx/connection errors keep the timeout messaging; everything
+                # else is a deterministic failure.
+                if (
+                    isinstance(retry_err, GardenaRequestError)
+                    and (retry_err.status in _GATEWAY_TIMEOUT_STATUSES)
+                ) or isinstance(retry_err, GardenaConnectionError):
+                    translation_key = "command_timeout"
+                else:
+                    translation_key = "command_failed"
+                raise HomeAssistantError(
+                    translation_domain="gardena_smart_system",
+                    translation_key=translation_key,
+                    translation_placeholders={"error": str(retry_err)},
+                ) from retry_err
+            else:
+                if expected_state_check is not None and await self._async_wait_for_expected_state(
+                    expected_state_check
+                ):
+                    _LOGGER.info(
+                        "%s: command succeeded on retry, device reached expected state",
+                        self._device_name,
+                    )
+                    return
+                # Retry returned cleanly but we still cannot confirm the
+                # device state. Mirror the original timeout so the user knows
+                # to check.
+                raise HomeAssistantError(
+                    translation_domain="gardena_smart_system",
+                    translation_key="command_timeout",
+                    translation_placeholders={"error": str(err)},
+                )
+
+        raise HomeAssistantError(
+            translation_domain="gardena_smart_system",
+            translation_key="command_timeout",
+            translation_placeholders={"error": str(err)},
+        ) from err
+
+    async def _async_wait_for_expected_state(
+        self,
+        expected_state_check: Callable[[], bool],
+    ) -> bool:
+        """Poll the coordinator-cached state until the target is observed.
+
+        Reads memory only — the WebSocket push from the Gardena cloud is what
+        actually advances the state. Returns ``True`` if the lambda returns
+        truthy within COMMAND_POLL_AFTER_TIMEOUT_SECONDS, ``False`` otherwise.
+        """
+        # Initial check before the first sleep — the WebSocket may already
+        # have pushed the new state by the time the API call returns.
+        if expected_state_check():
+            return True
+        deadline = asyncio.get_running_loop().time() + COMMAND_POLL_AFTER_TIMEOUT_SECONDS
+        while asyncio.get_running_loop().time() < deadline:
+            await asyncio.sleep(COMMAND_POLL_INTERVAL_SECONDS)
+            if expected_state_check():
+                return True
+        return False
+
+    def _auto_retry_enabled(self) -> bool:
+        """Return whether the user opted into auto-retry on command timeouts."""
+        return bool(
+            self.coordinator.config_entry.options.get(
+                OPT_AUTO_RETRY_ON_TIMEOUT, DEFAULT_AUTO_RETRY_ON_TIMEOUT
+            )
+        )

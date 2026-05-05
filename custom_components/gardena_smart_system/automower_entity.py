@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -20,9 +21,20 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from aioautomower import AutomowerDevice
 
 from .automower_coordinator import AutomowerCoordinator
-from .const import DOMAIN
+from .const import (
+    COMMAND_POLL_AFTER_TIMEOUT_SECONDS,
+    COMMAND_POLL_INTERVAL_SECONDS,
+    DEFAULT_AUTO_RETRY_ON_TIMEOUT,
+    DOMAIN,
+    OPT_AUTO_RETRY_ON_TIMEOUT,
+)
 
 _LOGGER = logging.getLogger(__name__)
+
+# HTTP statuses where the gateway timed out / was unavailable. The same
+# uncertainty as a client-side timeout applies — the request may have reached
+# the device anyway.
+_GATEWAY_TIMEOUT_STATUSES = frozenset({502, 503, 504})
 
 
 class AutomowerEntity(CoordinatorEntity[AutomowerCoordinator]):
@@ -90,12 +102,15 @@ class AutomowerEntity(CoordinatorEntity[AutomowerCoordinator]):
         self,
         method: Callable[..., Awaitable[Any]],
         *args: Any,
+        expected_state_check: Callable[[], bool] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run an Automower API command through throttle, budget, and exception mapping.
 
         Mirrors ``GardenaEntity._async_execute_command`` but with
-        Automower-specific exception types. See that method for the rationale.
+        Automower-specific exception types. See that method for the rationale,
+        including the issue #22 poll-after-timeout / opt-in retry behaviour
+        triggered by ``expected_state_check``.
         """
         self.coordinator.check_command_throttle()
         self.coordinator.api_budget.increment()
@@ -108,23 +123,132 @@ class AutomowerEntity(CoordinatorEntity[AutomowerCoordinator]):
                 translation_placeholders={"error": str(err)},
             ) from err
         except AutomowerRequestError as err:
-            translation_key = (
-                "command_timeout" if err.status in (502, 503, 504) else "command_failed"
-            )
+            if err.status in _GATEWAY_TIMEOUT_STATUSES:
+                await self._async_handle_timeout(
+                    err,
+                    method,
+                    args,
+                    kwargs,
+                    expected_state_check=expected_state_check,
+                )
+                return
             raise HomeAssistantError(
                 translation_domain="gardena_smart_system",
-                translation_key=translation_key,
+                translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
         except AutomowerConnectionError as err:
-            raise HomeAssistantError(
-                translation_domain="gardena_smart_system",
-                translation_key="command_timeout",
-                translation_placeholders={"error": str(err)},
-            ) from err
+            await self._async_handle_timeout(
+                err,
+                method,
+                args,
+                kwargs,
+                expected_state_check=expected_state_check,
+            )
+            return
         except AutomowerException as err:
             raise HomeAssistantError(
                 translation_domain="gardena_smart_system",
                 translation_key="command_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
+
+    async def _async_handle_timeout(
+        self,
+        err: AutomowerException,
+        method: Callable[..., Awaitable[Any]],
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+        *,
+        expected_state_check: Callable[[], bool] | None,
+    ) -> None:
+        """Decide whether an apparent client-side timeout actually failed.
+
+        See ``GardenaEntity._async_handle_timeout`` for the full rationale.
+        """
+        if expected_state_check is not None and await self._async_wait_for_expected_state(
+            expected_state_check
+        ):
+            _LOGGER.info(
+                "%s: command timed out client-side but device reached the expected"
+                " state via WebSocket push — treating as success (%s)",
+                self._device_name,
+                err,
+            )
+            return
+
+        if self._auto_retry_enabled():
+            _LOGGER.info(
+                "%s: command timed out and target state not yet observed,"
+                " auto-retry is enabled — sending command once more",
+                self._device_name,
+            )
+            try:
+                self.coordinator.check_command_throttle()
+                self.coordinator.api_budget.increment()
+                await method(*args, **kwargs)
+            except AutomowerAuthenticationError as retry_err:
+                raise ConfigEntryAuthFailed(
+                    translation_domain="gardena_smart_system",
+                    translation_key="command_failed",
+                    translation_placeholders={"error": str(retry_err)},
+                ) from retry_err
+            except AutomowerException as retry_err:
+                if (
+                    isinstance(retry_err, AutomowerRequestError)
+                    and (retry_err.status in _GATEWAY_TIMEOUT_STATUSES)
+                ) or isinstance(retry_err, AutomowerConnectionError):
+                    translation_key = "command_timeout"
+                else:
+                    translation_key = "command_failed"
+                raise HomeAssistantError(
+                    translation_domain="gardena_smart_system",
+                    translation_key=translation_key,
+                    translation_placeholders={"error": str(retry_err)},
+                ) from retry_err
+            else:
+                if expected_state_check is not None and await self._async_wait_for_expected_state(
+                    expected_state_check
+                ):
+                    _LOGGER.info(
+                        "%s: command succeeded on retry, device reached expected state",
+                        self._device_name,
+                    )
+                    return
+                raise HomeAssistantError(
+                    translation_domain="gardena_smart_system",
+                    translation_key="command_timeout",
+                    translation_placeholders={"error": str(err)},
+                )
+
+        raise HomeAssistantError(
+            translation_domain="gardena_smart_system",
+            translation_key="command_timeout",
+            translation_placeholders={"error": str(err)},
+        ) from err
+
+    async def _async_wait_for_expected_state(
+        self,
+        expected_state_check: Callable[[], bool],
+    ) -> bool:
+        """Poll the coordinator-cached state until the target is observed.
+
+        Reads memory only — the WebSocket push from the Husqvarna cloud is
+        what actually advances the state.
+        """
+        if expected_state_check():
+            return True
+        deadline = asyncio.get_running_loop().time() + COMMAND_POLL_AFTER_TIMEOUT_SECONDS
+        while asyncio.get_running_loop().time() < deadline:
+            await asyncio.sleep(COMMAND_POLL_INTERVAL_SECONDS)
+            if expected_state_check():
+                return True
+        return False
+
+    def _auto_retry_enabled(self) -> bool:
+        """Return whether the user opted into auto-retry on command timeouts."""
+        return bool(
+            self.coordinator.config_entry.options.get(
+                OPT_AUTO_RETRY_ON_TIMEOUT, DEFAULT_AUTO_RETRY_ON_TIMEOUT
+            )
+        )

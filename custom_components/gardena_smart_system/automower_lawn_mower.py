@@ -39,6 +39,14 @@ _ACTIVITY_MAP: dict[str, LawnMowerActivity] = {
     MowerActivity.STOPPED_IN_GARDEN: LawnMowerActivity.ERROR,
 }
 
+# Expected mower activities/states per command, used by the issue #22 poll-
+# after-timeout recovery. Listed liberally — any of these proves the command
+# landed.
+_MOWING_ACTIVITIES = frozenset({MowerActivity.MOWING, MowerActivity.LEAVING})
+_DOCKED_ACTIVITIES = frozenset(
+    {MowerActivity.CHARGING, MowerActivity.PARKED_IN_CS, MowerActivity.GOING_HOME}
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -120,11 +128,11 @@ class AutomowerLawnMowerEntity(AutomowerEntity, LawnMowerEntity):
 
     async def async_start_mowing(self) -> None:
         """Start mowing (resume schedule)."""
-        await self._async_send_command("start")
+        await self._async_send_command("start", expected="mowing")
 
     async def async_dock(self) -> None:
         """Send the mower back to dock until next schedule."""
-        await self._async_send_command("park_until_next_schedule")
+        await self._async_send_command("park_until_next_schedule", expected="docked")
 
     async def async_pause(self) -> None:
         """Pause the mower."""
@@ -132,13 +140,35 @@ class AutomowerLawnMowerEntity(AutomowerEntity, LawnMowerEntity):
 
     async def async_park_until_further_notice(self) -> None:
         """Park the mower indefinitely until manually resumed."""
-        await self._async_send_command("park_until_further_notice")
+        await self._async_send_command("park_until_further_notice", expected="docked")
 
     async def async_resume_schedule(self) -> None:
         """Resume the mower's automatic schedule."""
-        await self._async_send_command("resume_schedule")
+        await self._async_send_command("resume_schedule", expected="mowing")
 
-    async def _async_send_command(self, command: str, **kwargs: Any) -> None:
+    def _make_expected_state_check(self, expected: str | None) -> Callable[[], bool] | None:
+        """Build a coordinator-state probe for issue #22 timeout recovery."""
+        if expected == "mowing":
+            target = _MOWING_ACTIVITIES
+        elif expected == "docked":
+            target = _DOCKED_ACTIVITIES
+        else:
+            return None
+
+        mower_id = self._mower_id
+
+        def _check() -> bool:
+            data = self.coordinator.data or {}
+            device = data.get(mower_id)
+            if device is None or device.mower is None:
+                return False
+            return device.mower.activity in target
+
+        return _check
+
+    async def _async_send_command(
+        self, command: str, *, expected: str | None = None, **kwargs: Any
+    ) -> None:
         """Send a command to the Automower API."""
         device = self._device
         if device is None:
@@ -149,4 +179,9 @@ class AutomowerLawnMowerEntity(AutomowerEntity, LawnMowerEntity):
         method: Callable[..., Awaitable[Any]] = getattr(
             self.coordinator.client, self._COMMAND_METHODS[command]
         )
-        await self._async_execute_command(method, device.mower_id, **kwargs)
+        await self._async_execute_command(
+            method,
+            device.mower_id,
+            expected_state_check=self._make_expected_state_check(expected),
+            **kwargs,
+        )

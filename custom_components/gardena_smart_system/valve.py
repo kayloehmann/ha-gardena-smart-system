@@ -7,6 +7,7 @@ to a HA valve entity.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any, cast
 
@@ -164,6 +165,30 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
                 translation_placeholders={"limit": str(MAX_CONCURRENT_IRRIGATION_VALVES)},
             )
 
+    def _make_expected_state_check(self, command: str) -> Callable[[], bool] | None:
+        """Build a coordinator-state probe for issue #22 timeout recovery."""
+        if command == "START_SECONDS_TO_OVERRIDE":
+            target = (ValveActivity.MANUAL_WATERING, ValveActivity.SCHEDULED_WATERING)
+        elif command == "STOP_UNTIL_NEXT_TASK":
+            target = (ValveActivity.CLOSED,)
+        else:
+            return None
+
+        device_id = self._device_id
+        service_id = self._service_id
+
+        def _check() -> bool:
+            data = self.coordinator.data or {}
+            device = data.get(device_id)
+            if device is None:
+                return False
+            valve = device.valves.get(service_id)
+            if valve is None:
+                return False
+            return valve.activity in target
+
+        return _check
+
     async def _async_send_command(self, command: str, **params: int) -> None:
         """Send a command to this valve."""
         if self._device is None or self._valve is None:
@@ -176,6 +201,7 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
             service_id=self._service_id,
             control_type=ControlType.VALVE,
             command=command,
+            expected_state_check=self._make_expected_state_check(command),
             **params,
         )
         self._apply_optimistic_state(command, params)

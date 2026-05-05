@@ -129,8 +129,21 @@ API_BUDGET_STOP_PERCENT = 5.0
 OPT_DEFAULT_WATERING_MINUTES = "default_watering_minutes"
 OPT_DEFAULT_SOCKET_MINUTES = "default_socket_minutes"
 OPT_POLL_INTERVAL_MINUTES = "poll_interval_minutes"
+OPT_AUTO_RETRY_ON_TIMEOUT = "auto_retry_on_timeout"
 DEFAULT_WATERING_MINUTES = 60
 DEFAULT_SOCKET_MINUTES = 60
+DEFAULT_AUTO_RETRY_ON_TIMEOUT = False
+
+# ── Command-timeout recovery ─────────────────────────────────────
+# When a command fails with a client-side timeout / 502 / 503 / 504, the
+# request may or may not have been processed server-side. The Gardena API
+# pushes a state update via WebSocket the moment the device acknowledges the
+# command, so the integration waits up to COMMAND_POLL_AFTER_TIMEOUT_SECONDS
+# (checking the cached coordinator state every COMMAND_POLL_INTERVAL_SECONDS)
+# before deciding the command actually failed. Polling reads the in-memory
+# coordinator only — no extra REST calls are made.
+COMMAND_POLL_AFTER_TIMEOUT_SECONDS = 10.0
+COMMAND_POLL_INTERVAL_SECONDS = 1.0
 
 # ── MQTT bridge options ──────────────────────────────────────────
 OPT_MQTT_ENABLE = "mqtt_enable"

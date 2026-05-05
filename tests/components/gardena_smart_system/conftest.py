@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -131,6 +131,36 @@ def make_mock_location(
     loc.location_id = location_id
     loc.name = name
     return loc
+
+
+@pytest.fixture(autouse=True)
+def _shrink_command_timeout_poll_window():
+    """Collapse the issue #22 poll-after-timeout window for fast tests.
+
+    Default is a 10 s real-time poll, which would multiply the test suite
+    runtime by every error-path test. Recovery tests that need a non-zero
+    window patch these constants themselves.
+    """
+    with (
+        patch(
+            "custom_components.gardena_smart_system.entity.COMMAND_POLL_AFTER_TIMEOUT_SECONDS",
+            0.0,
+        ),
+        patch(
+            "custom_components.gardena_smart_system.entity.COMMAND_POLL_INTERVAL_SECONDS",
+            0.0,
+        ),
+        patch(
+            "custom_components.gardena_smart_system.automower_entity"
+            ".COMMAND_POLL_AFTER_TIMEOUT_SECONDS",
+            0.0,
+        ),
+        patch(
+            "custom_components.gardena_smart_system.automower_entity.COMMAND_POLL_INTERVAL_SECONDS",
+            0.0,
+        ),
+    ):
+        yield
 
 
 @pytest.fixture

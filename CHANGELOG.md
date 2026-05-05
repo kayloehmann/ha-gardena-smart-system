@@ -2,6 +2,12 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.12.13] - 2026-05-05
+
+### Added
+- **Poll-after-timeout recovery for command requests (#22).** When a command (lawn_mower start/dock/pause, valve open/close, power-socket on/off) hits a client-side timeout or a 502/503/504 from the upstream gateway, the integration now waits up to 10 s for the WebSocket to push the expected activity (`OK_CUTTING`, `MANUAL_WATERING`, `TIME_LIMITED_ON`, etc.). If the device confirms the target state in that window, the error is suppressed — the command actually landed server-side, only the HTTP response was lost. Polling reads the in-memory coordinator only, so no extra REST calls are made and the API budget is unaffected. v1.12.12 made the error message clearer; this release closes the gap for users on schedulers that don't wrap commands in a state check.
+- **Opt-in auto-retry for command timeouts (#22).** New options-flow toggle `auto_retry_on_timeout` (default off). When enabled, after the 10 s poll window passes without the device reaching the target state, the command is sent exactly once more before raising `command_timeout`. Default-off is deliberate: a 504 can race a successful server-side write, and silently retrying `start_mowing` would risk a double-start. Users on the HACS Scheduler component or similar fire-and-forget setups that prefer "double-fire over no-fire" can opt in via the integration's options.
+
 ## [1.12.12] - 2026-05-02
 
 ### Changed

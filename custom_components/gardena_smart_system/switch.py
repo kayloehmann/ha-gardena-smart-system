@@ -5,6 +5,7 @@ Maps the POWER_SOCKET service to a HA switch entity.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any, cast
 
@@ -120,6 +121,30 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
         """Turn the socket off."""
         await self._async_send_command("STOP_UNTIL_NEXT_TASK")
 
+    def _make_expected_state_check(self, command: str) -> Callable[[], bool] | None:
+        """Build a coordinator-state probe for issue #22 timeout recovery."""
+        if command == "START_SECONDS_TO_OVERRIDE":
+            target = (
+                PowerSocketActivity.TIME_LIMITED_ON,
+                PowerSocketActivity.FOREVER_ON,
+                PowerSocketActivity.SCHEDULED_ON,
+            )
+        elif command == "STOP_UNTIL_NEXT_TASK":
+            target = (PowerSocketActivity.OFF,)
+        else:
+            return None
+
+        device_id = self._device_id
+
+        def _check() -> bool:
+            data = self.coordinator.data or {}
+            device = data.get(device_id)
+            if device is None or device.power_socket is None:
+                return False
+            return device.power_socket.activity in target
+
+        return _check
+
     async def _async_send_command(self, command: str, **params: int) -> None:
         """Send a command to the power socket service."""
         device = self._device
@@ -133,6 +158,7 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
             service_id=device.power_socket.service_id,
             control_type=ControlType.POWER_SOCKET,
             command=command,
+            expected_state_check=self._make_expected_state_check(command),
             **params,
         )
         self._apply_optimistic_state(command, params)
