@@ -5,6 +5,7 @@ Maps the MOWER service to a HA lawn_mower entity.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import cast
 
 import voluptuous as vol
@@ -46,6 +47,25 @@ _MOWER_ACTIVITY_MAP: dict[str, LawnMowerActivity] = {
     MowerActivity.PAUSED_IN_CS: LawnMowerActivity.PAUSED,
     MowerActivity.STOPPED_IN_GARDEN: LawnMowerActivity.ERROR,
 }
+
+# Expected mower activities per command kind, for the issue #22 poll-after-
+# timeout recovery. Listed liberally — any of these proves the command landed.
+_MOWING_ACTIVITIES = frozenset(
+    {
+        MowerActivity.OK_CUTTING,
+        MowerActivity.OK_CUTTING_TIMER_OVERRIDDEN,
+        MowerActivity.OK_LEAVING,
+        MowerActivity.OK_SEARCHING,
+    }
+)
+_PARKED_ACTIVITIES = frozenset(
+    {
+        MowerActivity.PARKED_PARK_SELECTED,
+        MowerActivity.PARKED_TIMER,
+        MowerActivity.PARKED_AUTOTIMER,
+        MowerActivity.OK_CHARGING,
+    }
+)
 
 
 async def async_setup_entry(
@@ -127,32 +147,57 @@ class GardenaLawnMowerEntity(GardenaEntity, LawnMowerEntity):
 
     async def async_start_mowing(self) -> None:
         """Start mowing without overriding the schedule."""
-        await self._async_send_command("START_DONT_OVERRIDE")
+        await self._async_send_command("START_DONT_OVERRIDE", expected="mowing")
 
     async def async_override_schedule(self, duration: int) -> None:
         """Force mowing for the given number of minutes, overriding the schedule."""
         await self._async_send_command(
             "START_SECONDS_TO_OVERRIDE",
+            expected="mowing",
             seconds=duration * 60,
         )
 
     async def async_dock(self) -> None:
         """Send the mower back to dock."""
-        await self._async_send_command("PARK_UNTIL_NEXT_TASK")
+        await self._async_send_command("PARK_UNTIL_NEXT_TASK", expected="parked")
 
     async def async_pause(self) -> None:
         """Pause the mower and park until further notice."""
-        await self._async_send_command("PARK_UNTIL_FURTHER_NOTICE")
+        await self._async_send_command("PARK_UNTIL_FURTHER_NOTICE", expected="parked")
 
     async def async_park_until_further_notice(self) -> None:
         """Park the mower indefinitely until manually resumed."""
-        await self._async_send_command("PARK_UNTIL_FURTHER_NOTICE")
+        await self._async_send_command("PARK_UNTIL_FURTHER_NOTICE", expected="parked")
 
     async def async_resume_schedule(self) -> None:
         """Resume the mower's automatic mowing schedule."""
-        await self._async_send_command("START_DONT_OVERRIDE")
+        await self._async_send_command("START_DONT_OVERRIDE", expected="mowing")
 
-    async def _async_send_command(self, command: str, **params: int) -> None:
+    def _make_expected_state_check(self, expected: str | None) -> Callable[[], bool] | None:
+        """Build a coordinator-state probe for issue #22 timeout recovery."""
+        if expected is None:
+            return None
+        if expected == "mowing":
+            target = _MOWING_ACTIVITIES
+        elif expected == "parked":
+            target = _PARKED_ACTIVITIES
+        else:  # pragma: no cover — defensive
+            return None
+
+        device_id = self._device_id
+
+        def _check() -> bool:
+            data = self.coordinator.data or {}
+            device = data.get(device_id)
+            if device is None or device.mower is None:
+                return False
+            return device.mower.activity in target
+
+        return _check
+
+    async def _async_send_command(
+        self, command: str, *, expected: str | None = None, **params: int
+    ) -> None:
         """Send a command to the mower service."""
         device = self._device
         if device is None or device.mower is None:
@@ -165,5 +210,6 @@ class GardenaLawnMowerEntity(GardenaEntity, LawnMowerEntity):
             service_id=device.mower.service_id,
             control_type=ControlType.MOWER,
             command=command,
+            expected_state_check=self._make_expected_state_check(expected),
             **params,
         )

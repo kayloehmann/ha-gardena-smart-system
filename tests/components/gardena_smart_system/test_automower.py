@@ -689,7 +689,9 @@ class TestAutomowerLawnMowerCommands:
     async def test_gateway_timeout_uses_command_timeout_translation(
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry, status: int
     ) -> None:
-        device = make_mock_automower_device()
+        # Start parked so the issue #22 poll-after-timeout recovery cannot
+        # short-circuit by observing the device already in the target state.
+        device = make_mock_automower_device(mower_activity=MowerActivity.PARKED_IN_CS)
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
@@ -727,7 +729,9 @@ class TestAutomowerLawnMowerCommands:
     async def test_connection_error_uses_command_timeout_translation(
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
     ) -> None:
-        device = make_mock_automower_device()
+        # Start parked so the issue #22 poll-after-timeout recovery cannot
+        # short-circuit by observing the device already in the target state.
+        device = make_mock_automower_device(mower_activity=MowerActivity.PARKED_IN_CS)
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
@@ -3139,6 +3143,7 @@ class TestAutomowerMiscCoverage:
                 "mqtt_topic_prefix": "gardena",
                 "mqtt_publish_states": True,
                 "mqtt_subscribe_commands": True,
+                "auto_retry_on_timeout": False,
             },
         )
         assert result["type"] == "create_entry"
