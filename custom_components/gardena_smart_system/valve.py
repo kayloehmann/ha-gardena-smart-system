@@ -168,9 +168,11 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
     def _make_expected_state_check(self, command: str) -> Callable[[], bool] | None:
         """Build a coordinator-state probe for issue #22 timeout recovery."""
         if command == "START_SECONDS_TO_OVERRIDE":
-            target = (ValveActivity.MANUAL_WATERING, ValveActivity.SCHEDULED_WATERING)
+            target: frozenset[str] = frozenset(
+                {ValveActivity.MANUAL_WATERING, ValveActivity.SCHEDULED_WATERING}
+            )
         elif command == "STOP_UNTIL_NEXT_TASK":
-            target = (ValveActivity.CLOSED,)
+            target = frozenset({ValveActivity.CLOSED})
         else:
             return None
 

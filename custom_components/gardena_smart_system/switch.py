@@ -124,13 +124,15 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
     def _make_expected_state_check(self, command: str) -> Callable[[], bool] | None:
         """Build a coordinator-state probe for issue #22 timeout recovery."""
         if command == "START_SECONDS_TO_OVERRIDE":
-            target = (
-                PowerSocketActivity.TIME_LIMITED_ON,
-                PowerSocketActivity.FOREVER_ON,
-                PowerSocketActivity.SCHEDULED_ON,
+            target: frozenset[str] = frozenset(
+                {
+                    PowerSocketActivity.TIME_LIMITED_ON,
+                    PowerSocketActivity.FOREVER_ON,
+                    PowerSocketActivity.SCHEDULED_ON,
+                }
             )
         elif command == "STOP_UNTIL_NEXT_TASK":
-            target = (PowerSocketActivity.OFF,)
+            target = frozenset({PowerSocketActivity.OFF})
         else:
             return None
 
