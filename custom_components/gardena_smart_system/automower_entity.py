@@ -157,8 +157,7 @@ class AutomowerEntity(CoordinatorEntity[AutomowerCoordinator]):
 
             if not is_last_attempt:
                 _LOGGER.info(
-                    "%s: attempt %d/%d timed out and target state not yet"
-                    " observed, retrying (%s)",
+                    "%s: attempt %d/%d timed out and target state not yet observed, retrying (%s)",
                     self._device_name,
                     attempt + 1,
                     COMMAND_RETRY_ATTEMPTS,

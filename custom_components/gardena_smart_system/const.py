@@ -147,7 +147,7 @@ DEFAULT_SOCKET_MINUTES = 60
 # PARK_* on a parked mower is a no-op), so retrying is safe even when the
 # first call actually landed server-side. This survives the transient
 # Gardena-gateway overload that hits at the top of the hour when many users'
-# schedules fire at once. Worst-case wall time is ~45 s (3 × 15 s polls);
+# schedules fire at once. Worst-case wall time is ~45 s (3 x 15 s polls);
 # typical case is sub-second when the first call succeeds.
 COMMAND_RETRY_ATTEMPTS = 3
 COMMAND_POLL_AFTER_TIMEOUT_SECONDS = 15.0
