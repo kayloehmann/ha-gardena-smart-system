@@ -2,6 +2,11 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.12.15] - 2026-05-13
+
+### Fixed
+- **Cosmetic-only release.** v1.12.14 tagged a commit that did not pass `ruff check` / `ruff format` (RUF003 — ambiguous `×` in a comment, plus two log strings the formatter wanted on a single line). No runtime behaviour difference, but the tag is permanent so a clean re-release is the cleanest fix. Identical functionality to v1.12.14.
+
 ## [1.12.14] - 2026-05-13
 
 ### Changed
