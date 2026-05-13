@@ -129,20 +129,28 @@ API_BUDGET_STOP_PERCENT = 5.0
 OPT_DEFAULT_WATERING_MINUTES = "default_watering_minutes"
 OPT_DEFAULT_SOCKET_MINUTES = "default_socket_minutes"
 OPT_POLL_INTERVAL_MINUTES = "poll_interval_minutes"
-OPT_AUTO_RETRY_ON_TIMEOUT = "auto_retry_on_timeout"
 DEFAULT_WATERING_MINUTES = 60
 DEFAULT_SOCKET_MINUTES = 60
-DEFAULT_AUTO_RETRY_ON_TIMEOUT = False
 
-# ── Command-timeout recovery ─────────────────────────────────────
+# ── Command-timeout recovery & retry ─────────────────────────────
 # When a command fails with a client-side timeout / 502 / 503 / 504, the
 # request may or may not have been processed server-side. The Gardena API
 # pushes a state update via WebSocket the moment the device acknowledges the
-# command, so the integration waits up to COMMAND_POLL_AFTER_TIMEOUT_SECONDS
-# (checking the cached coordinator state every COMMAND_POLL_INTERVAL_SECONDS)
-# before deciding the command actually failed. Polling reads the in-memory
-# coordinator only — no extra REST calls are made.
-COMMAND_POLL_AFTER_TIMEOUT_SECONDS = 10.0
+# command, so after each attempt the integration waits up to
+# COMMAND_POLL_AFTER_TIMEOUT_SECONDS (checking the cached coordinator state
+# every COMMAND_POLL_INTERVAL_SECONDS) before retrying. Polling reads the
+# in-memory coordinator only — no extra REST calls are made.
+#
+# If the device still has not reached the expected state, the command is
+# re-sent — up to COMMAND_RETRY_ATTEMPTS times total. Mower/valve/socket
+# commands are idempotent (START_DONT_OVERRIDE on a mowing mower is a no-op,
+# PARK_* on a parked mower is a no-op), so retrying is safe even when the
+# first call actually landed server-side. This survives the transient
+# Gardena-gateway overload that hits at the top of the hour when many users'
+# schedules fire at once. Worst-case wall time is ~45 s (3 × 15 s polls);
+# typical case is sub-second when the first call succeeds.
+COMMAND_RETRY_ATTEMPTS = 3
+COMMAND_POLL_AFTER_TIMEOUT_SECONDS = 15.0
 COMMAND_POLL_INTERVAL_SECONDS = 1.0
 
 # ── MQTT bridge options ──────────────────────────────────────────

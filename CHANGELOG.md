@@ -2,6 +2,14 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [1.12.14] - 2026-05-13
+
+### Changed
+- **Commands now retry up to 3 times until the device confirms (#27).** v1.12.13 introduced a 10 s WebSocket-confirmation window for command timeouts plus an opt-in single retry. In practice the opt-in flag was the wrong default: when a scheduled `lawn_mower.start_mowing` hit the regular top-of-the-hour 504 from the Gardena gateway, nothing happened and the user had to discover and toggle a setting they didn't know existed. The integration now sends every command up to `COMMAND_RETRY_ATTEMPTS = 3` times, polling the cached coordinator state (no extra REST calls) for up to 15 s between attempts. Every command this integration issues is idempotent at the device level (`START_DONT_OVERRIDE` on a mowing mower is a no-op, `PARK_*` on a parked mower is a no-op, valve/socket commands are state-set), so retrying a 504 cannot cause unwanted double execution. Worst-case wall time is ~45 s when the device never confirms; the typical successful path is unchanged.
+
+### Removed
+- **`auto_retry_on_timeout` options-flow toggle.** Superseded by the unconditional retry loop above. Existing config entries that still have the key are simply ignored — no migration needed.
+
 ## [1.12.13] - 2026-05-05
 
 ### Added

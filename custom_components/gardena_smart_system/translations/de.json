@@ -76,8 +76,7 @@
           "mqtt_enable": "MQTT-Bridge aktivieren",
           "mqtt_topic_prefix": "MQTT-Topic-Präfix",
           "mqtt_publish_states": "Gerätezustände per MQTT veröffentlichen",
-          "mqtt_subscribe_commands": "Befehle per MQTT empfangen",
-          "auto_retry_on_timeout": "Befehle bei Timeout automatisch wiederholen"
+          "mqtt_subscribe_commands": "Befehle per MQTT empfangen"
         },
         "data_description": {
           "default_watering_minutes": "Dauer in Minuten beim Öffnen eines Ventils ohne Angabe einer Dauer (1–1440).",
@@ -86,8 +85,7 @@
           "mqtt_enable": "Spiegelt Gerätezustände auf einen lokalen MQTT-Broker und empfängt optional Befehle. Die MQTT-Integration muss konfiguriert sein.",
           "mqtt_topic_prefix": "Basis-Topic für alle MQTT-Nachrichten (z.B. ‘gardena’ → gardena/DEVICE_ID/state).",
           "mqtt_publish_states": "Veröffentlicht den vollständigen Gerätezustand als JSON bei jeder Aktualisierung (WebSocket-Push oder Abfrage).",
-          "mqtt_subscribe_commands": "Abonniert PREFIX/DEVICE_ID/command für eingehende Befehle (start_watering, stop_watering, turn_on, turn_off, park, resume).",
-          "auto_retry_on_timeout": "Wenn ein Befehl in einen Timeout läuft und das Gerät innerhalb von 10 s nicht den erwarteten Zustand erreicht, wird der Befehl einmalig erneut gesendet. Standardmäßig aus — aktiviere die Option nur, wenn ein doppelter Befehl für dich akzeptabel ist."
+          "mqtt_subscribe_commands": "Abonniert PREFIX/DEVICE_ID/command für eingehende Befehle (start_watering, stop_watering, turn_on, turn_off, park, resume)."
         }
       }
     }

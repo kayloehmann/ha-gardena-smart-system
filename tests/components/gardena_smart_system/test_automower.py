@@ -3143,7 +3143,6 @@ class TestAutomowerMiscCoverage:
                 "mqtt_topic_prefix": "gardena",
                 "mqtt_publish_states": True,
                 "mqtt_subscribe_commands": True,
-                "auto_retry_on_timeout": False,
             },
         )
         assert result["type"] == "create_entry"

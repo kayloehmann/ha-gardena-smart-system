@@ -1,4 +1,4 @@
-"""Tests for the issue #22 poll-after-timeout / opt-in retry recovery path."""
+"""Tests for the command-timeout / retry-until-confirmed recovery path."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 
-from custom_components.gardena_smart_system.const import OPT_AUTO_RETRY_ON_TIMEOUT
+from custom_components.gardena_smart_system.const import COMMAND_RETRY_ATTEMPTS
 
 from .conftest import make_mock_device
 
@@ -45,9 +45,9 @@ async def _setup_with_devices(hass, mock_config_entry, devices):
 def _push_state_then_raise(coordinator, device, target_activity, exc):
     """Build a side_effect that mutates coordinator data, then raises ``exc``.
 
-    Simulates the real-world race the recovery path was designed for: the
-    Gardena cloud accepted the command and pushed the activity update via
-    WebSocket, but the HTTP response itself did not arrive in time.
+    Simulates the real-world race: the Gardena cloud accepted the command and
+    pushed the activity update via WebSocket, but the HTTP response itself did
+    not arrive in time.
     """
 
     def _side_effect(*_args: Any, **_kwargs: Any) -> None:
@@ -59,7 +59,7 @@ def _push_state_then_raise(coordinator, device, target_activity, exc):
 
 
 class TestTimeoutRecovery:
-    """Issue #22 Feature 1: poll-after-timeout."""
+    """First-attempt WebSocket-confirmation path."""
 
     async def test_recovery_when_state_reaches_target(
         self, hass: HomeAssistant, mock_config_entry: object
@@ -116,32 +116,9 @@ class TestTimeoutRecovery:
 
             assert mock_client.async_send_command.call_count == 1
 
-    async def test_no_recovery_no_retry_raises_command_timeout(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
-        """No state change + retry disabled → command_timeout error, no second call."""
-        from aiogardenasmart.exceptions import GardenaConnectionError
-
-        device = make_mock_device(has_sensor=False, has_mower=True)
-        devices = {device.device_id: device}
-
-        async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
-            mock_client.async_send_command.side_effect = GardenaConnectionError("Timeout")
-
-            with pytest.raises(HomeAssistantError) as exc_info:
-                await hass.services.async_call(
-                    "lawn_mower",
-                    "start_mowing",
-                    {"entity_id": "lawn_mower.my_sensor_mower"},
-                    blocking=True,
-                )
-
-            assert exc_info.value.translation_key == "command_timeout"
-            assert mock_client.async_send_command.call_count == 1
-
 
 class TestTimeoutRetry:
-    """Issue #22 Feature 2: opt-in auto-retry."""
+    """Multi-attempt retry path — retries are unconditional, no opt-in."""
 
     async def test_retry_succeeds_when_second_call_lands(
         self, hass: HomeAssistant, mock_config_entry: object
@@ -153,12 +130,6 @@ class TestTimeoutRetry:
         devices = {device.device_id: device}
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
-            hass.config_entries.async_update_entry(
-                mock_config_entry,
-                options={**mock_config_entry.options, OPT_AUTO_RETRY_ON_TIMEOUT: True},
-            )
-            await hass.async_block_till_done()
-
             coordinator = mock_config_entry.runtime_data
             calls: list[int] = []
 
@@ -182,10 +153,10 @@ class TestTimeoutRetry:
 
             assert mock_client.async_send_command.call_count == 2
 
-    async def test_retry_disabled_does_not_call_twice(
+    async def test_all_attempts_exhausted_raises_command_timeout(
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
-        """Retry must stay opt-in — without the option, no second call is made."""
+        """Every attempt fails — exactly N calls, then command_timeout."""
         from aiogardenasmart.exceptions import GardenaConnectionError
 
         device = make_mock_device(has_sensor=False, has_mower=True)
@@ -194,7 +165,7 @@ class TestTimeoutRetry:
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
             mock_client.async_send_command.side_effect = GardenaConnectionError("Timeout")
 
-            with pytest.raises(HomeAssistantError):
+            with pytest.raises(HomeAssistantError) as exc_info:
                 await hass.services.async_call(
                     "lawn_mower",
                     "start_mowing",
@@ -202,70 +173,40 @@ class TestTimeoutRetry:
                     blocking=True,
                 )
 
-            assert mock_client.async_send_command.call_count == 1
+            assert exc_info.value.translation_key == "command_timeout"
+            assert mock_client.async_send_command.call_count == COMMAND_RETRY_ATTEMPTS
 
-    async def test_retry_enabled_but_still_no_state_change_raises_timeout(
+    async def test_retry_clean_response_but_no_state_change_raises_timeout(
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
-        """Retry succeeds at the API level but the device never confirms the state."""
+        """Final attempt returns cleanly at the HTTP level but state never arrives.
+
+        Once any attempt returns cleanly the loop trusts it and exits — no
+        further retries even if WebSocket confirmation never happens. The
+        service call therefore succeeds from HA's perspective. (If the user
+        wants strict end-state confirmation they can read the entity state.)
+        """
         from aiogardenasmart.exceptions import GardenaConnectionError
 
         device = make_mock_device(has_sensor=False, has_mower=True)
         devices = {device.device_id: device}
 
         async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
-            hass.config_entries.async_update_entry(
-                mock_config_entry,
-                options={**mock_config_entry.options, OPT_AUTO_RETRY_ON_TIMEOUT: True},
-            )
-            await hass.async_block_till_done()
-
             calls: list[int] = []
 
             def _side_effect(*_args: Any, **_kwargs: Any) -> None:
                 calls.append(1)
                 if len(calls) == 1:
                     raise GardenaConnectionError("Timeout")
-                # Second call returns cleanly but device state never changes.
+                # Subsequent calls return cleanly but device state never changes.
 
             mock_client.async_send_command.side_effect = _side_effect
 
-            with pytest.raises(HomeAssistantError) as exc_info:
-                await hass.services.async_call(
-                    "lawn_mower",
-                    "start_mowing",
-                    {"entity_id": "lawn_mower.my_sensor_mower"},
-                    blocking=True,
-                )
-
-            assert exc_info.value.translation_key == "command_timeout"
-            assert mock_client.async_send_command.call_count == 2
-
-    async def test_retry_second_call_fails_too(
-        self, hass: HomeAssistant, mock_config_entry: object
-    ) -> None:
-        """Both calls fail — exactly two API calls, then a translated error."""
-        from aiogardenasmart.exceptions import GardenaConnectionError
-
-        device = make_mock_device(has_sensor=False, has_mower=True)
-        devices = {device.device_id: device}
-
-        async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
-            hass.config_entries.async_update_entry(
-                mock_config_entry,
-                options={**mock_config_entry.options, OPT_AUTO_RETRY_ON_TIMEOUT: True},
+            await hass.services.async_call(
+                "lawn_mower",
+                "start_mowing",
+                {"entity_id": "lawn_mower.my_sensor_mower"},
+                blocking=True,
             )
-            await hass.async_block_till_done()
 
-            mock_client.async_send_command.side_effect = GardenaConnectionError("Timeout")
-
-            with pytest.raises(HomeAssistantError) as exc_info:
-                await hass.services.async_call(
-                    "lawn_mower",
-                    "start_mowing",
-                    {"entity_id": "lawn_mower.my_sensor_mower"},
-                    blocking=True,
-                )
-
-            assert exc_info.value.translation_key == "command_timeout"
             assert mock_client.async_send_command.call_count == 2

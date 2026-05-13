@@ -76,8 +76,7 @@
           "mqtt_enable": "Enable MQTT bridge",
           "mqtt_topic_prefix": "MQTT topic prefix",
           "mqtt_publish_states": "Publish device states to MQTT",
-          "mqtt_subscribe_commands": "Accept commands via MQTT",
-          "auto_retry_on_timeout": "Auto-retry commands on timeout"
+          "mqtt_subscribe_commands": "Accept commands via MQTT"
         },
         "data_description": {
           "default_watering_minutes": "Duration in minutes when opening a valve without specifying a duration (1-1440).",
@@ -86,8 +85,7 @@
           "mqtt_enable": "Mirror device states to a local MQTT broker and optionally accept commands. Requires the MQTT integration to be configured.",
           "mqtt_topic_prefix": "Base topic for all MQTT messages (e.g. 'gardena' → gardena/DEVICE_ID/state).",
           "mqtt_publish_states": "Publish full device state as JSON on every update (WebSocket push or poll).",
-          "mqtt_subscribe_commands": "Subscribe to PREFIX/DEVICE_ID/command for inbound commands (start_watering, stop_watering, turn_on, turn_off, park, resume).",
-          "auto_retry_on_timeout": "When a command times out and the device does not reach the expected state within 10 s, send the command once more. Off by default — leave off if you would rather see a clear error than risk a duplicate command."
+          "mqtt_subscribe_commands": "Subscribe to PREFIX/DEVICE_ID/command for inbound commands (start_watering, stop_watering, turn_on, turn_off, park, resume)."
         }
       }
     }

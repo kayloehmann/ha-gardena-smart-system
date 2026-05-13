@@ -17,7 +17,6 @@ from custom_components.gardena_smart_system.const import (
     CONF_CLIENT_SECRET,
     CONF_LOCATION_ID,
     DOMAIN,
-    OPT_AUTO_RETRY_ON_TIMEOUT,
     OPT_DEFAULT_SOCKET_MINUTES,
     OPT_DEFAULT_WATERING_MINUTES,
     OPT_MQTT_ENABLE,
@@ -489,7 +488,6 @@ class TestOptionsFlow:
                 OPT_MQTT_TOPIC_PREFIX: "gardena",
                 OPT_MQTT_PUBLISH_STATES: True,
                 OPT_MQTT_SUBSCRIBE_COMMANDS: True,
-                OPT_AUTO_RETRY_ON_TIMEOUT: False,
             },
         )
 
@@ -533,7 +531,6 @@ class TestOptionsFlow:
                 OPT_MQTT_TOPIC_PREFIX: "gardena",
                 OPT_MQTT_PUBLISH_STATES: True,
                 OPT_MQTT_SUBSCRIBE_COMMANDS: True,
-                OPT_AUTO_RETRY_ON_TIMEOUT: False,
             },
         )
 

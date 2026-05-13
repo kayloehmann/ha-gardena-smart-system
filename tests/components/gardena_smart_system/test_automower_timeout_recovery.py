@@ -1,4 +1,4 @@
-"""Tests for the Automower path of issue #22 timeout recovery."""
+"""Tests for the Automower path of command-timeout / retry recovery."""
 
 from __future__ import annotations
 
@@ -23,8 +23,8 @@ except ImportError:
     )
 
 from custom_components.gardena_smart_system.const import (
+    COMMAND_RETRY_ATTEMPTS,
     DOMAIN,
-    OPT_AUTO_RETRY_ON_TIMEOUT,
 )
 
 from .test_automower import AUTOMOWER_ENTRY_DATA, make_mock_automower_device
@@ -109,10 +109,10 @@ class TestAutomowerTimeoutRecovery:
 
             assert mock_client.async_start.call_count == 1
 
-    async def test_no_recovery_no_retry_raises_command_timeout(
+    async def test_all_attempts_exhausted_raises_command_timeout(
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
     ) -> None:
-        """No state change + retry disabled → command_timeout, no second call."""
+        """Every attempt fails — exactly N calls, then command_timeout."""
         device = make_mock_automower_device(mower_activity=MowerActivity.PARKED_IN_CS)
         devices = {device.mower_id: device}
 
@@ -128,7 +128,7 @@ class TestAutomowerTimeoutRecovery:
                 )
 
             assert exc_info.value.translation_key == "command_timeout"
-            assert mock_client.async_start.call_count == 1
+            assert mock_client.async_start.call_count == COMMAND_RETRY_ATTEMPTS
 
     async def test_retry_succeeds_when_second_call_lands(
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
@@ -138,15 +138,6 @@ class TestAutomowerTimeoutRecovery:
         devices = {device.mower_id: device}
 
         async with _setup_automower(hass, automower_config_entry, devices) as mock_client:
-            hass.config_entries.async_update_entry(
-                automower_config_entry,
-                options={
-                    **automower_config_entry.options,
-                    OPT_AUTO_RETRY_ON_TIMEOUT: True,
-                },
-            )
-            await hass.async_block_till_done()
-
             coordinator = automower_config_entry.runtime_data
             calls: list[int] = []
 

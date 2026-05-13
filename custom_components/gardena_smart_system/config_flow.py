@@ -44,7 +44,6 @@ from .const import (
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
     CONF_LOCATION_ID,
-    DEFAULT_AUTO_RETRY_ON_TIMEOUT,
     DEFAULT_MQTT_TOPIC_PREFIX,
     DEFAULT_POLL_INTERVAL_AUTOMOWER,
     DEFAULT_POLL_INTERVAL_GARDENA,
@@ -53,7 +52,6 @@ from .const import (
     DOMAIN,
     MAX_POLL_INTERVAL,
     MIN_POLL_INTERVAL,
-    OPT_AUTO_RETRY_ON_TIMEOUT,
     OPT_DEFAULT_SOCKET_MINUTES,
     OPT_DEFAULT_WATERING_MINUTES,
     OPT_MQTT_ENABLE,
@@ -581,18 +579,12 @@ class GardenaOptionsFlowHandler(OptionsFlow):
         schema_dict[vol.Required(OPT_MQTT_PUBLISH_STATES)] = BooleanSelector()
         schema_dict[vol.Required(OPT_MQTT_SUBSCRIBE_COMMANDS)] = BooleanSelector()
 
-        current_auto_retry = self.config_entry.options.get(
-            OPT_AUTO_RETRY_ON_TIMEOUT, DEFAULT_AUTO_RETRY_ON_TIMEOUT
-        )
-        schema_dict[vol.Required(OPT_AUTO_RETRY_ON_TIMEOUT)] = BooleanSelector()
-
         suggested_values: dict[str, Any] = {
             OPT_POLL_INTERVAL_MINUTES: current_poll,
             OPT_MQTT_ENABLE: current_mqtt,
             OPT_MQTT_TOPIC_PREFIX: current_mqtt_prefix,
             OPT_MQTT_PUBLISH_STATES: current_mqtt_publish,
             OPT_MQTT_SUBSCRIBE_COMMANDS: current_mqtt_commands,
-            OPT_AUTO_RETRY_ON_TIMEOUT: current_auto_retry,
         }
         if not is_automower:
             suggested_values[OPT_DEFAULT_WATERING_MINUTES] = current_watering
