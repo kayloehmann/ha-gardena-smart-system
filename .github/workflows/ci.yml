@@ -79,7 +79,7 @@ jobs:
           )["project"]["version"]
 
           manifest = json.loads(
-              pathlib.Path("custom_components/gardena_smart_system/manifest.json").read_text()
+              pathlib.Path("custom_components/gardena_smart_system_ng/manifest.json").read_text()
           )
           reqs = [r for r in manifest["requirements"] if r.startswith("aiogardenasmart")]
           manifest_version = reqs[0].split("==")[1] if reqs else ""
@@ -110,4 +110,4 @@ jobs:
           pip install mypy pytest-homeassistant-custom-component
 
       - name: Run mypy
-        run: mypy custom_components/gardena_smart_system/
+        run: mypy custom_components/gardena_smart_system_ng/

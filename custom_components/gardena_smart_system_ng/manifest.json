@@ -1,0 +1,16 @@
+{
+  "domain": "gardena_smart_system_ng",
+  "name": "Gardena Smart System",
+  "after_dependencies": ["mqtt"],
+  "codeowners": ["@kayloehmann"],
+  "config_flow": true,
+  "documentation": "https://github.com/kayloehmann/ha-gardena-smart-system",
+  "integration_type": "hub",
+  "iot_class": "cloud_push",
+  "issue_tracker": "https://github.com/kayloehmann/ha-gardena-smart-system/issues",
+  "loggers": ["aiogardenasmart"],
+  "quality_scale": "platinum",
+  "requirements": ["aiogardenasmart==0.1.9"],
+  "single_config_entry": false,
+  "version": "2.0.0"
+}

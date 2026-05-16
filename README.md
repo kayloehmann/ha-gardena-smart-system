@@ -12,6 +12,10 @@ A Home Assistant custom integration for **Husqvarna smart garden devices** — s
 
 > **📖 Full documentation lives in the [Wiki](https://github.com/kayloehmann/ha-gardena-smart-system/wiki) — available in English and German / Vollständige Dokumentation im [Wiki](https://github.com/kayloehmann/ha-gardena-smart-system/wiki) — auf Englisch und Deutsch.**
 
+> **⚠️ Breaking change in v2.0.0 — the integration domain was renamed `gardena_smart_system` → `gardena_smart_system_ng`** (required for HACS default-catalog inclusion; the old domain is taken by another integration). There is no automatic migration: delete the old entry, update to 2.0.0, delete the orphaned `custom_components/gardena_smart_system/` folder, restart, and re-add the integration with the same credentials. Full steps in the [CHANGELOG](CHANGELOG.md#200---2026-05-16).
+>
+> **⚠️ Breaking Change in v2.0.0 — die Integrations-Domain wurde umbenannt von `gardena_smart_system` zu `gardena_smart_system_ng`** (erforderlich für die Aufnahme in den HACS-Default-Katalog; die alte Domain ist von einer anderen Integration belegt). Es gibt keine automatische Migration: alten Eintrag löschen, auf 2.0.0 aktualisieren, den verwaisten Ordner `custom_components/gardena_smart_system/` löschen, neu starten und die Integration mit denselben Zugangsdaten neu hinzufügen. Vollständige Schritte im [CHANGELOG](CHANGELOG.md#200---2026-05-16).
+
 ---
 
 ## English

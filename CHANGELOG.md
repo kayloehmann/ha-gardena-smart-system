@@ -2,6 +2,25 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [2.0.0] - 2026-05-16
+
+### ⚠️ BREAKING — integration domain renamed
+
+The integration domain changed from `gardena_smart_system` to **`gardena_smart_system_ng`**. This was required to be accepted into the HACS default catalog: the `gardena_smart_system` domain is already taken there by the older `py-smart-gardena/hass-gardena-smart-system` integration, and two integrations cannot share a domain (HACS would install both into the same `custom_components/` folder and they would overwrite each other).
+
+There is **no automatic migration** across a domain change in Home Assistant. The display name stays *Gardena Smart System* and your Husqvarna API credentials are unchanged, but the old config entry, its entities, and their history are tied to the old domain and will not carry over. Plan for a one-time reconfiguration.
+
+**Migration steps:**
+
+1. Note your **Application Key** and **Application Secret** (Husqvarna Developer Portal) — you will re-enter them.
+2. **Settings → Devices & Services**, open the old *Gardena Smart System* entry and **Delete** it.
+3. Update the integration in HACS to **2.0.0** (this installs the new `custom_components/gardena_smart_system_ng/` folder). The old `custom_components/gardena_smart_system/` folder is now orphaned — delete it manually and restart Home Assistant.
+4. **Add Integration → Gardena Smart System**, re-enter your Application Key/Secret and pick the API (Gardena and/or Automower) as before.
+5. Update any automations/scripts/dashboards that reference old entity IDs. Recommended: in the new entry, rename the re-created entities back to their previous entity IDs so existing automations keep working without edits.
+
+### Changed
+- **Renamed integration domain `gardena_smart_system` → `gardena_smart_system_ng`** across the component, tests, CI, and documentation. `manifest.json` `domain`, `const.DOMAIN`, all `translation_domain` references, the `custom_components/` and `tests/components/` directory layout, the coverage source, and CI/issue-template paths were updated accordingly. No functional or behavioural change beyond the domain itself.
+
 ## [1.12.15] - 2026-05-13
 
 ### Fixed

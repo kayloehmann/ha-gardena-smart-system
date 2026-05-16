@@ -4,7 +4,7 @@
 
 This policy covers:
 
-- The `gardena_smart_system` custom component under `custom_components/`.
+- The `gardena_smart_system_ng` custom component under `custom_components/`.
 - The vendored `aiogardenasmart` library under `aiogardenasmart/`.
 - The vendored `aioautomower` library under `aioautomower/`.
 

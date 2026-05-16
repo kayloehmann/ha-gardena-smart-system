@@ -1,0 +1,198 @@
+"""Number platform for Automower cutting height control."""
+
+from __future__ import annotations
+
+from typing import cast
+
+from homeassistant.components.number import NumberEntity, NumberMode
+from homeassistant.const import EntityCategory
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from aioautomower import AutomowerDevice
+
+from . import GardenaConfigEntry
+from .automower_coordinator import AutomowerCoordinator
+from .automower_entity import AutomowerEntity
+from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
+
+PARALLEL_UPDATES = 1
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: GardenaConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up Automower number entities."""
+    if entry.data.get(CONF_API_TYPE) != API_TYPE_AUTOMOWER:
+        return
+
+    coordinator = cast(AutomowerCoordinator, entry.runtime_data)
+    known_ids: set[str] = set()
+
+    @callback
+    def _async_add_new_entities() -> None:
+        if not coordinator.data:
+            return
+        new_entities: list[NumberEntity] = []
+        for device in coordinator.data.values():
+            # Global cutting height
+            key = f"{device.mower_id}_cutting_height"
+            if key not in known_ids:
+                known_ids.add(key)
+                new_entities.append(AutomowerCuttingHeightEntity(coordinator, device))
+            # Schedule override
+            sched_key = f"{device.mower_id}_schedule_override"
+            if sched_key not in known_ids:
+                known_ids.add(sched_key)
+                new_entities.append(AutomowerScheduleOverrideEntity(coordinator, device))
+            # Per-work-area cutting height
+            if device.capabilities.work_areas:
+                for wa in device.work_areas.values():
+                    wa_key = f"{device.mower_id}_wa_{wa.work_area_id}_height"
+                    if wa_key not in known_ids:
+                        known_ids.add(wa_key)
+                        new_entities.append(
+                            AutomowerWorkAreaHeightEntity(coordinator, device, wa.work_area_id)
+                        )
+        if new_entities:
+            async_add_entities(new_entities)
+
+    entry.async_on_unload(coordinator.async_add_listener(_async_add_new_entities))
+    _async_add_new_entities()
+
+
+class AutomowerCuttingHeightEntity(AutomowerEntity, NumberEntity):
+    """Global cutting height control (1-9)."""
+
+    _attr_translation_key = "automower_cutting_height"
+    _attr_native_min_value = 1
+    _attr_native_max_value = 9
+    _attr_native_step = 1
+    _attr_mode = NumberMode.SLIDER
+
+    def __init__(self, coordinator: AutomowerCoordinator, device: AutomowerDevice) -> None:
+        """Initialize the cutting height entity."""
+        super().__init__(coordinator, device, "cutting_height")
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the current cutting height."""
+        device = self._device
+        if device is None:
+            return None
+        return float(device.settings.cutting_height)
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set the cutting height."""
+        device = self._device
+        if device is None:
+            raise HomeAssistantError(
+                translation_domain="gardena_smart_system_ng",
+                translation_key="device_unavailable",
+            )
+        await self._async_execute_command(
+            self.coordinator.client.async_set_cutting_height,
+            device.mower_id,
+            int(value),
+        )
+
+
+class AutomowerScheduleOverrideEntity(AutomowerEntity, NumberEntity):
+    """Override the mower schedule for a given duration in minutes.
+
+    Setting a value sends a Start command to the mower API, forcing it
+    to mow for the specified number of minutes regardless of its schedule.
+    The native_value reflects the planner override action so users can see
+    whether an override is currently active.
+    """
+
+    _attr_translation_key = "automower_schedule_override"
+    _attr_native_min_value = 1
+    _attr_native_max_value = 480
+    _attr_native_step = 1
+    _attr_mode = NumberMode.SLIDER
+    _attr_native_unit_of_measurement = "min"
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, coordinator: AutomowerCoordinator, device: AutomowerDevice) -> None:
+        """Initialize the schedule override entity."""
+        super().__init__(coordinator, device, "schedule_override")
+        self._last_set_value: float | None = None
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the last set override duration, or None if no override is active."""
+        device = self._device
+        if device is None:
+            return None
+        if device.planner.override.action == "FORCE_MOW":
+            return self._last_set_value
+        return None
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Start mowing for the given number of minutes (schedule override)."""
+        device = self._device
+        if device is None:
+            raise HomeAssistantError(
+                translation_domain="gardena_smart_system_ng",
+                translation_key="device_unavailable",
+            )
+        await self._async_execute_command(
+            self.coordinator.client.async_start,
+            device.mower_id,
+            duration=int(value),
+        )
+        self._last_set_value = value
+
+
+class AutomowerWorkAreaHeightEntity(AutomowerEntity, NumberEntity):
+    """Per-work-area cutting height control (0-100%)."""
+
+    _attr_native_min_value = 0
+    _attr_native_max_value = 100
+    _attr_native_step = 1
+    _attr_mode = NumberMode.SLIDER
+    _attr_native_unit_of_measurement = "%"
+
+    def __init__(
+        self,
+        coordinator: AutomowerCoordinator,
+        device: AutomowerDevice,
+        work_area_id: int,
+    ) -> None:
+        """Initialize the work area cutting height entity."""
+        super().__init__(coordinator, device, f"wa_{work_area_id}_height")
+        self._work_area_id = work_area_id
+        wa = device.work_areas.get(work_area_id)
+        wa_name = wa.name if wa else f"Work area {work_area_id}"
+        self._attr_translation_key = "automower_work_area_cutting_height"
+        self._attr_translation_placeholders = {"work_area": wa_name}
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the current work area cutting height."""
+        device = self._device
+        if device is None:
+            return None
+        wa = device.work_areas.get(self._work_area_id)
+        if wa is None:
+            return None
+        return float(wa.cutting_height)
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set the work area cutting height."""
+        device = self._device
+        if device is None:
+            raise HomeAssistantError(
+                translation_domain="gardena_smart_system_ng",
+                translation_key="device_unavailable",
+            )
+        await self._async_execute_command(
+            self.coordinator.client.async_set_work_area_cutting_height,
+            device.mower_id,
+            self._work_area_id,
+            int(value),
+        )
