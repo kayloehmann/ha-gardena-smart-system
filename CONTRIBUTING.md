@@ -34,7 +34,7 @@ ruff format --check custom_components/ tests/
 ## Type Checking
 
 ```bash
-mypy custom_components/gardena_smart_system/
+mypy custom_components/gardena_smart_system_ng/
 ```
 
 ## Pull Requests

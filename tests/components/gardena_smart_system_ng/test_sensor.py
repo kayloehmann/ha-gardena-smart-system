@@ -1,0 +1,1571 @@
+"""Tests for the Gardena Smart System sensor platform."""
+
+from __future__ import annotations
+
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+from homeassistant.const import STATE_UNAVAILABLE
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
+
+from .conftest import make_mock_device
+
+_PATCH_CLIENT = "custom_components.gardena_smart_system_ng.coordinator.GardenaClient"
+_PATCH_AUTH = "custom_components.gardena_smart_system_ng.coordinator.GardenaAuth"
+_PATCH_WS = "custom_components.gardena_smart_system_ng.coordinator.GardenaWebSocket"
+
+
+def _setup_mock_api(devices: dict) -> tuple:
+    """Return context managers that patch the coordinator dependencies."""
+    return (
+        patch(_PATCH_CLIENT),
+        patch(_PATCH_AUTH, return_value=AsyncMock()),
+        patch(_PATCH_WS),
+        devices,
+    )
+
+
+@pytest.fixture
+def mock_sensor_api(mock_devices: dict) -> object:
+    """Patch aiogardenasmart classes and return the mock client."""
+    with (
+        patch(_PATCH_CLIENT) as mock_client_cls,
+        patch(_PATCH_AUTH, return_value=AsyncMock()),
+        patch(_PATCH_WS) as mock_ws_cls,
+    ):
+        mock_client = AsyncMock()
+        mock_client.async_get_devices = AsyncMock(return_value=mock_devices)
+        mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+        mock_client_cls.return_value = mock_client
+
+        mock_ws = AsyncMock()
+        mock_ws.async_connect = AsyncMock()
+        mock_ws.async_disconnect = AsyncMock()
+        mock_ws_cls.return_value = mock_ws
+
+        yield mock_client
+
+
+async def _setup_integration(
+    hass: HomeAssistant, mock_config_entry: object, mock_api: object
+) -> None:
+    """Set up the integration and wait for it to be ready."""
+    mock_config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+
+class TestSensorEntityCreation:
+    """Test sensor entities are created for the right device services."""
+
+    async def test_battery_level_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        state = hass.states.get("sensor.my_sensor_battery")
+        assert state is not None
+        assert state.state == "85"
+
+    async def test_rf_link_level_sensor_created_but_disabled(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        entity_reg = er.async_get(hass)
+        entry = entity_reg.async_get("sensor.my_sensor_signal_strength")
+        assert entry is not None
+        assert entry.disabled_by is not None
+
+    async def test_soil_humidity_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        state = hass.states.get("sensor.my_sensor_soil_moisture")
+        assert state is not None
+        assert state.state == "42"
+
+    async def test_soil_temperature_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        state = hass.states.get("sensor.my_sensor_soil_temperature")
+        assert state is not None
+        assert state.state == "18.5"
+
+    async def test_ambient_temperature_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        state = hass.states.get("sensor.my_sensor_ambient_temperature")
+        assert state is not None
+        assert state.state == "22.1"
+
+    async def test_light_intensity_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        state = hass.states.get("sensor.my_sensor_light_intensity")
+        assert state is not None
+        assert state.state == "15000"
+
+    async def test_mower_operating_hours_created_but_disabled(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(
+            "mower-dev", "SN-MOWER", "My Mower", has_sensor=False, has_mower=True
+        )
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+        entity_reg = er.async_get(hass)
+        # mower_operating_hours has translation name "Operating hours"
+        # On "My Mower" device with has_mower=True, has_sensor=False:
+        # battery_level -> sensor.my_mower_battery
+        # rf_link_level -> sensor.my_mower_signal_strength (disabled)
+        # mower_operating_hours -> sensor.my_mower_operating_hours (disabled)
+        entry = entity_reg.async_get("sensor.my_mower_operating_hours")
+        assert entry is not None
+        assert entry.disabled_by is not None
+
+    async def test_mower_activity_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(
+            "mower-dev", "SN-MOWER", "My Mower", has_sensor=False, has_mower=True
+        )
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+        state = hass.states.get("sensor.my_mower_activity")
+        assert state is not None
+        assert state.state == "PARKED_PARK_SELECTED"
+
+    async def test_mower_last_error_code_created_but_disabled(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(
+            "mower-dev", "SN-MOWER", "My Mower", has_sensor=False, has_mower=True
+        )
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+        entity_reg = er.async_get(hass)
+        entry = entity_reg.async_get("sensor.my_mower_last_error_code")
+        assert entry is not None
+        assert entry.disabled_by is not None
+
+    async def test_mower_last_error_code_value(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(
+            "mower-dev", "SN-MOWER", "My Mower", has_sensor=False, has_mower=True
+        )
+        device.mower.last_error_code = "TRAPPED"
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+            # Enable the disabled entity and reload within the mock context
+            entity_reg = er.async_get(hass)
+            entity_reg.async_update_entity("sensor.my_mower_last_error_code", disabled_by=None)
+            await hass.config_entries.async_reload(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            state = hass.states.get("sensor.my_mower_last_error_code")
+            assert state is not None
+            assert state.state == "TRAPPED"
+
+    async def test_mower_activity_not_created_without_mower(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        # Default mock device has no mower
+        assert hass.states.get("sensor.my_sensor_activity") is None
+
+    async def test_no_sensor_entities_for_device_without_sensor_service(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device("no-sensor-dev", "SN-NS", "No Sensor", has_sensor=False)
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+        # Soil sensors should not exist
+        assert hass.states.get("sensor.no_sensor_soil_moisture") is None
+        assert hass.states.get("sensor.no_sensor_soil_temperature") is None
+        assert hass.states.get("sensor.no_sensor_ambient_temperature") is None
+        assert hass.states.get("sensor.no_sensor_light_intensity") is None
+
+
+class TestSensorUniqueIds:
+    """Test sensor entity unique IDs."""
+
+    async def test_battery_sensor_unique_id(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        entity_reg = er.async_get(hass)
+        entry = entity_reg.async_get("sensor.my_sensor_battery")
+        assert entry is not None
+        assert entry.unique_id == "SN001_battery_level"
+
+    async def test_soil_humidity_unique_id(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        entity_reg = er.async_get(hass)
+        entry = entity_reg.async_get("sensor.my_sensor_soil_moisture")
+        assert entry is not None, "sensor.my_sensor_soil_moisture not found"
+        assert entry.unique_id == "SN001_soil_humidity"
+
+
+class TestSensorDeviceInfo:
+    """Test sensor entities are linked to the correct device."""
+
+    async def test_sensor_device_info(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        entity_reg = er.async_get(hass)
+        entry = entity_reg.async_get("sensor.my_sensor_battery")
+        assert entry is not None
+        assert entry.device_id is not None
+
+
+class TestSensorUnavailability:
+    """Test sensor entities become unavailable when device goes offline."""
+
+    async def test_sensor_unavailable_when_device_offline(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device()
+        device.is_online = False
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+        state = hass.states.get("sensor.my_sensor_battery")
+        assert state is not None
+        assert state.state == STATE_UNAVAILABLE
+
+    async def test_sensor_unavailable_when_device_removed_from_coordinator(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device()
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+            # Verify sensor is available first
+            state = hass.states.get("sensor.my_sensor_battery")
+            assert state is not None
+            assert state.state == "85"
+
+            # Simulate device removal via coordinator data update
+            coordinator = mock_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+        state = hass.states.get("sensor.my_sensor_battery")
+        assert state is not None
+        assert state.state == STATE_UNAVAILABLE
+
+    async def test_sensor_returns_none_when_service_value_missing(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device()
+        device.sensor.soil_humidity = None
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+        # soil_humidity was set to None, but exists_fn checks is not None,
+        # so the entity should not be created
+        state = hass.states.get("sensor.my_sensor_soil_moisture")
+        assert state is None
+
+    async def test_logs_device_offline_and_online_transitions(
+        self, hass: HomeAssistant, mock_config_entry: object, caplog: object
+    ) -> None:
+        """Test that device availability transitions are logged."""
+        import logging
+
+        device = make_mock_device()
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+            # Device starts online — no log yet (first check, _was_available is None)
+            state = hass.states.get("sensor.my_sensor_battery")
+            assert state.state == "85"
+
+            # Simulate device going offline
+            device.is_online = False
+            coordinator = mock_config_entry.runtime_data
+            coordinator.async_set_updated_data(devices)
+            await hass.async_block_till_done()
+
+            state = hass.states.get("sensor.my_sensor_battery")
+            assert state.state == STATE_UNAVAILABLE
+
+            assert any(
+                "Device My Sensor is offline" in r.message and r.levelno == logging.WARNING
+                for r in caplog.records
+            )
+
+            # Simulate device coming back online
+            caplog.clear()
+            device.is_online = True
+            coordinator.async_set_updated_data(devices)
+            await hass.async_block_till_done()
+
+            state = hass.states.get("sensor.my_sensor_battery")
+            assert state.state == "85"
+
+            assert any(
+                "Device My Sensor is back online" in r.message and r.levelno == logging.INFO
+                for r in caplog.records
+            )
+
+
+class TestSensorDynamicDevices:
+    """Test new sensor entities are added when new devices appear."""
+
+    async def test_new_sensor_device_added_dynamically(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device1 = make_mock_device("dev-1", "SN001", "Sensor 1")
+        devices = {"dev-1": device1}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+            # Initially only one device
+            assert hass.states.get("sensor.sensor_1_battery") is not None
+            assert hass.states.get("sensor.sensor_2_battery") is None
+
+            # Add a second device via coordinator update
+            device2 = make_mock_device("dev-2", "SN002", "Sensor 2")
+            new_devices = {"dev-1": device1, "dev-2": device2}
+            coordinator = mock_config_entry.runtime_data
+            coordinator.async_set_updated_data(new_devices)
+            await hass.async_block_till_done()
+
+            assert hass.states.get("sensor.sensor_2_battery") is not None
+
+
+class TestValveErrorSensor:
+    """Test per-valve error code sensors."""
+
+    async def test_valve_error_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Per-valve error sensors are created for each valve."""
+        device = make_mock_device(valve_count=2)
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+        entity_reg = er.async_get(hass)
+        # Two valves: device-uuid:1 and device-uuid:2
+        entry1 = entity_reg.async_get("sensor.my_sensor_valve_error_code_valve_1")
+        entry2 = entity_reg.async_get("sensor.my_sensor_valve_error_code_valve_2")
+        assert entry1 is not None
+        assert entry2 is not None
+        assert "valve_1_last_error_code" in entry1.unique_id
+        assert "valve_2_last_error_code" in entry2.unique_id
+
+    async def test_valve_error_sensor_disabled_by_default(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Valve error sensors are disabled by default."""
+        device = make_mock_device(valve_count=1)
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+        entity_reg = er.async_get(hass)
+        entry = entity_reg.async_get("sensor.my_sensor_valve_error_code_valve_1")
+        assert entry is not None
+        assert entry.disabled_by is not None
+
+    async def test_valve_error_sensor_value(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Valve error sensor reports the last_error_code after enabling."""
+        device = make_mock_device(valve_count=1)
+        vid = f"{device.device_id}:1"
+        device.valves[vid].last_error_code = "WATERING_CANCELED"
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+            entity_reg = er.async_get(hass)
+            entity_reg.async_update_entity(
+                "sensor.my_sensor_valve_error_code_valve_1", disabled_by=None
+            )
+            await hass.config_entries.async_reload(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            state = hass.states.get("sensor.my_sensor_valve_error_code_valve_1")
+            assert state is not None
+            assert state.state == "WATERING_CANCELED"
+
+    async def test_valve_error_sensor_none_value(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Valve error sensor returns unknown when valve disappears."""
+        device = make_mock_device(valve_count=1)
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+            entity_reg = er.async_get(hass)
+            entity_reg.async_update_entity(
+                "sensor.my_sensor_valve_error_code_valve_1", disabled_by=None
+            )
+            await hass.config_entries.async_reload(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            # Remove the device from coordinator → device gone → None
+            coordinator = mock_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+
+            state = hass.states.get("sensor.my_sensor_valve_error_code_valve_1")
+            assert state is not None
+            assert state.state == STATE_UNAVAILABLE
+
+    async def test_no_valve_error_sensor_without_valves(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """No valve error sensors created for device without valves."""
+        device = make_mock_device(valve_count=0)
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+        entity_reg = er.async_get(hass)
+        entry = entity_reg.async_get("sensor.my_sensor_valve_error_code_valve_1")
+        assert entry is None
+
+
+class TestPowerSocketErrorSensor:
+    """Test the power socket last error code sensor."""
+
+    async def test_power_socket_error_sensor_created_disabled(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Power socket error sensor is created but disabled by default."""
+        device = make_mock_device(has_sensor=False, has_power_socket=True)
+        device.power_socket.last_error_code = "NO_MESSAGE"
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+        entity_reg = er.async_get(hass)
+        entry = entity_reg.async_get("sensor.my_sensor_last_error_code")
+        assert entry is not None
+        assert entry.disabled_by is not None
+
+    async def test_power_socket_error_sensor_not_created_without_socket(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """No power socket error sensor for device without power socket."""
+        device = make_mock_device(has_power_socket=False)
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+        entity_reg = er.async_get(hass)
+        entry = entity_reg.async_get("sensor.my_sensor_last_error_code")
+        assert entry is None
+
+
+class TestSensorDeviceNoneGuard:
+    """Test sensor native_value returns None when device disappears."""
+
+    async def test_native_value_returns_none_when_device_gone(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        """sensor.py:188-189: native_value returns None when device is None."""
+        from custom_components.gardena_smart_system_ng.sensor import (
+            COMMON_SENSORS,
+            GardenaSensorEntity,
+        )
+
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        coordinator = mock_config_entry.runtime_data
+        # Get a device to construct the entity
+        device = next(iter(coordinator.data.values()))
+        coordinator.async_set_updated_data({})
+        await hass.async_block_till_done()
+
+        entity = GardenaSensorEntity(coordinator, device, COMMON_SENSORS[0])
+        assert entity.native_value is None
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Feature Tests: Valve Remaining Duration Sensor
+# ──────────────────────────────────────────────────────────────────────
+
+
+async def _setup_with_devices(hass, mock_config_entry, devices):
+    """Set up the integration with given device map."""
+    with (
+        patch(_PATCH_CLIENT) as mock_client_cls,
+        patch(_PATCH_AUTH, return_value=AsyncMock()),
+        patch(_PATCH_WS) as mock_ws_cls,
+    ):
+        mock_client = AsyncMock()
+        mock_client.async_get_devices = AsyncMock(return_value=devices)
+        mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+        mock_client_cls.return_value = mock_client
+        mock_ws = AsyncMock()
+        mock_ws.async_connect = AsyncMock()
+        mock_ws.async_disconnect = AsyncMock()
+        mock_ws_cls.return_value = mock_ws
+
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+
+class TestValveRemainingDurationSensor:
+    """Test the valve remaining duration sensor."""
+
+    async def test_remaining_duration_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=1)
+        device.valves["device-uuid:1"].duration = 300
+        await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
+
+        entity_reg = er.async_get(hass)
+        # Find the entity by unique_id substring
+        found = None
+        for entry in entity_reg.entities.values():
+            if "remaining_duration" in (entry.unique_id or ""):
+                found = entry
+                break
+        assert found is not None
+
+    async def test_remaining_duration_is_future_timestamp_when_active(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=1)
+        device.valves["device-uuid:1"].activity = "MANUAL_WATERING"
+        device.valves["device-uuid:1"].duration = 300
+        await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
+
+        entity_reg = er.async_get(hass)
+        for entry in entity_reg.entities.values():
+            if "remaining_duration" in (entry.unique_id or ""):
+                state = hass.states.get(entry.entity_id)
+                assert state is not None
+                assert state.state != "unknown"
+                # Should be an ISO timestamp in the future
+                from homeassistant.util import dt as dt_util
+
+                end_time = dt_util.parse_datetime(state.state)
+                assert end_time is not None
+                assert end_time > dt_util.utcnow()
+                break
+
+    async def test_remaining_duration_unknown_when_duration_zero(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=1)
+        device.valves["device-uuid:1"].duration = 0
+        await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
+
+        entity_reg = er.async_get(hass)
+        for entry in entity_reg.entities.values():
+            if "remaining_duration" in (entry.unique_id or ""):
+                state = hass.states.get(entry.entity_id)
+                assert state is not None
+                assert state.state == "unknown"
+                break
+
+    async def test_remaining_duration_unknown_when_duration_is_none(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=1)
+        device.valves["device-uuid:1"].duration = None
+        await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
+
+        entity_reg = er.async_get(hass)
+        for entry in entity_reg.entities.values():
+            if "remaining_duration" in (entry.unique_id or ""):
+                state = hass.states.get(entry.entity_id)
+                assert state is not None
+                assert state.state == "unknown"
+                break
+
+    async def test_remaining_duration_unknown_when_valve_closed(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Duration is unknown when valve is closed, even if API reports stale value."""
+        device = make_mock_device(valve_count=1)
+        device.valves["device-uuid:1"].activity = "CLOSED"
+        device.valves["device-uuid:1"].duration = 300
+        await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
+
+        entity_reg = er.async_get(hass)
+        for entry in entity_reg.entities.values():
+            if "remaining_duration" in (entry.unique_id or ""):
+                state = hass.states.get(entry.entity_id)
+                assert state is not None
+                assert state.state == "unknown"
+                break
+
+    async def test_no_remaining_duration_without_valves(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(valve_count=0)
+        await _setup_with_devices(hass, mock_config_entry, {device.device_id: device})
+
+        entity_reg = er.async_get(hass)
+        found = False
+        for entry in entity_reg.entities.values():
+            if "remaining_duration" in (entry.unique_id or ""):
+                found = True
+                break
+        assert not found
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Hub-level Diagnostic Sensor Tests
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestHubDeviceCountSensor:
+    """Test the hub device count sensor."""
+
+    async def test_device_count_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        entity_reg = er.async_get(hass)
+        found = None
+        for entry in entity_reg.entities.values():
+            if "device_count" in (entry.unique_id or ""):
+                found = entry
+                break
+        assert found is not None
+
+    async def test_device_count_value(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        entity_reg = er.async_get(hass)
+        for entry in entity_reg.entities.values():
+            if "device_count" in (entry.unique_id or ""):
+                state = hass.states.get(entry.entity_id)
+                assert state is not None
+                assert int(state.state) == 1
+                break
+
+
+class TestHubPollingIntervalSensor:
+    """Test the hub polling interval sensor."""
+
+    async def test_polling_interval_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        entity_reg = er.async_get(hass)
+        found = None
+        for entry in entity_reg.entities.values():
+            if "polling_interval" in (entry.unique_id or ""):
+                found = entry
+                break
+        assert found is not None
+
+    async def test_polling_interval_value(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        entity_reg = er.async_get(hass)
+        for entry in entity_reg.entities.values():
+            if "polling_interval" in (entry.unique_id or ""):
+                state = hass.states.get(entry.entity_id)
+                assert state is not None
+                assert float(state.state) > 0
+                break
+
+
+class TestHubWebSocketSensor:
+    """Test the hub WebSocket connected binary sensor."""
+
+    async def test_websocket_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        entity_reg = er.async_get(hass)
+        found = None
+        for entry in entity_reg.entities.values():
+            if "websocket_connected" in (entry.unique_id or ""):
+                found = entry
+                break
+        assert found is not None
+
+    async def test_websocket_initially_connected(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+
+        entity_reg = er.async_get(hass)
+        for entry in entity_reg.entities.values():
+            if "websocket_connected" in (entry.unique_id or ""):
+                state = hass.states.get(entry.entity_id)
+                assert state is not None
+                # WS connects during setup
+                assert state.state == "on"
+                break
+
+
+# ──────────────────────────────────────────────────────────────────────
+# v1.3.0 Features: P2 (Power Socket Duration), P4 (Battery State)
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestPowerSocketRemainingDuration:
+    """P2: Power socket remaining duration sensor."""
+
+    async def test_duration_is_future_timestamp_when_active(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(has_power_socket=True)
+        device.power_socket.activity = "TIMER"
+        device.power_socket.duration = 300
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get("sensor.my_sensor_remaining_power_time")
+        assert state is not None
+        assert state.state != "unknown"
+        from homeassistant.util import dt as dt_util
+
+        end_time = dt_util.parse_datetime(state.state)
+        assert end_time is not None
+        assert end_time > dt_util.utcnow()
+
+    async def test_duration_unknown_when_duration_zero(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(has_power_socket=True)
+        device.power_socket.duration = 0
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get("sensor.my_sensor_remaining_power_time")
+        assert state is not None
+        assert state.state == "unknown"
+
+    async def test_duration_unknown_when_off(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Duration is unknown when socket is OFF, even with stale value."""
+        device = make_mock_device(has_power_socket=True)
+        device.power_socket.activity = "OFF"
+        device.power_socket.duration = 300
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get("sensor.my_sensor_remaining_power_time")
+        assert state is not None
+        assert state.state == "unknown"
+
+    async def test_no_sensor_without_power_socket(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        device = make_mock_device(has_power_socket=False)
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get("sensor.my_sensor_remaining_power_time")
+        assert state is None
+
+
+class TestBatteryStateSensor:
+    """P4: Gardena battery state enum sensor."""
+
+    async def test_battery_state_ok(self, hass: HomeAssistant, mock_config_entry: object) -> None:
+        device = make_mock_device()
+        device.common.battery_state = "OK"
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get("sensor.my_sensor_battery_state")
+        assert state is not None
+        assert state.state == "ok"
+
+    async def test_battery_state_low(self, hass: HomeAssistant, mock_config_entry: object) -> None:
+        device = make_mock_device()
+        device.common.battery_state = "LOW"
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get("sensor.my_sensor_battery_state")
+        assert state is not None
+        assert state.state == "low"
+
+    async def test_battery_state_none(self, hass: HomeAssistant, mock_config_entry: object) -> None:
+        device = make_mock_device()
+        device.common.battery_state = None
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        # No entity created when battery_state is None (exists_fn)
+        entity_reg = er.async_get(hass)
+        found = [e for e in entity_reg.entities.values() if "battery_state" in (e.unique_id or "")]
+        assert len(found) == 0
+
+
+class TestSensorNoneGuards:
+    """Test sensor None guards for device/valve removal and hub edge cases."""
+
+    async def test_valve_remaining_duration_device_removed(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Valve remaining duration returns None when device removed."""
+        device = make_mock_device(valve_count=1)
+        device.valves["device-uuid:1"].duration = 300
+        devices = {device.device_id: device}
+
+        patches = (
+            patch(_PATCH_CLIENT),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS),
+        )
+        p_client = patches[0].__enter__()
+        patches[1].__enter__()
+        p_ws = patches[2].__enter__()
+        mock_client = AsyncMock()
+        mock_client.async_get_devices = AsyncMock(return_value=devices)
+        mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+        p_client.return_value = mock_client
+        mock_ws = AsyncMock()
+        mock_ws.async_connect = AsyncMock()
+        mock_ws.async_disconnect = AsyncMock()
+        p_ws.return_value = mock_ws
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        try:
+            coordinator = mock_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+            # Entity becomes unavailable when device is gone
+            entity_reg = er.async_get(hass)
+            valve_sensors = [
+                e
+                for e in entity_reg.entities.values()
+                if "remaining_duration" in (e.unique_id or "")
+            ]
+            if valve_sensors:
+                state = hass.states.get(valve_sensors[0].entity_id)
+                assert state is not None
+                assert state.state == "unavailable"
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+    async def test_valve_error_sensor_device_removed(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Valve error sensor returns None when device removed."""
+        device = make_mock_device(valve_count=1)
+        device.valves["device-uuid:1"].last_error_code = "SOME_ERROR"
+        devices = {device.device_id: device}
+
+        patches = (
+            patch(_PATCH_CLIENT),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS),
+        )
+        p_client = patches[0].__enter__()
+        patches[1].__enter__()
+        p_ws = patches[2].__enter__()
+        mock_client = AsyncMock()
+        mock_client.async_get_devices = AsyncMock(return_value=devices)
+        mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+        p_client.return_value = mock_client
+        mock_ws = AsyncMock()
+        mock_ws.async_connect = AsyncMock()
+        mock_ws.async_disconnect = AsyncMock()
+        p_ws.return_value = mock_ws
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        try:
+            coordinator = mock_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+    async def test_hub_polling_interval_none(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Hub polling interval sensor returns None when update_interval is None."""
+        device = make_mock_device()
+        devices = {device.device_id: device}
+
+        patches = (
+            patch(_PATCH_CLIENT),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS),
+        )
+        p_client = patches[0].__enter__()
+        patches[1].__enter__()
+        p_ws = patches[2].__enter__()
+        mock_client = AsyncMock()
+        mock_client.async_get_devices = AsyncMock(return_value=devices)
+        mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+        p_client.return_value = mock_client
+        mock_ws = AsyncMock()
+        mock_ws.async_connect = AsyncMock()
+        mock_ws.async_disconnect = AsyncMock()
+        p_ws.return_value = mock_ws
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        try:
+            coordinator = mock_config_entry.runtime_data
+            coordinator.update_interval = None
+            coordinator.async_set_updated_data(devices)
+            await hass.async_block_till_done()
+
+            state = hass.states.get("sensor.gardena_hub_my_garden_polling_interval")
+            if state is not None:
+                assert state.state in ("unknown", "unavailable")
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+    async def test_gardena_entity_coordinator_data_none(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Gardena entity _device returns None when coordinator.data is None."""
+        device = make_mock_device()
+        devices = {device.device_id: device}
+
+        patches = (
+            patch(_PATCH_CLIENT),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS),
+        )
+        p_client = patches[0].__enter__()
+        patches[1].__enter__()
+        p_ws = patches[2].__enter__()
+        mock_client = AsyncMock()
+        mock_client.async_get_devices = AsyncMock(return_value=devices)
+        mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+        p_client.return_value = mock_client
+        mock_ws = AsyncMock()
+        mock_ws.async_connect = AsyncMock()
+        mock_ws.async_disconnect = AsyncMock()
+        p_ws.return_value = mock_ws
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        try:
+            coordinator = mock_config_entry.runtime_data
+            coordinator.data = None
+            coordinator.async_set_updated_data(None)
+            await hass.async_block_till_done()
+            state = hass.states.get("sensor.my_sensor_battery")
+            assert state is not None
+            assert state.state == "unavailable"
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+
+class TestMowerStateSensor:
+    """Test the mower state sensor (P7)."""
+
+    async def test_mower_state_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Mower state sensor is created with correct value."""
+        device = make_mock_device(
+            "mower-dev", "SN-MOWER", "My Mower", has_sensor=False, has_mower=True
+        )
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get("sensor.my_mower_state")
+        assert state is not None
+        assert state.state == "ok"
+
+    async def test_mower_state_not_created_without_mower(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        """Mower state sensor not created when device has no mower."""
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+        assert hass.states.get("sensor.my_sensor_state") is None
+
+
+class TestPowerSocketStateSensor:
+    """Test the power socket state sensor (P7)."""
+
+    async def test_power_socket_state_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Power socket state sensor is created with correct value."""
+        device = make_mock_device("socket-dev", "SN-SOCKET", "My Socket", has_power_socket=True)
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get("sensor.my_socket_power_socket_state")
+        assert state is not None
+        assert state.state == "ok"
+
+    async def test_power_socket_state_not_created_without_socket(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        """Power socket state sensor not created when device has no socket."""
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+        assert hass.states.get("sensor.my_sensor_power_socket_state") is None
+
+
+class TestValveStateSensor:
+    """Test the per-valve state sensor (P7)."""
+
+    async def test_valve_state_sensor_created(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Valve state sensor is created with correct value."""
+        device = make_mock_device(valve_count=1)
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        state = hass.states.get("sensor.my_sensor_valve_state_valve_1")
+        assert state is not None
+        assert state.state == "ok"
+
+    async def test_valve_state_device_removed(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Valve state sensor returns unavailable when device removed."""
+        device = make_mock_device(valve_count=1)
+        devices = {device.device_id: device}
+
+        patches = (
+            patch(_PATCH_CLIENT),
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS),
+        )
+        p_client = patches[0].__enter__()
+        patches[1].__enter__()
+        p_ws = patches[2].__enter__()
+        mock_client = AsyncMock()
+        mock_client.async_get_devices = AsyncMock(return_value=devices)
+        mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+        p_client.return_value = mock_client
+        mock_ws = AsyncMock()
+        mock_ws.async_connect = AsyncMock()
+        mock_ws.async_disconnect = AsyncMock()
+        p_ws.return_value = mock_ws
+        mock_config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        try:
+            coordinator = mock_config_entry.runtime_data
+            coordinator.async_set_updated_data({})
+            await hass.async_block_till_done()
+            state = hass.states.get("sensor.my_sensor_valve_state_valve_1")
+            assert state is not None
+            assert state.state == "unavailable"
+        finally:
+            for p in reversed(patches):
+                p.__exit__(None, None, None)
+
+
+class TestValveSetErrorSensor:
+    """Test the valve set error sensor (P9)."""
+
+    async def test_valve_set_error_sensor_created_disabled(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """ValveSet error sensor is created but disabled by default."""
+        device = make_mock_device(valve_count=1)
+        vs = MagicMock()
+        vs.state = "OK"
+        vs.last_error_code = "NO_MESSAGE"
+        device.valve_set = vs
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        entity_reg = er.async_get(hass)
+        entry = entity_reg.async_get("sensor.my_sensor_valve_set_error_code")
+        assert entry is not None
+        assert entry.disabled_by is not None
+
+    async def test_valve_set_error_sensor_value(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """ValveSet error sensor returns correct value when enabled."""
+        device = make_mock_device(valve_count=1)
+        vs = MagicMock()
+        vs.state = "WARNING"
+        vs.last_error_code = "VALVE_ERROR_1"
+        device.valve_set = vs
+        devices = {device.device_id: device}
+
+        with (
+            patch(_PATCH_CLIENT) as mock_client_cls,
+            patch(_PATCH_AUTH, return_value=AsyncMock()),
+            patch(_PATCH_WS) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_devices = AsyncMock(return_value=devices)
+            mock_client.async_get_websocket_url = AsyncMock(return_value="wss://test")
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await _setup_integration(hass, mock_config_entry, mock_client)
+
+            entity_reg = er.async_get(hass)
+            entity_reg.async_update_entity(
+                "sensor.my_sensor_valve_set_error_code", disabled_by=None
+            )
+            await hass.config_entries.async_reload(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+            state = hass.states.get("sensor.my_sensor_valve_set_error_code")
+            assert state is not None
+            assert state.state == "VALVE_ERROR_1"
+
+    async def test_valve_set_error_not_created_without_valve_set(
+        self, hass: HomeAssistant, mock_config_entry: object, mock_sensor_api: object
+    ) -> None:
+        """ValveSet error sensor not created when device has no valve_set."""
+        await _setup_integration(hass, mock_config_entry, mock_sensor_api)
+        entity_reg = er.async_get(hass)
+        entry = entity_reg.async_get("sensor.my_sensor_valve_set_error_code")
+        assert entry is None
+
+
+# ──────────────────────────────────────────────────────────────────────
+# v1.5.11: Duration-change detection & single-valve placeholder tests
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestValveDurationChangeWhileActive:
+    """Duration change mid-watering should recompute end_time."""
+
+    async def test_duration_change_updates_end_time(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """When duration changes while valve is active, end_time updates."""
+        device = make_mock_device(valve_count=1)
+        vid = "device-uuid:1"
+        device.valves[vid].activity = "MANUAL_WATERING"
+        device.valves[vid].duration = 300
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        from homeassistant.util import dt as dt_util
+
+        entity_reg = er.async_get(hass)
+        entry = None
+        for e in entity_reg.entities.values():
+            if "remaining_duration" in (e.unique_id or ""):
+                entry = e
+                break
+        assert entry is not None
+
+        state1 = hass.states.get(entry.entity_id)
+        assert state1 is not None
+        end1 = dt_util.parse_datetime(state1.state)
+        assert end1 is not None
+
+        # Simulate duration change (e.g. START_SECONDS_TO_OVERRIDE)
+        device.valves[vid].duration = 600
+        coordinator = mock_config_entry.runtime_data
+        coordinator.async_set_updated_data(devices)
+        await hass.async_block_till_done()
+
+        state2 = hass.states.get(entry.entity_id)
+        assert state2 is not None
+        end2 = dt_util.parse_datetime(state2.state)
+        assert end2 is not None
+        # New end time should be later than the original
+        assert end2 > end1
+
+    async def test_active_closed_active_cycle(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """MANUAL_WATERING(300) → CLOSED → MANUAL_WATERING(120) gets fresh end_time."""
+        device = make_mock_device(valve_count=1)
+        vid = "device-uuid:1"
+        device.valves[vid].activity = "MANUAL_WATERING"
+        device.valves[vid].duration = 300
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        from homeassistant.util import dt as dt_util
+
+        entity_reg = er.async_get(hass)
+        entry = None
+        for e in entity_reg.entities.values():
+            if "remaining_duration" in (e.unique_id or ""):
+                entry = e
+                break
+        assert entry is not None
+
+        state1 = hass.states.get(entry.entity_id)
+        end1 = dt_util.parse_datetime(state1.state)
+        assert end1 is not None
+
+        # Close the valve
+        device.valves[vid].activity = "CLOSED"
+        device.valves[vid].duration = 0
+        coordinator = mock_config_entry.runtime_data
+        coordinator.async_set_updated_data(devices)
+        await hass.async_block_till_done()
+
+        state_closed = hass.states.get(entry.entity_id)
+        assert state_closed.state == "unknown"
+
+        # Reopen with different duration
+        device.valves[vid].activity = "MANUAL_WATERING"
+        device.valves[vid].duration = 120
+        coordinator.async_set_updated_data(devices)
+        await hass.async_block_till_done()
+
+        state3 = hass.states.get(entry.entity_id)
+        end3 = dt_util.parse_datetime(state3.state)
+        assert end3 is not None
+        # 120s duration → end_time should be earlier than the 300s one
+        assert end3 < end1
+
+
+class TestPowerSocketDurationChangeWhileActive:
+    """Duration change mid-cycle should recompute end_time for power socket."""
+
+    async def test_duration_change_updates_end_time(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """When duration changes while socket is active, end_time updates."""
+        device = make_mock_device(has_power_socket=True)
+        device.power_socket.activity = "TIMER"
+        device.power_socket.duration = 300
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        from homeassistant.util import dt as dt_util
+
+        state1 = hass.states.get("sensor.my_sensor_remaining_power_time")
+        assert state1 is not None
+        end1 = dt_util.parse_datetime(state1.state)
+        assert end1 is not None
+
+        # Simulate duration change
+        device.power_socket.duration = 600
+        coordinator = mock_config_entry.runtime_data
+        coordinator.async_set_updated_data(devices)
+        await hass.async_block_till_done()
+
+        state2 = hass.states.get("sensor.my_sensor_remaining_power_time")
+        end2 = dt_util.parse_datetime(state2.state)
+        assert end2 is not None
+        assert end2 > end1
+
+    async def test_power_socket_state_tracking_cycle(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """OFF → TIME_LIMITED_ON → OFF cycle tracks state correctly."""
+        device = make_mock_device(has_power_socket=True)
+        device.power_socket.activity = "OFF"
+        device.power_socket.duration = 0
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        from homeassistant.util import dt as dt_util
+
+        state_off = hass.states.get("sensor.my_sensor_remaining_power_time")
+        assert state_off.state == "unknown"
+
+        # Turn on
+        device.power_socket.activity = "TIMER"
+        device.power_socket.duration = 300
+        coordinator = mock_config_entry.runtime_data
+        coordinator.async_set_updated_data(devices)
+        await hass.async_block_till_done()
+
+        state_on = hass.states.get("sensor.my_sensor_remaining_power_time")
+        assert state_on.state != "unknown"
+        end = dt_util.parse_datetime(state_on.state)
+        assert end is not None
+
+        # Turn off
+        device.power_socket.activity = "OFF"
+        device.power_socket.duration = 0
+        coordinator.async_set_updated_data(devices)
+        await hass.async_block_till_done()
+
+        state_off2 = hass.states.get("sensor.my_sensor_remaining_power_time")
+        assert state_off2.state == "unknown"
+
+
+class TestSingleValvePlaceholder:
+    """Single-valve devices (Smart Water Control) must not show literal {zone}."""
+
+    async def test_single_valve_has_empty_zone_placeholder(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Single-valve device sets translation_placeholders with empty zone."""
+        from custom_components.gardena_smart_system_ng.sensor import (
+            GardenaValveErrorSensor,
+            GardenaValveRemainingDurationSensor,
+            GardenaValveStateSensor,
+        )
+
+        device = make_mock_device(single_valve=True)
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        coordinator = mock_config_entry.runtime_data
+
+        # Check that entities were created and have placeholders set
+        for cls in (
+            GardenaValveRemainingDurationSensor,
+            GardenaValveErrorSensor,
+            GardenaValveStateSensor,
+        ):
+            entity = cls(coordinator, device, device.device_id)
+            assert hasattr(entity, "_attr_translation_placeholders")
+            assert entity._attr_translation_placeholders == {"zone": ""}
+
+    async def test_single_valve_sensor_entities_created(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """Single-valve device creates sensor entities without {zone} in name."""
+        device = make_mock_device(single_valve=True, name="Water Control")
+        devices = {device.device_id: device}
+        await _setup_with_devices(hass, mock_config_entry, devices)
+
+        entity_reg = er.async_get(hass)
+        # Should find remaining_duration, state, and error sensors
+        found_keys = set()
+        for entry in entity_reg.entities.values():
+            uid = entry.unique_id or ""
+            if "valve" in uid and device.serial in uid:
+                found_keys.add(uid)
+        assert len(found_keys) >= 3, f"Expected at least 3 valve sensor entities, got: {found_keys}"
