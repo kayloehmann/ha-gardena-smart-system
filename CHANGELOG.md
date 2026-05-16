@@ -2,7 +2,9 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
-## [2.0.1] - 2026-05-16
+## [2.0.2] - 2026-05-16
+
+> **Note:** Version 2.0.1 was skipped. A release-tooling mishap published and then deleted a `v2.0.1` tag; with immutable releases enabled the tag name is permanently reserved and cannot point to the correct commit, so this change ships as 2.0.2. No 2.0.1 was ever installable.
 
 ### Added
 - **Bundled brand assets** under `custom_components/gardena_smart_system_ng/brand/` (`icon.png`, `icon@2x.png`, `logo.png`, `logo@2x.png`). As of Home Assistant 2026.3.0, custom integrations ship their own brand images instead of registering them in the `home-assistant/brands` repository (which no longer accepts custom-integration icons). This restores the GARDENA icon/logo lost in the v2.0.0 domain rename and satisfies the HACS `brands` validation. Same GARDENA artwork as before — no visual change for users.
