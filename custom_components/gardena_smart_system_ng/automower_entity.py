@@ -115,6 +115,10 @@ class AutomowerEntity(CoordinatorEntity[AutomowerCoordinator]):
             is_last_attempt = attempt == COMMAND_RETRY_ATTEMPTS - 1
             self.coordinator.check_command_throttle()
             self.coordinator.api_budget.increment()
+            # Capture the WebSocket push marker *before* sending — only a push
+            # after this proves the command landed (see GardenaEntity for the
+            # stale-cache false-positive rationale, issue #27).
+            ws_marker = self.coordinator.ws_push_at(self._mower_id)
             try:
                 await method(*args, **kwargs)
             except AutomowerAuthenticationError as err:
@@ -143,7 +147,7 @@ class AutomowerEntity(CoordinatorEntity[AutomowerCoordinator]):
                 return
 
             if expected_state_check is not None and await self._async_wait_for_expected_state(
-                expected_state_check
+                expected_state_check, ws_marker
             ):
                 _LOGGER.info(
                     "%s: attempt %d timed out client-side but device reached"
@@ -173,17 +177,29 @@ class AutomowerEntity(CoordinatorEntity[AutomowerCoordinator]):
     async def _async_wait_for_expected_state(
         self,
         expected_state_check: Callable[[], bool],
+        ws_marker: float,
     ) -> bool:
-        """Poll the coordinator-cached state until the target is observed.
+        """Wait for a *fresh* WebSocket push that confirms the target state.
 
         Reads memory only — the WebSocket push from the Husqvarna cloud is
-        what actually advances the state.
+        what actually advances the state. ``ws_marker`` is the per-mower push
+        timestamp captured immediately before the command was sent; a
+        confirmation requires both a push newer than that marker **and**
+        ``expected_state_check()`` truthy. See
+        ``GardenaEntity._async_wait_for_expected_state`` for why the fresh-push
+        gate is required (issue #27 silent-failure class).
         """
-        if expected_state_check():
+
+        def confirmed() -> bool:
+            return (
+                self.coordinator.ws_push_at(self._mower_id) > ws_marker and expected_state_check()
+            )
+
+        if confirmed():
             return True
         deadline = asyncio.get_running_loop().time() + COMMAND_POLL_AFTER_TIMEOUT_SECONDS
         while asyncio.get_running_loop().time() < deadline:
             await asyncio.sleep(COMMAND_POLL_INTERVAL_SECONDS)
-            if expected_state_check():
+            if confirmed():
                 return True
         return False

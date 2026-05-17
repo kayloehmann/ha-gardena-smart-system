@@ -442,6 +442,12 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         self._ws: Any = None
         self._ws_connected = False
         self._last_command_time: float = 0.0
+        # Monotonic timestamp of the last WebSocket-pushed update, per device.
+        # Used by command confirmation to distinguish a *fresh* push that
+        # advanced the state from a stale cached state left over from a
+        # previous cycle. Reset on process restart is fine — a command in
+        # flight does not survive a restart anyway.
+        self._ws_push_at: dict[str, float] = {}
         # Token bucket for command throttling — starts full so a cold-start
         # burst is permitted. Refills at 1 token per MIN_COMMAND_INTERVAL_SECONDS.
         self._command_tokens: float = float(COMMAND_BURST_CAPACITY)
@@ -501,6 +507,15 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
     def last_command_time(self) -> float:
         """Monotonic timestamp of the last API command."""
         return self._last_command_time
+
+    def ws_push_at(self, device_id: str) -> float:
+        """Monotonic timestamp of the last WebSocket push for ``device_id``.
+
+        Returns 0.0 if no push has ever been observed for this device. Callers
+        compare a marker captured *before* sending a command against this value
+        to tell a fresh confirming push apart from stale cached state.
+        """
+        return self._ws_push_at.get(device_id, 0.0)
 
     @property
     def api_budget(self) -> ApiBudgetTracker:
@@ -888,6 +903,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
             self._clear_ws_handshake_denials()
         if self.data is not None:
             self.data[device_id] = device
+        self._ws_push_at[device_id] = time.monotonic()
         if self._mqtt_bridge is not None and self._mqtt_bridge.is_active:
             self.hass.async_create_task(
                 self._mqtt_bridge.async_publish_device_state(device_id, device),

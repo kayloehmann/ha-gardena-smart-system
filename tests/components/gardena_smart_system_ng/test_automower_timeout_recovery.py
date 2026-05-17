@@ -78,7 +78,9 @@ def _push_mowing_state(coordinator, device: AutomowerDevice) -> None:
     """Mutate the coordinator-cached AutomowerDevice into the MOWING activity."""
     new_mower = dataclasses.replace(device.mower, activity=MowerActivity.MOWING)
     new_device = dataclasses.replace(device, mower=new_mower)
-    coordinator.async_set_updated_data({device.mower_id: new_device})
+    # Real WebSocket entry point so the per-mower fresh-push marker is bumped
+    # (issue #27: stale cached state must not count as confirmation).
+    coordinator._on_device_update(device.mower_id, new_device)
 
 
 class TestAutomowerTimeoutRecovery:

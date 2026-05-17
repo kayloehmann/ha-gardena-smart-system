@@ -2,6 +2,11 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [2.0.3] - 2026-05-17
+
+### Fixed
+- **Commands no longer silently no-op on stale cached state (#27).** Since v1.12.14 a 504 from the Gardena/Husqvarna gateway triggered a retry-until-confirmed loop that polled the *cached* coordinator state for confirmation. The very first check ran against whatever was already in memory — which, after a top-of-the-hour 504, could still be a "mowing-ish" activity left over from the previous cycle (`OK_SEARCHING` and `OK_LEAVING` are both in the mowing set, and the cache can be stale). The command was then reported as a success at INFO level, no retry happened, the mower never actually started, and — because HA's default log level is WARNING — *nothing was logged*. Confirmation now requires a **fresh WebSocket push for that specific device that arrives after the command was sent** (a per-device monotonic push marker captured before each attempt), in addition to the expected-state check. Stale cache can no longer be mistaken for a landed command: an unconfirmed command now correctly retries and, if still unconfirmed, surfaces a visible `command_timeout` instead of silently doing nothing. Applies to both the Gardena and Automower command paths.
+
 ## [2.0.2] - 2026-05-16
 
 > **Note:** Version 2.0.1 was skipped. A release-tooling mishap published and then deleted a `v2.0.1` tag; with immutable releases enabled the tag name is permanently reserved and cannot point to the correct commit, so this change ships as 2.0.2. No 2.0.1 was ever installable.

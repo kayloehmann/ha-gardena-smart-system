@@ -159,6 +159,12 @@ class GardenaEntity(CoordinatorEntity[GardenaCoordinator]):
             is_last_attempt = attempt == COMMAND_RETRY_ATTEMPTS - 1
             self.coordinator.check_command_throttle()
             self.coordinator.api_budget.increment()
+            # Capture the WebSocket push marker *before* sending. Only a push
+            # that arrives after this point proves the command landed; the
+            # cached state may still hold a stale activity from a previous
+            # cycle (e.g. OK_SEARCHING/OK_LEAVING) that would otherwise be
+            # mistaken for success.
+            ws_marker = self.coordinator.ws_push_at(self._device_id)
             try:
                 await method(*args, **kwargs)
             except GardenaAuthenticationError as err:
@@ -191,7 +197,7 @@ class GardenaEntity(CoordinatorEntity[GardenaCoordinator]):
             # have received the command — wait for a WebSocket-pushed state
             # confirmation before deciding to retry.
             if expected_state_check is not None and await self._async_wait_for_expected_state(
-                expected_state_check
+                expected_state_check, ws_marker
             ):
                 _LOGGER.info(
                     "%s: attempt %d timed out client-side but device reached"
@@ -221,20 +227,46 @@ class GardenaEntity(CoordinatorEntity[GardenaCoordinator]):
     async def _async_wait_for_expected_state(
         self,
         expected_state_check: Callable[[], bool],
+        ws_marker: float,
     ) -> bool:
-        """Poll the coordinator-cached state until the target is observed.
+        """Wait for a *fresh* WebSocket push that confirms the target state.
 
         Reads memory only — the WebSocket push from the Gardena cloud is what
-        actually advances the state. Returns ``True`` if the lambda returns
-        truthy within COMMAND_POLL_AFTER_TIMEOUT_SECONDS, ``False`` otherwise.
+        actually advances the state. ``ws_marker`` is the per-device push
+        timestamp captured immediately before the command was sent.
+
+        A confirmation requires **both**:
+
+        1. a WebSocket push for this device that arrived *after* the command
+           was sent (``ws_push_at > ws_marker``), and
+        2. ``expected_state_check()`` returning truthy.
+
+        Requiring the fresh push is what fixes the silent-failure class of
+        bugs (issue #27): after a 504 the cached coordinator state can still
+        hold a stale activity from the previous cycle (``OK_SEARCHING`` /
+        ``OK_LEAVING`` are both in the "mowing" set). The old code trusted
+        that cached state directly and reported a false-positive success — the
+        mower never started and nothing was logged above INFO. Without a fresh
+        confirming push we now fall through to a retry, and ultimately to a
+        visible ``command_timeout`` instead of a silent no-op.
+
+        Returns ``True`` if a fresh confirming push is observed within
+        COMMAND_POLL_AFTER_TIMEOUT_SECONDS, ``False`` otherwise.
         """
-        # Initial check before the first sleep — the WebSocket may already
-        # have pushed the new state by the time the API call returns.
-        if expected_state_check():
+
+        def confirmed() -> bool:
+            return (
+                self.coordinator.ws_push_at(self._device_id) > ws_marker and expected_state_check()
+            )
+
+        # Initial check before the first sleep — a push may already have
+        # arrived by the time the API call returned. Still gated on the
+        # fresh-push marker, so stale cache cannot satisfy it.
+        if confirmed():
             return True
         deadline = asyncio.get_running_loop().time() + COMMAND_POLL_AFTER_TIMEOUT_SECONDS
         while asyncio.get_running_loop().time() < deadline:
             await asyncio.sleep(COMMAND_POLL_INTERVAL_SECONDS)
-            if expected_state_check():
+            if confirmed():
                 return True
         return False

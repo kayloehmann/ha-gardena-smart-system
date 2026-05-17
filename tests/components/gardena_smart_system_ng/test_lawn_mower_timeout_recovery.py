@@ -52,7 +52,10 @@ def _push_state_then_raise(coordinator, device, target_activity, exc):
 
     def _side_effect(*_args: Any, **_kwargs: Any) -> None:
         device.mower.activity = target_activity
-        coordinator.async_set_updated_data({device.device_id: device})
+        # Go through the real WebSocket entry point so the per-device
+        # fresh-push marker is bumped — that is what now distinguishes a
+        # confirming push from stale cached state (issue #27).
+        coordinator._on_device_update(device.device_id, device)
         raise exc
 
     return _side_effect
@@ -140,7 +143,7 @@ class TestTimeoutRetry:
                     raise GardenaConnectionError("Timeout")
                 # Second call: server accepts, push the state update.
                 device.mower.activity = "OK_CUTTING"
-                coordinator.async_set_updated_data({device.device_id: device})
+                coordinator._on_device_update(device.device_id, device)
 
             mock_client.async_send_command.side_effect = _side_effect
 
@@ -210,3 +213,50 @@ class TestTimeoutRetry:
             )
 
             assert mock_client.async_send_command.call_count == 2
+
+
+class TestStaleStateNotMistakenForSuccess:
+    """Regression for issue #27: silent no-op on stale cached state.
+
+    Before the fix, ``_async_wait_for_expected_state`` trusted the cached
+    coordinator state directly. After a 504 the cache could still hold a
+    "mowing-ish" activity (``OK_SEARCHING`` / ``OK_LEAVING`` are in
+    ``_MOWING_ACTIVITIES``) left over from a previous cycle, so the very first
+    check passed, the command was reported as a success at INFO level, no
+    retry happened, and the mower never actually started — with nothing
+    logged above INFO. The fix requires a *fresh* WebSocket push (newer than
+    the moment the command was sent) before any state can count as success.
+    """
+
+    async def test_stale_mowing_activity_does_not_confirm(
+        self, hass: HomeAssistant, mock_config_entry: object
+    ) -> None:
+        """504 on every attempt + stale OK_SEARCHING cache → command_timeout.
+
+        No WebSocket push ever arrives. The pre-existing cached activity is in
+        the mowing set but is stale from a prior cycle. The command must NOT
+        be treated as success on attempt 1; it must retry to exhaustion and
+        surface a visible ``command_timeout`` instead of silently no-op'ing.
+        """
+        from aiogardenasmart.exceptions import GardenaRequestError
+
+        device = make_mock_device(has_sensor=False, has_mower=True)
+        devices = {device.device_id: device}
+
+        async for mock_client in _setup_with_devices(hass, mock_config_entry, devices):
+            # Stale leftover state from a previous mowing cycle — in
+            # _MOWING_ACTIVITIES, so the naive cached check would pass.
+            device.mower.activity = "OK_SEARCHING"
+            # Every attempt times out at the gateway; nothing is ever pushed.
+            mock_client.async_send_command.side_effect = GardenaRequestError(504, "gateway timeout")
+
+            with pytest.raises(HomeAssistantError) as exc_info:
+                await hass.services.async_call(
+                    "lawn_mower",
+                    "start_mowing",
+                    {"entity_id": "lawn_mower.my_sensor_mower"},
+                    blocking=True,
+                )
+
+            assert exc_info.value.translation_key == "command_timeout"
+            assert mock_client.async_send_command.call_count == COMMAND_RETRY_ATTEMPTS
