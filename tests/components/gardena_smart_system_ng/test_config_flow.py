@@ -24,6 +24,7 @@ from custom_components.gardena_smart_system_ng.const import (
     OPT_MQTT_SUBSCRIBE_COMMANDS,
     OPT_MQTT_TOPIC_PREFIX,
     OPT_POLL_INTERVAL_MINUTES,
+    OPT_START_MOWING_DURATION_MINUTES,
 )
 
 from .conftest import (
@@ -485,6 +486,7 @@ class TestOptionsFlow:
             {
                 OPT_DEFAULT_WATERING_MINUTES: 30,
                 OPT_DEFAULT_SOCKET_MINUTES: 120,
+                OPT_START_MOWING_DURATION_MINUTES: 90,
                 OPT_POLL_INTERVAL_MINUTES: 15,
                 OPT_MQTT_ENABLE: False,
                 OPT_MQTT_TOPIC_PREFIX: "gardena",
@@ -496,6 +498,7 @@ class TestOptionsFlow:
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert mock_config_entry.options[OPT_DEFAULT_WATERING_MINUTES] == 30
         assert mock_config_entry.options[OPT_DEFAULT_SOCKET_MINUTES] == 120
+        assert mock_config_entry.options[OPT_START_MOWING_DURATION_MINUTES] == 90
         assert mock_config_entry.options[OPT_POLL_INTERVAL_MINUTES] == 15
 
     async def test_options_flow_prefills_existing_values(self, hass: HomeAssistant) -> None:
@@ -513,6 +516,7 @@ class TestOptionsFlow:
             options={
                 OPT_DEFAULT_WATERING_MINUTES: 45,
                 OPT_DEFAULT_SOCKET_MINUTES: 90,
+                OPT_START_MOWING_DURATION_MINUTES: 90,
                 OPT_POLL_INTERVAL_MINUTES: 20,
             },
         )
@@ -528,6 +532,7 @@ class TestOptionsFlow:
             {
                 OPT_DEFAULT_WATERING_MINUTES: 45,
                 OPT_DEFAULT_SOCKET_MINUTES: 90,
+                OPT_START_MOWING_DURATION_MINUTES: 90,
                 OPT_POLL_INTERVAL_MINUTES: 20,
                 OPT_MQTT_ENABLE: False,
                 OPT_MQTT_TOPIC_PREFIX: "gardena",
@@ -539,4 +544,5 @@ class TestOptionsFlow:
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert entry.options[OPT_DEFAULT_WATERING_MINUTES] == 45
         assert entry.options[OPT_DEFAULT_SOCKET_MINUTES] == 90
+        assert entry.options[OPT_START_MOWING_DURATION_MINUTES] == 90
         assert entry.options[OPT_POLL_INTERVAL_MINUTES] == 20

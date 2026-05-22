@@ -48,6 +48,7 @@ from .const import (
     DEFAULT_POLL_INTERVAL_AUTOMOWER,
     DEFAULT_POLL_INTERVAL_GARDENA,
     DEFAULT_SOCKET_MINUTES,
+    DEFAULT_START_MOWING_DURATION_MINUTES,
     DEFAULT_WATERING_MINUTES,
     DOMAIN,
     MAX_POLL_INTERVAL,
@@ -59,6 +60,7 @@ from .const import (
     OPT_MQTT_SUBSCRIBE_COMMANDS,
     OPT_MQTT_TOPIC_PREFIX,
     OPT_POLL_INTERVAL_MINUTES,
+    OPT_START_MOWING_DURATION_MINUTES,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -533,6 +535,9 @@ class GardenaOptionsFlowHandler(OptionsFlow):
             current_socket = self.config_entry.options.get(
                 OPT_DEFAULT_SOCKET_MINUTES, DEFAULT_SOCKET_MINUTES
             )
+            current_start_mowing = self.config_entry.options.get(
+                OPT_START_MOWING_DURATION_MINUTES, DEFAULT_START_MOWING_DURATION_MINUTES
+            )
             schema_dict = {
                 vol.Required(OPT_DEFAULT_WATERING_MINUTES): NumberSelector(
                     NumberSelectorConfig(
@@ -547,6 +552,15 @@ class GardenaOptionsFlowHandler(OptionsFlow):
                     NumberSelectorConfig(
                         min=1,
                         max=1440,
+                        step=1,
+                        unit_of_measurement="min",
+                        mode=NumberSelectorMode.BOX,
+                    )
+                ),
+                vol.Required(OPT_START_MOWING_DURATION_MINUTES): NumberSelector(
+                    NumberSelectorConfig(
+                        min=1,
+                        max=480,
                         step=1,
                         unit_of_measurement="min",
                         mode=NumberSelectorMode.BOX,
@@ -589,6 +603,7 @@ class GardenaOptionsFlowHandler(OptionsFlow):
         if not is_automower:
             suggested_values[OPT_DEFAULT_WATERING_MINUTES] = current_watering
             suggested_values[OPT_DEFAULT_SOCKET_MINUTES] = current_socket
+            suggested_values[OPT_START_MOWING_DURATION_MINUTES] = current_start_mowing
 
         schema = self.add_suggested_values_to_schema(
             vol.Schema(schema_dict),

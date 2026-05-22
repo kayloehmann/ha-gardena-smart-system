@@ -129,8 +129,14 @@ API_BUDGET_STOP_PERCENT = 5.0
 OPT_DEFAULT_WATERING_MINUTES = "default_watering_minutes"
 OPT_DEFAULT_SOCKET_MINUTES = "default_socket_minutes"
 OPT_POLL_INTERVAL_MINUTES = "poll_interval_minutes"
+OPT_START_MOWING_DURATION_MINUTES = "start_mowing_duration_minutes"
 DEFAULT_WATERING_MINUTES = 60
 DEFAULT_SOCKET_MINUTES = 60
+# Sileno's battery typically runs ~60 min per session; anything beyond ~2 h is
+# effectively "until the mower itself decides to dock." 120 min covers the
+# typical session with a small margin and matches what most users want when
+# they press the Lovelace "Start" button.
+DEFAULT_START_MOWING_DURATION_MINUTES = 120
 
 # ── Command-timeout recovery & retry ─────────────────────────────
 # When a command fails with a client-side timeout / 502 / 503 / 504, the

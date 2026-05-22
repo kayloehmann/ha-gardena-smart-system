@@ -10,7 +10,16 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 
-from .conftest import make_mock_device
+from .conftest import ENTRY_DATA, MOCK_LOCATION_NAME, make_mock_device
+
+try:
+    from tests.common import MockConfigEntry
+except ImportError:
+    from pytest_homeassistant_custom_component.common import (
+        MockConfigEntry,  # type: ignore[no-redef]
+    )
+
+from custom_components.gardena_smart_system_ng.const import DOMAIN
 
 _PATCH_CLIENT = "custom_components.gardena_smart_system_ng.coordinator.GardenaClient"
 _PATCH_AUTH = "custom_components.gardena_smart_system_ng.coordinator.GardenaAuth"
@@ -326,9 +335,16 @@ class TestLawnMowerActivityMapping:
 class TestLawnMowerCommands:
     """Test lawn mower start, dock, pause, override_schedule commands."""
 
-    async def test_start_mowing_command(
+    async def test_start_mowing_command_uses_override_with_default_duration(
         self, hass: HomeAssistant, mock_config_entry: object
     ) -> None:
+        """The Lovelace Start button forces mowing for the configured default.
+
+        Historically this mapped to START_DONT_OVERRIDE, but that command is a
+        silent no-op when the Gardena-side schedule does not currently permit
+        mowing. Mapping to START_SECONDS_TO_OVERRIDE makes "Start" actually
+        start the mower, matching what HA users expect (issue #27).
+        """
         device = make_mock_device(has_sensor=False, has_mower=True)
         devices = {device.device_id: device}
 
@@ -343,7 +359,36 @@ class TestLawnMowerCommands:
             mock_client.async_send_command.assert_called_once_with(
                 service_id=device.mower.service_id,
                 control_type="MOWER_CONTROL",
-                command="START_DONT_OVERRIDE",
+                command="START_SECONDS_TO_OVERRIDE",
+                seconds=7200,  # DEFAULT_START_MOWING_DURATION_MINUTES (120) * 60
+            )
+
+    async def test_start_mowing_honours_configured_duration_option(
+        self, hass: HomeAssistant
+    ) -> None:
+        """Users can override the default via the integration's options flow."""
+        device = make_mock_device(has_sensor=False, has_mower=True)
+        devices = {device.device_id: device}
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data=ENTRY_DATA,
+            title=MOCK_LOCATION_NAME,
+            options={"start_mowing_duration_minutes": 60},
+        )
+
+        async for mock_client in _setup_with_devices(hass, entry, devices):
+            await hass.services.async_call(
+                "lawn_mower",
+                "start_mowing",
+                {"entity_id": "lawn_mower.my_sensor_mower"},
+                blocking=True,
+            )
+
+            mock_client.async_send_command.assert_called_once_with(
+                service_id=device.mower.service_id,
+                control_type="MOWER_CONTROL",
+                command="START_SECONDS_TO_OVERRIDE",
+                seconds=3600,
             )
 
     async def test_dock_command(self, hass: HomeAssistant, mock_config_entry: object) -> None:

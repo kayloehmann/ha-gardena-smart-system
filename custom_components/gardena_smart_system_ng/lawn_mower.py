@@ -25,7 +25,12 @@ from homeassistant.helpers.entity_platform import (
 from aiogardenasmart import Device
 
 from . import GardenaConfigEntry
-from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
+from .const import (
+    API_TYPE_AUTOMOWER,
+    CONF_API_TYPE,
+    DEFAULT_START_MOWING_DURATION_MINUTES,
+    OPT_START_MOWING_DURATION_MINUTES,
+)
 from .coordinator import GardenaCoordinator
 from .entity import GardenaEntity
 
@@ -146,8 +151,25 @@ class GardenaLawnMowerEntity(GardenaEntity, LawnMowerEntity):
         return _MOWER_ACTIVITY_MAP.get(device.mower.activity or "", LawnMowerActivity.PAUSED)
 
     async def async_start_mowing(self) -> None:
-        """Start mowing without overriding the schedule."""
-        await self._async_send_command("START_DONT_OVERRIDE", expected="mowing")
+        """Start mowing now for the configured default duration.
+
+        Sends ``START_SECONDS_TO_OVERRIDE`` so the Lovelace "Start" button (and
+        HA scheduler integrations) actually start the mower immediately, even
+        when the Gardena-side schedule is empty or in a "do-not-mow" window.
+        Users who explicitly want the original "resume the configured schedule"
+        behaviour can use the ``gardena_smart_system_ng.resume_schedule``
+        service, which still maps to ``START_DONT_OVERRIDE``.
+        """
+        duration_minutes: int = int(
+            self.coordinator.config_entry.options.get(
+                OPT_START_MOWING_DURATION_MINUTES, DEFAULT_START_MOWING_DURATION_MINUTES
+            )
+        )
+        await self._async_send_command(
+            "START_SECONDS_TO_OVERRIDE",
+            expected="mowing",
+            seconds=duration_minutes * 60,
+        )
 
     async def async_override_schedule(self, duration: int) -> None:
         """Force mowing for the given number of minutes, overriding the schedule."""

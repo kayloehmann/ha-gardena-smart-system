@@ -72,6 +72,7 @@
         "data": {
           "default_watering_minutes": "Default watering duration",
           "default_socket_minutes": "Default power socket duration",
+          "start_mowing_duration_minutes": "Default mowing duration",
           "poll_interval_minutes": "Polling interval",
           "mqtt_enable": "Enable MQTT bridge",
           "mqtt_topic_prefix": "MQTT topic prefix",
@@ -81,6 +82,7 @@
         "data_description": {
           "default_watering_minutes": "Duration in minutes when opening a valve without specifying a duration (1-1440).",
           "default_socket_minutes": "Duration in minutes when turning on a power socket (1-1440). Set to 1440 (24h) for near-indefinite operation.",
+          "start_mowing_duration_minutes": "Duration in minutes when the Lovelace 'Start' button (or lawn_mower.start_mowing service) triggers the mower (1-480). Sent as START_SECONDS_TO_OVERRIDE so the mower starts immediately, independent of the Gardena schedule. The mower will auto-park earlier if it finishes the area or runs low on battery.",
           "poll_interval_minutes": "How often to poll the API for updates in minutes (5-1440). Lower values provide fresher data but consume more API quota. Default: 30 (Gardena) / 15 (Automower).",
           "mqtt_enable": "Mirror device states to a local MQTT broker and optionally accept commands. Requires the MQTT integration to be configured.",
           "mqtt_topic_prefix": "Base topic for all MQTT messages (e.g. 'gardena' → gardena/DEVICE_ID/state).",

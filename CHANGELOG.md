@@ -2,6 +2,14 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [2.0.4] - 2026-05-22
+
+### Changed
+- **`lawn_mower.start_mowing` now actually starts the mower (#27).** The Lovelace "Start" button and the `lawn_mower.start_mowing` service used to send `START_DONT_OVERRIDE`, which the Gardena cloud interprets as *"resume the configured schedule if it currently allows mowing"*. With an empty schedule or in a "do-not-mow" window the cloud accepts the command (HTTP 200) and the mower stays parked — a silent no-op that confused users who expected "Start" to mean "start now". The mapping has been changed to `START_SECONDS_TO_OVERRIDE`, which forces mowing for the configured default duration regardless of the schedule. Users who explicitly want the original semantic can still call `gardena_smart_system_ng.resume_schedule`.
+
+### Added
+- **`start_mowing_duration_minutes` option** (Settings → Devices & Services → Gardena → Configure). Controls how long `lawn_mower.start_mowing` runs the mower, in minutes (1–480). Default: 120 — covers a typical Sileno mowing session; the mower auto-parks earlier if it finishes the area or runs low on battery.
+
 ## [2.0.3] - 2026-05-17
 
 ### Fixed
