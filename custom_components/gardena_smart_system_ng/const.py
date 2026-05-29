@@ -69,6 +69,14 @@ COMMAND_BURST_CAPACITY = 10
 WS_WATCHDOG_TIMEOUT_SECONDS = 14400
 WS_WATCHDOG_CHECK_INTERVAL = timedelta(seconds=60)
 
+# Husqvarna enforces a server-side 2-hour maximum duration on WebSocket
+# connections (to allow load balancing). The aiogardenasmart library treats the
+# resulting server-sent CLOSE frame as a normal (non-error) exit, so the
+# coordinator never receives on_error and _ws_connected stays True
+# indefinitely. A proactive reconnect shortly before the limit avoids that
+# silent gap entirely.
+WS_MAX_SESSION_SECONDS = 6900  # 1 h 55 min — 5-minute buffer before 2 h limit
+
 # WebSocket handshake kill-switch: after this many consecutive 4xx handshake
 # rejections (403 / 410 / 429) the WS subsystem is suspended for
 # WS_KILL_SWITCH_COOLDOWN. This protects the REST rate-limit budget when the
