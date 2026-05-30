@@ -17,7 +17,7 @@ from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import issue_registry as ir
-from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.event import async_call_later, async_track_time_interval
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
@@ -45,6 +45,7 @@ from .const import (
     WS_HANDSHAKE_DENIAL_THRESHOLD,
     WS_KILL_SWITCH_COOLDOWN,
     WS_REPAIR_ISSUE_THRESHOLD,
+    WS_MAX_SESSION_SECONDS,
     WS_WATCHDOG_CHECK_INTERVAL,
     WS_WATCHDOG_TIMEOUT_SECONDS,
 )
@@ -473,6 +474,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         # avoid log spam when MQTT is permanently unavailable.
         self._mqtt_bridge_next_check: float = 0.0
         self._ws_watchdog_unsub: CALLBACK_TYPE | None = None
+        self._ws_session_timer_unsub: CALLBACK_TYPE | None = None
         self._ws_connect_lock = asyncio.Lock()
         # WebSocket circuit breaker: consecutive failures trigger an escalating
         # cooldown during which no new WS connection attempts are made. Protects
@@ -883,6 +885,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         self._reset_ws_failures()
         self._cancel_ws_reconnect()
         self._start_ws_watchdog()
+        self._start_ws_session_timer()
         # Always use the long WS health-check interval when connected — the
         # custom poll interval is for REST fallback only.
         ws_interval = cfg.scan_interval_ws
@@ -923,6 +926,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         self._ws_connected = False
         self._ws = None
         self._stop_ws_watchdog()
+        self._stop_ws_session_timer()
         self.update_interval = self._custom_poll_interval or cfg.scan_interval
 
         if isinstance(err, cfg.auth_error_type):
@@ -1177,6 +1181,45 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         # here would double the API calls per watchdog event.
         self._schedule_ws_reconnect()
 
+
+    # ── WebSocket session timer (2-hour server limit) ────────────────────
+
+    def _start_ws_session_timer(self) -> None:
+        """Schedule a proactive reconnect before the server-enforced 2-hour session limit."""
+        self._stop_ws_session_timer()
+        self._ws_session_timer_unsub = async_call_later(
+            self.hass,
+            WS_MAX_SESSION_SECONDS,
+            self._async_ws_session_expired,
+        )
+
+    def _stop_ws_session_timer(self) -> None:
+        """Cancel the pending session-expiry reconnect timer."""
+        if self._ws_session_timer_unsub:
+            self._ws_session_timer_unsub()
+            self._ws_session_timer_unsub = None
+
+    async def _async_ws_session_expired(self, _now: object = None) -> None:
+        """Proactively reconnect before the 2-hour server-enforced session limit."""
+        self._ws_session_timer_unsub = None
+        if not self._ws_connected or not self._ws:
+            return
+        cfg = self._config
+        _LOGGER.debug(
+            "%s WebSocket session limit approaching (%ds), proactively reconnecting",
+            cfg.api_label,
+            WS_MAX_SESSION_SECONDS,
+        )
+        self._ws_connected = False
+        self._stop_ws_watchdog()
+        self.update_interval = self._custom_poll_interval or cfg.scan_interval
+        try:
+            await self._ws.async_disconnect()
+        except (aiohttp.ClientError, TimeoutError, OSError):
+            _LOGGER.debug("Error disconnecting WebSocket for session renewal, ignoring")
+        self._ws = None
+        self._schedule_ws_reconnect()
+
     # ── MQTT bridge ──────────────────────────────────────────────────────
 
     async def _async_start_mqtt_bridge(self) -> None:
@@ -1216,6 +1259,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         """Disconnect the WebSocket, revoke token, and clean up resources."""
         self._cancel_ws_reconnect()
         self._stop_ws_watchdog()
+        self._stop_ws_session_timer()
         if self._mqtt_bridge is not None:
             await self._mqtt_bridge.async_stop()
         if self._ws:
