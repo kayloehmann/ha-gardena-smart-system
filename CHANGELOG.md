@@ -2,6 +2,11 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [2.0.5] - 2026-05-30
+
+### Fixed
+- **WebSocket silently runs on stale data after the 2-hour Husqvarna server session limit (#34).** Husqvarna's API enforces a server-side 2-hour maximum duration on WebSocket connections for load-balancing purposes. When that limit is reached the server sends a graceful WS CLOSE frame; the aiogardenasmart library exits its receive loop normally (no exception), so `_on_ws_error` was never called, `_ws_connected` stayed `True`, and the coordinator silently ran on stale data until the 4-hour watchdog fired — a silent data gap of up to 2 hours. Fix: a one-shot timer (`WS_MAX_SESSION_SECONDS = 6900 s`, i.e. 1 h 55 min — 5 minutes before the server limit) is now scheduled every time a WebSocket session is established. When the timer fires, `_async_ws_session_expired()` proactively disconnects and schedules a normal reconnect through the same `_schedule_ws_reconnect()` path used by every other recovery code-path. The timer is cancelled on explicit error or shutdown so it does not fire on a connection that has already been torn down. Thanks @tomasszabo for the investigation and fix.
+
 ## [2.0.4] - 2026-05-22
 
 ### Changed
