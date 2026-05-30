@@ -1201,6 +1201,7 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
 
     async def _async_ws_session_expired(self, _now: object = None) -> None:
         """Proactively reconnect before the 2-hour server-enforced session limit."""
+        self._ws_session_timer_unsub = None
         if not self._ws_connected or not self._ws:
             return
         cfg = self._config
