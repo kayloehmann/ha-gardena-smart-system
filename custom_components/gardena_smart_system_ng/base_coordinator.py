@@ -1181,7 +1181,6 @@ class BaseSmartSystemCoordinator[DeviceT](DataUpdateCoordinator[dict[str, Device
         # here would double the API calls per watchdog event.
         self._schedule_ws_reconnect()
 
-
     # ── WebSocket session timer (2-hour server limit) ────────────────────
 
     def _start_ws_session_timer(self) -> None:
