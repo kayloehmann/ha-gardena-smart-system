@@ -44,6 +44,7 @@ from .const import (
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
     CONF_LOCATION_ID,
+    DEFAULT_LOCAL_PORT,
     DEFAULT_MQTT_TOPIC_PREFIX,
     DEFAULT_POLL_INTERVAL_AUTOMOWER,
     DEFAULT_POLL_INTERVAL_GARDENA,
@@ -55,6 +56,10 @@ from .const import (
     MIN_POLL_INTERVAL,
     OPT_DEFAULT_SOCKET_MINUTES,
     OPT_DEFAULT_WATERING_MINUTES,
+    OPT_LOCAL_ENABLE,
+    OPT_LOCAL_HOST,
+    OPT_LOCAL_PASSWORD,
+    OPT_LOCAL_PORT,
     OPT_MQTT_ENABLE,
     OPT_MQTT_PUBLISH_STATES,
     OPT_MQTT_SUBSCRIBE_COMMANDS,
@@ -527,7 +532,7 @@ class GardenaOptionsFlowHandler(OptionsFlow):
         current_poll = self.config_entry.options.get(OPT_POLL_INTERVAL_MINUTES, default_poll)
 
         if is_automower:
-            schema_dict: dict[vol.Required, Any] = {}
+            schema_dict: dict[vol.Marker, Any] = {}
         else:
             current_watering = self.config_entry.options.get(
                 OPT_DEFAULT_WATERING_MINUTES, DEFAULT_WATERING_MINUTES
@@ -593,6 +598,25 @@ class GardenaOptionsFlowHandler(OptionsFlow):
         schema_dict[vol.Required(OPT_MQTT_PUBLISH_STATES)] = BooleanSelector()
         schema_dict[vol.Required(OPT_MQTT_SUBSCRIBE_COMMANDS)] = BooleanSelector()
 
+        # Local gateway options (Gardena only). The websocketd service must be
+        # enabled once on the gateway via shell; here we only collect host +
+        # password. An empty host (or the toggle off) keeps the channel disabled.
+        if not is_automower:
+            current_local_enable = self.config_entry.options.get(OPT_LOCAL_ENABLE, False)
+            current_local_host = self.config_entry.options.get(OPT_LOCAL_HOST, "")
+            current_local_password = self.config_entry.options.get(OPT_LOCAL_PASSWORD, "")
+            current_local_port = self.config_entry.options.get(OPT_LOCAL_PORT, DEFAULT_LOCAL_PORT)
+            schema_dict[vol.Optional(OPT_LOCAL_ENABLE, default=False)] = BooleanSelector()
+            schema_dict[vol.Optional(OPT_LOCAL_HOST)] = TextSelector(
+                TextSelectorConfig(type=TextSelectorType.TEXT)
+            )
+            schema_dict[vol.Optional(OPT_LOCAL_PASSWORD)] = TextSelector(
+                TextSelectorConfig(type=TextSelectorType.PASSWORD)
+            )
+            schema_dict[vol.Optional(OPT_LOCAL_PORT, default=DEFAULT_LOCAL_PORT)] = NumberSelector(
+                NumberSelectorConfig(min=1, max=65535, step=1, mode=NumberSelectorMode.BOX)
+            )
+
         suggested_values: dict[str, Any] = {
             OPT_POLL_INTERVAL_MINUTES: current_poll,
             OPT_MQTT_ENABLE: current_mqtt,
@@ -604,6 +628,10 @@ class GardenaOptionsFlowHandler(OptionsFlow):
             suggested_values[OPT_DEFAULT_WATERING_MINUTES] = current_watering
             suggested_values[OPT_DEFAULT_SOCKET_MINUTES] = current_socket
             suggested_values[OPT_START_MOWING_DURATION_MINUTES] = current_start_mowing
+            suggested_values[OPT_LOCAL_ENABLE] = current_local_enable
+            suggested_values[OPT_LOCAL_HOST] = current_local_host
+            suggested_values[OPT_LOCAL_PASSWORD] = current_local_password
+            suggested_values[OPT_LOCAL_PORT] = current_local_port
 
         schema = self.add_suggested_values_to_schema(
             vol.Schema(schema_dict),

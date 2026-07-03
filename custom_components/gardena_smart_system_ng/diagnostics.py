@@ -15,6 +15,7 @@ from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
 TO_REDACT = {
     "client_id",
     "client_secret",
+    "local_password",
     "serial",
     "serial_number",
     "location_id",
@@ -53,6 +54,7 @@ async def async_get_config_entry_diagnostics(
     else:
         coordinator_info["location_id"] = "**REDACTED**"
         coordinator_info["stale_miss_counts"] = dict(coordinator.stale_miss_counts)
+        coordinator_info["local_connected"] = getattr(coordinator, "local_connected", None)
 
     return async_redact_data(
         {

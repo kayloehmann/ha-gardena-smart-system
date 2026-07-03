@@ -167,6 +167,39 @@ COMMAND_RETRY_ATTEMPTS = 3
 COMMAND_POLL_AFTER_TIMEOUT_SECONDS = 15.0
 COMMAND_POLL_INTERVAL_SECONDS = 1.0
 
+# ── Local WebSocket access (GARDENA smart Gateway) ───────────────
+# Optional second channel: a direct WebSocket to the GARDENA smart Gateway
+# (websocketd, port 8443) via the official `gardena-smart-local-api` library.
+# When enabled AND reachable, local state pushes take PRECEDENCE over the cloud
+# WebSocket (lower latency, works during a cloud/internet outage) and commands
+# are routed LOCAL-FIRST, falling back to the cloud command path only when the
+# local channel is unavailable or the local send is not acknowledged.
+#
+# The gateway's websocketd service must be enabled once via shell on the gateway
+# itself (touch /etc/enable-websocketd + restart firewall + start websocketd) —
+# the integration cannot do this. The config flow only asks for host + password.
+# The gateway has NO initial state dump, so the cloud REST/WS remains the source
+# of the initial device set; local is a live-update + command OVERLAY.
+OPT_LOCAL_ENABLE = "local_enable"
+OPT_LOCAL_HOST = "local_host"
+OPT_LOCAL_PASSWORD = "local_password"  # option key, not a secret value
+OPT_LOCAL_PORT = "local_port"
+DEFAULT_LOCAL_PORT = 8443
+# Password = first 8 characters of the gateway's device id (printed on the
+# underside); the websocketd Basic-Auth checks only the password, not the user.
+LOCAL_PASSWORD_LENGTH = 8
+# Cloud device serials are the SGTIN96 EPC serial of the local device id, zero-
+# padded to 8 digits — e.g. local `3034F8EE901E…` → serial 4756 → "00004756".
+# This is how a local device is matched to its existing cloud-side entities.
+LOCAL_SERIAL_PAD_WIDTH = 8
+# Local reconnect ladder (seconds). The gateway is on the LAN, so reconnects are
+# cheap and carry no API-budget cost (unlike the cloud WS) — retry briskly.
+LOCAL_RECONNECT_SCHEDULE = (1, 2, 5, 10, 30, 60)
+# Local command acknowledgement timeout. The gateway replies with a Reply frame
+# (matching request_id) within well under a second on the LAN; if no ack arrives
+# in this window the local send is considered failed and the cloud path is used.
+LOCAL_COMMAND_ACK_TIMEOUT_SECONDS = 5.0
+
 # ── MQTT bridge options ──────────────────────────────────────────
 OPT_MQTT_ENABLE = "mqtt_enable"
 OPT_MQTT_TOPIC_PREFIX = "mqtt_topic_prefix"

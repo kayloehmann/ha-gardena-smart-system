@@ -199,7 +199,7 @@ class GardenaValveEntity(GardenaEntity, ValveEntity):
                 translation_key="device_unavailable",
             )
         await self._async_execute_command(
-            self.coordinator.client.async_send_command,
+            self.coordinator.async_send_command,
             service_id=self._service_id,
             control_type=ControlType.VALVE,
             command=command,

@@ -21,6 +21,15 @@ warn_unreachable = true
 module = "tests.*"
 disallow_untyped_defs = false
 
+# The official `gardena-smart-local-api` (GARDENA GmbH, used for local gateway
+# access) does not yet ship a PEP 561 `py.typed` marker, so mypy cannot import
+# its types. We isolate that untyped boundary here; every value crossing it is
+# re-typed in our own `local_ids`/`local_channel` wrappers, which remain fully
+# strict-checked. TODO: drop this once upstream ships py.typed (contribute it).
+[[tool.mypy.overrides]]
+module = "gardena_smart_local_api.*"
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

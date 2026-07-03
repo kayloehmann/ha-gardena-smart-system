@@ -45,6 +45,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -e ./aiogardenasmart -e ./aioautomower
+          pip install gardena-smart-local-api==0.0.11
           pip install pytest pytest-asyncio pytest-cov pytest-homeassistant-custom-component
 
       - name: Run tests

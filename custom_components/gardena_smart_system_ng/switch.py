@@ -156,7 +156,7 @@ class GardenaPowerSocketEntity(GardenaEntity, SwitchEntity):
                 translation_key="device_unavailable",
             )
         await self._async_execute_command(
-            self.coordinator.client.async_send_command,
+            self.coordinator.async_send_command,
             service_id=device.power_socket.service_id,
             control_type=ControlType.POWER_SOCKET,
             command=command,
