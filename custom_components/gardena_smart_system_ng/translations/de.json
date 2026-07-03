@@ -76,7 +76,11 @@
           "mqtt_enable": "MQTT-Bridge aktivieren",
           "mqtt_topic_prefix": "MQTT-Topic-Präfix",
           "mqtt_publish_states": "Gerätezustände per MQTT veröffentlichen",
-          "mqtt_subscribe_commands": "Befehle per MQTT empfangen"
+          "mqtt_subscribe_commands": "Befehle per MQTT empfangen",
+          "local_enable": "Lokalen Gateway-Zugriff aktivieren",
+          "local_host": "Gateway-Host oder -IP",
+          "local_password": "Gateway-Passwort",
+          "local_port": "Gateway-Port"
         },
         "data_description": {
           "default_watering_minutes": "Dauer in Minuten beim Öffnen eines Ventils ohne Angabe einer Dauer (1–1440).",
@@ -85,13 +89,24 @@
           "mqtt_enable": "Spiegelt Gerätezustände auf einen lokalen MQTT-Broker und empfängt optional Befehle. Die MQTT-Integration muss konfiguriert sein.",
           "mqtt_topic_prefix": "Basis-Topic für alle MQTT-Nachrichten (z.B. ‘gardena’ → gardena/DEVICE_ID/state).",
           "mqtt_publish_states": "Veröffentlicht den vollständigen Gerätezustand als JSON bei jeder Aktualisierung (WebSocket-Push oder Abfrage).",
-          "mqtt_subscribe_commands": "Abonniert PREFIX/DEVICE_ID/command für eingehende Befehle (start_watering, stop_watering, turn_on, turn_off, park, resume)."
+          "mqtt_subscribe_commands": "Abonniert PREFIX/DEVICE_ID/command für eingehende Befehle (start_watering, stop_watering, turn_on, turn_off, park, resume).",
+          "local_enable": "Direkt mit dem GARDENA smart Gateway über das LAN kommunizieren. Der lokale Zustand hat Vorrang vor der Cloud, und Befehle werden zuerst lokal gesendet (Cloud als Fallback). Der websocketd-Dienst des Gateways muss einmalig per Shell aktiviert werden — siehe Dokumentation.",
+          "local_host": "Hostname oder IP des Gateways (z.B. 10.0.0.5 oder GARDENA-xxxxxx.local). Leer lassen zum Deaktivieren.",
+          "local_password": "Die ersten 8 Zeichen der Geräte-ID des Gateways (auf der Unterseite aufgedruckt).",
+          "local_port": "WebSocket-Port des Gateways (Standard 8443)."
         }
       }
     }
   },
   "entity": {
     "sensor": {
+      "command_source": {
+        "name": "Letzter Befehl über",
+        "state": {
+          "local": "Lokal",
+          "cloud": "Cloud"
+        }
+      },
       "battery_level": {
         "name": "Akku"
       },
@@ -297,6 +312,9 @@
       },
       "hub_websocket_connected": {
         "name": "WebSocket verbunden"
+      },
+      "hub_local_connected": {
+        "name": "Lokales Gateway verbunden"
       }
     },
     "switch": {

@@ -77,7 +77,11 @@
           "mqtt_enable": "Enable MQTT bridge",
           "mqtt_topic_prefix": "MQTT topic prefix",
           "mqtt_publish_states": "Publish device states to MQTT",
-          "mqtt_subscribe_commands": "Accept commands via MQTT"
+          "mqtt_subscribe_commands": "Accept commands via MQTT",
+          "local_enable": "Enable local gateway access",
+          "local_host": "Gateway host or IP",
+          "local_password": "Gateway password",
+          "local_port": "Gateway port"
         },
         "data_description": {
           "default_watering_minutes": "Duration in minutes when opening a valve without specifying a duration (1-1440).",
@@ -87,13 +91,24 @@
           "mqtt_enable": "Mirror device states to a local MQTT broker and optionally accept commands. Requires the MQTT integration to be configured.",
           "mqtt_topic_prefix": "Base topic for all MQTT messages (e.g. 'gardena' → gardena/{device_id}/state).",
           "mqtt_publish_states": "Publish full device state as JSON on every update (WebSocket push or poll).",
-          "mqtt_subscribe_commands": "Subscribe to {prefix}/{device_id}/command for inbound commands (start_watering, stop_watering, turn_on, turn_off, park, resume)."
+          "mqtt_subscribe_commands": "Subscribe to {prefix}/{device_id}/command for inbound commands (start_watering, stop_watering, turn_on, turn_off, park, resume).",
+          "local_enable": "Talk to the GARDENA smart Gateway directly over the LAN. Local state takes precedence over the cloud and commands are sent locally first (cloud is the fallback). The gateway's websocketd service must be enabled once via shell — see the documentation.",
+          "local_host": "Hostname or IP of the gateway (e.g. 10.0.0.5 or GARDENA-xxxxxx.local). Leave empty to disable.",
+          "local_password": "The first 8 characters of the gateway's device id (printed on the underside).",
+          "local_port": "WebSocket port of the gateway (default 8443)."
         }
       }
     }
   },
   "entity": {
     "sensor": {
+      "command_source": {
+        "name": "Last command via",
+        "state": {
+          "local": "Local",
+          "cloud": "Cloud"
+        }
+      },
       "battery_level": {
         "name": "Battery"
       },
@@ -275,6 +290,9 @@
       },
       "hub_websocket_connected": {
         "name": "WebSocket connected"
+      },
+      "hub_local_connected": {
+        "name": "Local gateway connected"
       }
     },
     "switch": {

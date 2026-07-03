@@ -43,6 +43,24 @@ To use both APIs, add the integration twice with the same credentials.
 | Troubleshooting | [Wiki / Troubleshooting](https://github.com/kayloehmann/ha-gardena-smart-system/wiki/Troubleshooting-EN) |
 | Contributing | [Wiki / Contributing](https://github.com/kayloehmann/ha-gardena-smart-system/wiki/Contributing-EN) |
 
+### Local access (preview)
+
+Talk to the GARDENA smart Gateway directly over your LAN, alongside the cloud. When enabled and reachable, **local state takes precedence** over the cloud and **commands are sent locally first** (the cloud stays as the fallback) — lower latency, and monitoring/control keep working during a cloud or internet outage. Built on the official [`gardena-smart-local-api`](https://github.com/cloudless-garden/gardena-smart-local-api) (GARDENA GmbH).
+
+**One-time gateway setup (required).** The gateway's local WebSocket service is off by default and can only be enabled via shell on the gateway itself — the integration cannot do it. After enabling SSH on the gateway:
+
+```sh
+touch /etc/enable-websocketd   # survives reboots and firmware updates
+systemctl restart firewall     # opens 8443/TCP — easy to forget!
+systemctl start websocketd
+```
+
+**Integration setup.** Settings → Devices & Services → Gardena → *Configure*, then set **Enable local gateway access**, the **host/IP** (e.g. `10.0.0.5` or `GARDENA-xxxxxx.local`), the **password** (the first 8 characters of the gateway's device id, printed on the underside), and the **port** (default `8443`).
+
+Two entities surface the behaviour: a **Local gateway connected** binary sensor and a per-device **Last command via** (`local`/`cloud`) diagnostic sensor.
+
+Notes: the gateway uses a self-signed certificate (verification is disabled for it) and sends no initial state snapshot, so the cloud still provides the initial device state after a restart. If Home Assistant sits on a different VLAN than the gateway, allow it to reach the gateway on TCP 8443.
+
 ---
 
 ## Deutsch
@@ -69,6 +87,24 @@ Um beide APIs zu nutzen, die Integration zweimal mit denselben Zugangsdaten hinz
 | Einschränkungen | [Wiki / Einschränkungen](https://github.com/kayloehmann/ha-gardena-smart-system/wiki/Limitations-DE) |
 | Fehlerbehebung | [Wiki / Fehlerbehebung](https://github.com/kayloehmann/ha-gardena-smart-system/wiki/Troubleshooting-DE) |
 | Mitwirken | [Wiki / Mitwirken](https://github.com/kayloehmann/ha-gardena-smart-system/wiki/Contributing-DE) |
+
+### Lokaler Zugriff (Vorschau)
+
+Direkt mit dem GARDENA smart Gateway über das LAN kommunizieren, parallel zur Cloud. Wenn aktiviert und erreichbar, hat der **lokale Zustand Vorrang** vor der Cloud und **Befehle gehen zuerst lokal** raus (die Cloud bleibt Fallback) — geringere Latenz, und Überwachung/Steuerung funktionieren auch bei Cloud- oder Internet-Ausfall weiter. Basiert auf der offiziellen [`gardena-smart-local-api`](https://github.com/cloudless-garden/gardena-smart-local-api) (GARDENA GmbH).
+
+**Einmalige Gateway-Einrichtung (erforderlich).** Der lokale WebSocket-Dienst des Gateways ist standardmäßig aus und lässt sich nur per Shell am Gateway selbst aktivieren — die Integration kann das nicht. Nach dem Aktivieren von SSH am Gateway:
+
+```sh
+touch /etc/enable-websocketd   # übersteht Reboots und Firmware-Updates
+systemctl restart firewall     # gibt 8443/TCP frei — leicht zu vergessen!
+systemctl start websocketd
+```
+
+**Einrichtung in der Integration.** Einstellungen → Geräte & Dienste → Gardena → *Konfigurieren*, dann **Lokalen Gateway-Zugriff aktivieren**, **Host/IP** (z. B. `10.0.0.5` oder `GARDENA-xxxxxx.local`), **Passwort** (die ersten 8 Zeichen der Geräte-ID vom Aufkleber) und **Port** (Standard `8443`) setzen.
+
+Zwei Entitäten machen das sichtbar: ein Binary-Sensor **Lokales Gateway verbunden** und ein Diagnose-Sensor **Letzter Befehl über** (`local`/`cloud`) je Gerät.
+
+Hinweise: Das Gateway nutzt ein selbstsigniertes Zertifikat (Verifikation dafür deaktiviert) und sendet keinen initialen Zustands-Snapshot — der Anfangszustand kommt nach einem Neustart weiter aus der Cloud. Liegt Home Assistant in einem anderen VLAN als das Gateway, muss der Zugriff auf TCP 8443 freigegeben werden.
 
 ---
 

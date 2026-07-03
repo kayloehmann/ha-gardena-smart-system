@@ -30,7 +30,7 @@ from aiogardenasmart import Device
 
 from . import GardenaConfigEntry
 from .base_coordinator import BaseSmartSystemCoordinator
-from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE, DOMAIN
+from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE, DOMAIN, OPT_LOCAL_ENABLE
 from .coordinator import GardenaCoordinator
 from .entity import GardenaEntity, resolve_zone_placeholder
 
@@ -286,6 +286,15 @@ async def async_setup_entry(
                 if vs_key not in known_keys:
                     known_keys.add(vs_key)
                     new_entities.append(GardenaValveSetErrorSensor(coordinator, device))
+            # Command-source diagnostic (local vs cloud) — only with local access
+            # enabled and only for devices that can actually receive commands.
+            if entry.options.get(OPT_LOCAL_ENABLE) and (
+                device.valves or device.power_socket is not None or device.mower is not None
+            ):
+                cs_key = (device.device_id, "command_source")
+                if cs_key not in known_keys:
+                    known_keys.add(cs_key)
+                    new_entities.append(GardenaCommandSourceSensor(coordinator, device))
         if new_entities:
             async_add_entities(new_entities)
 
@@ -301,6 +310,24 @@ async def async_setup_entry(
             HubApiBudgetRemainingSensor(coordinator, entry),
         ]
     )
+
+
+class GardenaCommandSourceSensor(GardenaEntity, SensorEntity):
+    """Diagnostic sensor: which route carried this device's last command."""
+
+    _attr_translation_key = "command_source"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator: GardenaCoordinator, device: Device) -> None:
+        """Initialize the command-source sensor."""
+        super().__init__(coordinator, device, "command_source")
+        self._attr_options = ["local", "cloud"]
+
+    @property
+    def native_value(self) -> str | None:
+        """Return 'local', 'cloud', or None if no command has been sent yet."""
+        return self.coordinator.last_command_source(self._device_id)
 
 
 class GardenaSensorEntity(GardenaEntity, SensorEntity):

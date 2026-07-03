@@ -22,7 +22,7 @@ from aiogardenasmart import Device
 
 from . import GardenaConfigEntry
 from .base_coordinator import BaseSmartSystemCoordinator
-from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE
+from .const import API_TYPE_AUTOMOWER, CONF_API_TYPE, OPT_LOCAL_ENABLE
 from .coordinator import GardenaCoordinator
 from .entity import GardenaEntity
 
@@ -128,6 +128,10 @@ async def async_setup_entry(
 
     async_add_entities([HubWebSocketSensor(coordinator, entry, _hub_device_info)])
 
+    # Local gateway connection status — only relevant when local access is on.
+    if entry.options.get(OPT_LOCAL_ENABLE):
+        async_add_entities([HubLocalConnectionSensor(coordinator, entry, _hub_device_info)])
+
 
 class GardenaBinarySensorEntity(GardenaEntity, BinarySensorEntity):
     """A binary sensor entity for Gardena Smart System devices."""
@@ -177,3 +181,29 @@ class HubWebSocketSensor(CoordinatorEntity, BinarySensorEntity):
     def is_on(self) -> bool:
         """Return True if the WebSocket is connected."""
         return self.coordinator.ws_connected
+
+
+class HubLocalConnectionSensor(CoordinatorEntity, BinarySensorEntity):
+    """Local GARDENA smart Gateway connection status for the integration hub."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "hub_local_connected"
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    coordinator: GardenaCoordinator
+
+    def __init__(
+        self,
+        coordinator: GardenaCoordinator,
+        entry: GardenaConfigEntry,
+        device_info_fn: Callable[[GardenaConfigEntry], DeviceInfo],
+    ) -> None:
+        """Initialize the local connection sensor."""
+        super().__init__(coordinator)
+        self._attr_unique_id = f"hub_{entry.entry_id}_local_connected"
+        self._attr_device_info = device_info_fn(entry)
+
+    @property
+    def is_on(self) -> bool:
+        """Return True if the local gateway link is up."""
+        return self.coordinator.local_connected
