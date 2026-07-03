@@ -19,6 +19,7 @@ except ImportError:
     )
 
 from aiogardenasmart import GardenaConnectionError
+from custom_components.gardena_smart_system_ng import base_coordinator as base_coordinator_mod
 from custom_components.gardena_smart_system_ng.base_coordinator import (
     BaseSmartSystemCoordinator,
     RateLimitState,
@@ -27,7 +28,6 @@ from custom_components.gardena_smart_system_ng.base_coordinator import (
 from custom_components.gardena_smart_system_ng.const import (
     DOMAIN,
     OPT_MQTT_ENABLE,
-    WS_WATCHDOG_TIMEOUT_SECONDS,
 )
 from custom_components.gardena_smart_system_ng.coordinator import GardenaCoordinator
 
@@ -184,8 +184,14 @@ async def test_watchdog_reconnects_on_silence(
     coord: GardenaCoordinator, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     coord._ws_connected = True
+    # Shrink the timeout so the test is independent of the machine's uptime:
+    # last_message_time must stay positive (a real monotonic marker) while the
+    # silence still exceeds the timeout. A large fixed timeout would force a
+    # negative marker on freshly-booted CI runners and hit the "no messages
+    # yet" guard instead of the reconnect path.
+    monkeypatch.setattr(base_coordinator_mod, "WS_WATCHDOG_TIMEOUT_SECONDS", 1)
     ws = MagicMock()
-    ws.last_message_time = time.monotonic() - (WS_WATCHDOG_TIMEOUT_SECONDS + 5)
+    ws.last_message_time = time.monotonic() - 5  # positive marker, 5s of silence
     ws.async_disconnect = AsyncMock(side_effect=aiohttp.ClientError("gone"))
     coord._ws = ws
     scheduler = MagicMock()
