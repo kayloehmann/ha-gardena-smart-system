@@ -164,11 +164,8 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
         channel = self._local_channel
         if channel is None or not channel.connected or not self.data:
             return
-        cloud_device = self.data.get(device_id)
-        if cloud_device is None:
-            return
-        local = index_local_devices_by_serial(channel.devices).get(cloud_device.serial)
-        if local is not None and apply_local_state(local, cloud_device):
+        local = index_local_devices_by_serial(channel.devices).get(device.serial)
+        if local is not None and apply_local_state(local, device):
             self.async_set_updated_data(self.data)
 
     async def async_send_command(

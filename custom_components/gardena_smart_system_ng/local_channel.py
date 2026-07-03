@@ -171,7 +171,7 @@ class GardenaLocalChannel:
     async def _session_once(self) -> None:
         """One connection lifetime: connect, discover, pump events until close."""
         ssl_ctx = self._ssl
-        if ssl_ctx is None:  # async_start sets it first; narrow for the type checker
+        if ssl_ctx is None:  # pragma: no cover - async_start always sets _ssl first
             ssl_ctx = await self._hass.async_add_executor_job(get_default_no_verify_context)
             self._ssl = ssl_ctx
         async with self._session.ws_connect(

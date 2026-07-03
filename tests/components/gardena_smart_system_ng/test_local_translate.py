@@ -4,7 +4,7 @@ from typing import Any
 
 from aiogardenasmart.const import ControlType, ValveActivity
 
-from aiogardenasmart import Device, SensorService, ValveService
+from aiogardenasmart import CommonService, Device, SensorService, ValveService
 from custom_components.gardena_smart_system_ng.local_translate import (
     CMD_START,
     CMD_STOP,
@@ -185,6 +185,62 @@ def test_call_returns_none_when_builder_absent() -> None:
         build_local_command(Bare(), device, "uuid", ControlType.POWER_SOCKET, CMD_STOP, None)
         is None
     )
+
+
+def test_power_socket_unknown_command_returns_none() -> None:
+    device = Device(device_id="uuid", location_id="loc")
+    local = FakeLocalDevice()
+    assert build_local_command(local, device, "uuid", ControlType.POWER_SOCKET, "WEIRD", 60) is None
+
+
+def test_mower_unmappable_command_returns_none() -> None:
+    device = Device(device_id="uuid", location_id="loc")
+    local = FakeLocalDevice()
+    # START_DONT_OVERRIDE has no local equivalent → cloud fallback.
+    assert (
+        build_local_command(local, device, "uuid", ControlType.MOWER, "START_DONT_OVERRIDE", None)
+        is None
+    )
+
+
+def _common(rf_link_state: str) -> CommonService:
+    return CommonService(
+        device_id="uuid",
+        name="n",
+        serial="00004756",
+        model_type="m",
+        battery_level=None,
+        battery_state=None,
+        rf_link_level=None,
+        rf_link_state=rf_link_state,
+    )
+
+
+def test_state_overlay_sets_online_from_local() -> None:
+    device = Device(device_id="uuid", location_id="loc", common=_common("OFFLINE"))
+    local = FakeLocalDevice()
+    local.online = True
+
+    assert apply_local_state(local, device) is True
+    assert device.common is not None
+    assert device.common.rf_link_state == "ONLINE"
+
+
+def test_state_overlay_online_noop_when_already_online() -> None:
+    device = Device(device_id="uuid", location_id="loc", common=_common("ONLINE"))
+    local = FakeLocalDevice()
+    local.online = True  # agrees with cloud → no change
+
+    assert apply_local_state(local, device) is False
+
+
+def test_overlay_valves_skips_unknown_and_stops_past_local_count() -> None:
+    device = _device_with_valves({"uuid:1": ValveActivity.CLOSED, "uuid:2": ValveActivity.CLOSED})
+    local = FakeLocalDevice(valve_ids=[0])  # fewer local valves than cloud
+    local._open = {0: None}  # local can't tell → skip valve 0; valve 1 has no local peer
+
+    assert apply_local_state(local, device) is False
+    assert device.valves["uuid:1"].activity == ValveActivity.CLOSED
 
 
 def test_state_overlay_updates_sensor_values() -> None:

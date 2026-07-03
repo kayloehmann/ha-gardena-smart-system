@@ -3,18 +3,22 @@
 import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
+import aiohttp
 import pytest
 from gardena_smart_local_api.messages import (
+    EgressMessageList,
     Entity,
     ErrorMessage,
     ErrorMetadata,
     Event,
     IngressMessageList,
     Reply,
+    Request,
 )
 from gardena_smart_local_api.resources import IpsoPath
 from homeassistant.core import HomeAssistant
 
+from custom_components.gardena_smart_system_ng import local_channel as local_channel_mod
 from custom_components.gardena_smart_system_ng.local_channel import (
     GardenaLocalChannel,
 )
@@ -145,8 +149,6 @@ async def test_full_session_discovers_and_applies_events(
     """Drive a whole connection lifetime against a fake gateway WebSocket."""
     import json
 
-    import aiohttp
-
     channel, updates, conn = _make_channel(hass)
     dev = "3034F8EE901EE94000001294"  # decodes to an Irrigation Control (model 31653)
     device_payload = {dev: {"device": {"0": {"model_number": {"vs": "31653"}}}}}
@@ -208,3 +210,124 @@ async def test_full_session_discovers_and_applies_events(
     assert dev in channel.devices  # discovery built the device
     assert True in conn  # the link reported connected
     assert len(updates) >= 1  # discovery/event notified the coordinator
+
+
+async def test_connected_property_default_false(hass: HomeAssistant) -> None:
+    channel, _, _ = _make_channel(hass)
+    assert channel.connected is False
+
+
+async def test_send_command_false_when_no_request_ids(hass: HomeAssistant) -> None:
+    channel, _, _ = _make_channel(hass)
+    ws = MagicMock()
+    ws.closed = False
+    channel._ws = ws
+    request = EgressMessageList([Request(entity=Entity(path="x"), op="read", request_id=None)])
+    assert await channel.async_send_command(request) is False
+
+
+async def test_send_command_false_on_transport_error(hass: HomeAssistant) -> None:
+    channel, _, _ = _make_channel(hass)
+    ws = MagicMock()
+    ws.closed = False
+    ws.send_str = AsyncMock(side_effect=aiohttp.ClientError("boom"))
+    channel._ws = ws
+    request = EgressMessageList([Request(entity=Entity(path="x"), op="read", request_id="r")])
+    assert await channel.async_send_command(request) is False
+
+
+async def test_run_retries_after_session_error(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A session error is swallowed and the loop reconnects until stopped."""
+    channel, _, _ = _make_channel(hass)
+    monkeypatch.setattr(local_channel_mod, "LOCAL_RECONNECT_SCHEDULE", (0.001,))
+    calls: list[int] = []
+
+    async def fake_session() -> None:
+        calls.append(1)
+        if len(calls) == 1:
+            raise ValueError("boom")  # first attempt errors → reconnect
+        await asyncio.sleep(3600)  # second attempt blocks until cancelled
+
+    monkeypatch.setattr(channel, "_session_once", fake_session)
+    await channel.async_start()
+    for _ in range(50):
+        await asyncio.sleep(0.005)
+        if len(calls) >= 2:
+            break
+    await channel.async_stop()
+    assert len(calls) >= 2
+
+
+async def test_keepalive_returns_without_devices(hass: HomeAssistant) -> None:
+    channel, _, _ = _make_channel(hass)
+    channel.devices = {}  # type: ignore[assignment]
+    await channel._keepalive(MagicMock())  # returns immediately, no send
+
+
+async def test_keepalive_sends_until_closed(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    channel, _, _ = _make_channel(hass)
+    monkeypatch.setattr(local_channel_mod, "KEEPALIVE_INTERVAL_SECONDS", 0.001)
+    probe = MagicMock()
+    probe.model_dump_json = MagicMock(return_value="[]")
+    device = MagicMock()
+    device.build_refresh_online_status_obj = probe
+    channel.devices = {"d": device}  # type: ignore[assignment]
+
+    ws = MagicMock()
+    ws.send_str = AsyncMock()
+    states = [False, True]  # one iteration, then closed
+    type(ws).closed = property(lambda _self: states.pop(0) if states else True)
+
+    await channel._keepalive(ws)
+    ws.send_str.assert_awaited_once_with("[]")
+
+
+async def test_non_conforming_frame_is_ignored(hass: HomeAssistant) -> None:
+    channel, updates, _ = _make_channel(hass)
+    channel._on_raw("not-json")  # invalid JSON
+    channel._on_raw('{"not": "a list"}')  # valid JSON, wrong shape
+    assert updates == []
+
+
+async def test_error_frame_without_pending_is_logged(hass: HomeAssistant) -> None:
+    channel, _, _ = _make_channel(hass)
+    err = ErrorMessage(
+        metadata=ErrorMetadata(error_source="websocketd"),
+        payload={"vs": "boom"},
+        request_id="unknown",
+        success=False,
+    )
+    channel._handle_ingress(IngressMessageList([err]))  # no matching waiter → just logged
+
+
+async def test_event_without_device_is_ignored(hass: HomeAssistant) -> None:
+    channel, updates, _ = _make_channel(hass)
+    event = Event(
+        entity=Entity(device="", path=IpsoPath(object_name="lemonbeat")),
+        op="update",
+        payload={},
+    )
+    channel._handle_ingress(IngressMessageList([event]))
+    assert updates == []
+
+
+async def test_delete_event_removes_device(hass: HomeAssistant) -> None:
+    channel, updates, _ = _make_channel(hass)
+    channel.devices = {"d": MagicMock()}  # type: ignore[assignment]
+    event = Event(entity=Entity(device="d", path=IpsoPath()), op="delete", payload={})
+    channel._handle_ingress(IngressMessageList([event]))
+    assert "d" not in channel.devices
+    assert len(updates) == 1
+
+
+async def test_fail_pending_cancels_open_futures(hass: HomeAssistant) -> None:
+    channel, _, _ = _make_channel(hass)
+    fut: asyncio.Future[Reply] = asyncio.get_running_loop().create_future()
+    channel._pending["r"] = fut
+    channel._fail_pending()
+    assert fut.cancelled()
+    assert channel._pending == {}
