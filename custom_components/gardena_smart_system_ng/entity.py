@@ -148,7 +148,12 @@ class GardenaEntity(CoordinatorEntity[GardenaCoordinator]):
         a 504 cannot cause unwanted double execution.
 
         Polling reads the in-memory coordinator only — no extra REST calls.
-        The API budget counts each attempt that actually fires.
+
+        API-quota accounting and command throttling live in the coordinator's
+        ``async_send_command`` facade, on the cloud branch only: a command that
+        the facade routes to the local gateway consumes no quota and is not
+        throttled (and works even when the cloud budget is exhausted). Each
+        cloud attempt — including retries — still counts exactly once.
 
         Non-timeout errors (auth, deterministic 4xx, other library errors)
         short-circuit immediately — there is nothing a retry would fix.
@@ -157,8 +162,6 @@ class GardenaEntity(CoordinatorEntity[GardenaCoordinator]):
 
         for attempt in range(COMMAND_RETRY_ATTEMPTS):
             is_last_attempt = attempt == COMMAND_RETRY_ATTEMPTS - 1
-            self.coordinator.check_command_throttle()
-            self.coordinator.api_budget.increment()
             # Capture the WebSocket push marker *before* sending. Only a push
             # that arrives after this point proves the command landed; the
             # cached state may still hold a stale activity from a previous

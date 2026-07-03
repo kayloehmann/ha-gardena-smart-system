@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -117,6 +118,59 @@ async def test_command_falls_back_when_local_not_acked(
 
     coordinator._client.async_send_command.assert_called_once()
     assert coordinator.last_command_source("dev-uuid") == "cloud"
+
+
+async def test_local_command_does_not_touch_budget_or_throttle(
+    coordinator: GardenaCoordinator, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    coordinator._local_channel = FakeChannel(connected=True, ack=True)  # type: ignore[assignment]
+    throttle = MagicMock()
+    increment = MagicMock()
+    monkeypatch.setattr(coordinator, "check_command_throttle", throttle)
+    monkeypatch.setattr(coordinator._api_budget, "increment", increment)
+
+    await coordinator.async_send_command(
+        "dev-uuid:1", "VALVE_CONTROL", "START_SECONDS_TO_OVERRIDE", seconds=600
+    )
+
+    throttle.assert_not_called()  # local command is not rate-limited
+    increment.assert_not_called()  # and consumes no cloud quota
+    assert coordinator.last_command_source("dev-uuid") == "local"
+
+
+async def test_cloud_command_throttles_and_counts_budget(
+    coordinator: GardenaCoordinator, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    throttle = MagicMock()
+    increment = MagicMock()
+    monkeypatch.setattr(coordinator, "check_command_throttle", throttle)
+    monkeypatch.setattr(coordinator._api_budget, "increment", increment)
+
+    await coordinator.async_send_command(  # no local channel → cloud path
+        "dev-uuid:1", "VALVE_CONTROL", "STOP_UNTIL_NEXT_TASK"
+    )
+
+    throttle.assert_called_once()
+    increment.assert_called_once()
+    coordinator._client.async_send_command.assert_called_once()
+    assert coordinator.last_command_source("dev-uuid") == "cloud"
+
+
+async def test_local_command_works_when_cloud_budget_exhausted(
+    coordinator: GardenaCoordinator, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    coordinator._local_channel = FakeChannel(connected=True, ack=True)  # type: ignore[assignment]
+    # If the cloud path were taken this would raise; the local path must not.
+    monkeypatch.setattr(
+        coordinator,
+        "check_command_throttle",
+        MagicMock(side_effect=HomeAssistantError("exhausted")),
+    )
+
+    await coordinator.async_send_command("dev-uuid:1", "VALVE_CONTROL", "STOP_UNTIL_NEXT_TASK")
+
+    assert coordinator.last_command_source("dev-uuid") == "local"
+    coordinator._client.async_send_command.assert_not_called()
 
 
 async def test_local_overlay_pushes_update_on_change(

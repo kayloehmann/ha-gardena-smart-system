@@ -177,11 +177,20 @@ class GardenaCoordinator(BaseSmartSystemCoordinator[Device]):
         place of the cloud client. Records which route actually carried the
         command (see ``last_command_source``). A cloud-path failure propagates
         exactly as before so the existing retry/timeout logic is unaffected.
+
+        Throttling and API-quota accounting apply to the **cloud path only**: a
+        command carried locally consumes no quota, is not rate-limited, and
+        works even when the cloud budget is exhausted.
         """
         device_id = service_id.split(":")[0]
         if await self._try_local_command(device_id, service_id, control_type, command, params):
             self._last_command_source[device_id] = "local"
             return
+        # Only a real cloud request counts against the monthly quota and the
+        # command throttle. Raises HomeAssistantError if throttled/exhausted;
+        # that propagates uncaught through the retry engine, exactly as before.
+        self.check_command_throttle()
+        self._api_budget.increment()
         # Forward as keywords to preserve the exact cloud-client call convention.
         await self._client.async_send_command(
             service_id=service_id, control_type=control_type, command=command, **params
