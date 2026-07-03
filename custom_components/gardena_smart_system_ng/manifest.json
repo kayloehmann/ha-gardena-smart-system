@@ -12,5 +12,5 @@
   "quality_scale": "platinum",
   "requirements": ["aiogardenasmart==0.1.9", "gardena-smart-local-api==0.0.11"],
   "single_config_entry": false,
-  "version": "2.0.5"
+  "version": "2.1.0"
 }
