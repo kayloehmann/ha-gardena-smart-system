@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import cast
 
-from aioautomower.const import (
+from aiohusqvarna.const import (
     MowerActivity,
     MowerMode,
     MowerState,
@@ -24,7 +24,7 @@ from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfLength, UnitOf
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from aioautomower import AutomowerDevice
+from aiohusqvarna import AutomowerDevice
 
 from . import GardenaConfigEntry
 from .automower_coordinator import AutomowerCoordinator

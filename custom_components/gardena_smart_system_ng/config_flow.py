@@ -39,7 +39,7 @@ from homeassistant.helpers.selector import (
 from aiogardenasmart import GardenaAuth, GardenaClient
 
 if TYPE_CHECKING:
-    from aioautomower import AutomowerClient
+    from aiohusqvarna import AutomowerClient
 
 from .base_coordinator import async_reset_api_budget_store, async_reset_rate_limit_state_store
 from .const import (
@@ -491,21 +491,21 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
         reauth/reconfigure attempts do not leave dangling tokens on the
         Husqvarna auth server.
 
-        `aioautomower` may be imported for the first time in this process
+        `aiohusqvarna` may be imported for the first time in this process
         right here (only users who pick the Automower branch ever trigger
         it), so — like the deferred coordinator imports in ``__init__.py``
         (see #47) — it's routed through HA's import executor instead of a
         plain module-level/in-line import that would run on the event loop.
         """
-        aioautomower_exceptions = await async_import_module(hass, "aioautomower.exceptions")
-        aioautomower_module = await async_import_module(hass, "aioautomower")
-        automower_client_cls = cast("type[AutomowerClient]", aioautomower_module.AutomowerClient)
+        husqvarna_exceptions = await async_import_module(hass, "aiohusqvarna.exceptions")
+        husqvarna_module = await async_import_module(hass, "aiohusqvarna")
+        automower_client_cls = cast("type[AutomowerClient]", husqvarna_module.AutomowerClient)
 
         automower_error_map: dict[type[Exception], str] = {
-            aioautomower_exceptions.AutomowerAuthenticationError: "invalid_auth",
-            aioautomower_exceptions.AutomowerForbiddenError: "automower_not_connected",
-            aioautomower_exceptions.AutomowerRateLimitError: "rate_limited",
-            aioautomower_exceptions.AutomowerConnectionError: "cannot_connect",
+            husqvarna_exceptions.AutomowerAuthenticationError: "invalid_auth",
+            husqvarna_exceptions.AutomowerForbiddenError: "automower_not_connected",
+            husqvarna_exceptions.AutomowerRateLimitError: "rate_limited",
+            husqvarna_exceptions.AutomowerConnectionError: "cannot_connect",
         }
 
         auth = GardenaAuth(client_id, client_secret, session)

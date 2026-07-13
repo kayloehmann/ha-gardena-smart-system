@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from aioautomower.const import HeadlightMode
+from aiohusqvarna.const import HeadlightMode
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from aioautomower import AutomowerDevice
+from aiohusqvarna import AutomowerDevice
 
 from . import GardenaConfigEntry
 from .automower_coordinator import AutomowerCoordinator

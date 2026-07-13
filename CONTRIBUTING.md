@@ -8,7 +8,7 @@ Thanks for your interest in contributing to the Gardena Smart System integration
 2. Create a virtual environment: `python -m venv .venv && source .venv/bin/activate`
 3. Install dependencies:
    ```bash
-   pip install -e ./aiogardenasmart -e ./aioautomower
+   pip install -e ./aiogardenasmart -e ./aiohusqvarna
    pip install pytest pytest-asyncio pytest-cov pytest-homeassistant-custom-component mypy ruff
    ```
 

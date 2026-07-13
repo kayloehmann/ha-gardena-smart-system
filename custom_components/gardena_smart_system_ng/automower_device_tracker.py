@@ -9,7 +9,7 @@ from homeassistant.components.device_tracker.const import SourceType
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from aioautomower import AutomowerDevice
+from aiohusqvarna import AutomowerDevice
 
 from . import GardenaConfigEntry
 from .automower_coordinator import AutomowerCoordinator

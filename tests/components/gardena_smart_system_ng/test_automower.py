@@ -24,15 +24,15 @@ except ImportError:
         MockConfigEntry,  # type: ignore[no-redef]
     )
 
-from aioautomower.const import HeadlightMode, MowerActivity, MowerState
-from aioautomower.exceptions import (
+from aiohusqvarna.const import HeadlightMode, MowerActivity, MowerState
+from aiohusqvarna.exceptions import (
     AutomowerAuthenticationError,
     AutomowerConnectionError,
     AutomowerException,
     AutomowerRateLimitError,
     AutomowerRequestError,
 )
-from aioautomower.models import (
+from aiohusqvarna.models import (
     AutomowerDevice,
     BatteryInfo,
     CalendarInfo,
@@ -401,7 +401,7 @@ class TestAutomowerSensor:
     async def test_activity_enum_sensor(
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
     ) -> None:
-        from aioautomower.const import MowerActivity
+        from aiohusqvarna.const import MowerActivity
 
         device = make_mock_automower_device(mower_activity=MowerActivity.MOWING)
         devices = {device.mower_id: device}
@@ -415,7 +415,7 @@ class TestAutomowerSensor:
     async def test_state_enum_sensor(
         self, hass: HomeAssistant, automower_config_entry: MockConfigEntry
     ) -> None:
-        from aioautomower.const import MowerState
+        from aiohusqvarna.const import MowerState
 
         device = make_mock_automower_device(mower_state=MowerState.IN_OPERATION)
         devices = {device.mower_id: device}
@@ -2478,7 +2478,7 @@ class TestAutomowerDiagnostics:
 
 _PATCH_CF_AUTH = "custom_components.gardena_smart_system_ng.config_flow.GardenaAuth"
 _PATCH_CF_CLIENT = "custom_components.gardena_smart_system_ng.config_flow.GardenaClient"
-_PATCH_CF_AM_CLIENT = "aioautomower.AutomowerClient"
+_PATCH_CF_AM_CLIENT = "aiohusqvarna.AutomowerClient"
 
 
 class TestConfigFlowAdditional:

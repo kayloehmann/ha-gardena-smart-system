@@ -34,7 +34,7 @@ updates:
       - "python"
 
   - package-ecosystem: "pip"
-    directory: "/aioautomower"
+    directory: "/aiohusqvarna"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -44,7 +44,7 @@ updates:
       dev-dependencies:
         dependency-type: "development"
     commit-message:
-      prefix: "deps(aioautomower)"
+      prefix: "deps(aiohusqvarna)"
     labels:
       - "dependencies"
       - "python"

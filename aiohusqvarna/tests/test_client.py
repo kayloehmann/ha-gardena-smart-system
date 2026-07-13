@@ -10,9 +10,9 @@ from aiogardenasmart.auth import GardenaAuth
 from aiogardenasmart.const import AUTH_TOKEN_URL
 from aioresponses import aioresponses
 
-from aioautomower.client import AutomowerClient
-from aioautomower.const import API_BASE_URL, ActionType
-from aioautomower.exceptions import (
+from aiohusqvarna.client import AutomowerClient
+from aiohusqvarna.const import API_BASE_URL, ActionType
+from aiohusqvarna.exceptions import (
     AutomowerAuthenticationError,
     AutomowerConnectionError,
     AutomowerForbiddenError,

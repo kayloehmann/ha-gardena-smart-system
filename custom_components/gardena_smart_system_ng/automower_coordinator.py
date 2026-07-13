@@ -5,16 +5,16 @@ from __future__ import annotations
 from typing import Any
 
 import aiohttp
-from aioautomower.exceptions import (
+from aiogardenasmart.auth import GardenaAuth
+from aiohusqvarna.exceptions import (
     AutomowerAuthenticationError,
     AutomowerConnectionError,
     AutomowerRateLimitError,
 )
-from aiogardenasmart.auth import GardenaAuth
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from aioautomower import (
+from aiohusqvarna import (
     AutomowerClient,
     AutomowerDevice,
     AutomowerWebSocket,

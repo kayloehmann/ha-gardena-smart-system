@@ -44,7 +44,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e ./aiogardenasmart -e ./aioautomower
+          pip install -e ./aiogardenasmart -e ./aiohusqvarna
           pip install gardena-smart-local-api==0.0.11
           pip install pytest pytest-asyncio pytest-cov pytest-homeassistant-custom-component
 
@@ -66,7 +66,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check aiogardenasmart version is in sync
+      - name: Check vendored library versions are in sync with the manifest
         run: |
           python3 - <<'PYEOF'
           import json, pathlib, sys
@@ -75,21 +75,32 @@ jobs:
           except ImportError:
               import tomli as tomllib
 
-          lib_version = tomllib.loads(
-              pathlib.Path("aiogardenasmart/pyproject.toml").read_text()
-          )["project"]["version"]
-
+          # Every library we vendor in-tree must be pinned in the manifest at
+          # exactly the version we ship — otherwise Home Assistant installs a
+          # different build from PyPI than the one CI tested against.
           manifest = json.loads(
               pathlib.Path("custom_components/gardena_smart_system_ng/manifest.json").read_text()
           )
-          reqs = [r for r in manifest["requirements"] if r.startswith("aiogardenasmart")]
-          manifest_version = reqs[0].split("==")[1] if reqs else ""
 
-          print(f"Library version:  {lib_version}")
-          print(f"Manifest requires: {manifest_version}")
-          if lib_version != manifest_version:
-              print(f"::error::aiogardenasmart version mismatch: "
-                    f"pyproject.toml={lib_version}, manifest.json={manifest_version}")
+          failed = False
+          for lib in ("aiogardenasmart", "aiohusqvarna"):
+              lib_version = tomllib.loads(
+                  pathlib.Path(f"{lib}/pyproject.toml").read_text()
+              )["project"]["version"]
+
+              reqs = [r for r in manifest["requirements"] if r.startswith(f"{lib}==")]
+              manifest_version = reqs[0].split("==")[1] if reqs else ""
+
+              print(f"{lib}: pyproject={lib_version} manifest={manifest_version or '<missing>'}")
+              if not reqs:
+                  print(f"::error::{lib} is vendored but not listed in manifest.json requirements")
+                  failed = True
+              elif lib_version != manifest_version:
+                  print(f"::error::{lib} version mismatch: "
+                        f"pyproject.toml={lib_version}, manifest.json={manifest_version}")
+                  failed = True
+
+          if failed:
               sys.exit(1)
           print("OK — versions match")
           PYEOF
@@ -107,7 +118,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e ./aiogardenasmart -e ./aioautomower
+          pip install -e ./aiogardenasmart -e ./aiohusqvarna
           pip install mypy pytest-homeassistant-custom-component
 
       - name: Run mypy

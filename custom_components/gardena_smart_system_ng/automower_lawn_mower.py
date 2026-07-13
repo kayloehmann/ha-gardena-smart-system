@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from typing import Any, ClassVar, cast
 
-from aioautomower.const import MowerActivity, MowerState
+from aiohusqvarna.const import MowerActivity, MowerState
 from homeassistant.components.lawn_mower import LawnMowerEntity
 from homeassistant.components.lawn_mower.const import (
     LawnMowerActivity,
@@ -18,7 +18,7 @@ from homeassistant.helpers.entity_platform import (
     async_get_current_platform,
 )
 
-from aioautomower import AutomowerDevice
+from aiohusqvarna import AutomowerDevice
 
 from . import GardenaConfigEntry
 from .automower_coordinator import AutomowerCoordinator

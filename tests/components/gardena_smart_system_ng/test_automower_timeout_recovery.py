@@ -9,9 +9,9 @@ from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from aioautomower.const import MowerActivity
-from aioautomower.exceptions import AutomowerConnectionError
-from aioautomower.models import AutomowerDevice
+from aiohusqvarna.const import MowerActivity
+from aiohusqvarna.exceptions import AutomowerConnectionError
+from aiohusqvarna.models import AutomowerDevice
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 
