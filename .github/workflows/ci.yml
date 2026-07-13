@@ -28,6 +28,51 @@ jobs:
           args: format --check custom_components/ tests/
           src: "."
 
+  libs:
+    # The vendored libraries ship their own test-suites, but the root pytest run
+    # cannot see them (`testpaths = ["tests"]`), and the lint/mypy jobs above are
+    # scoped to `custom_components/` + `tests/`. They were therefore completely
+    # unverified in CI — this job closes that gap. Each library is checked in a
+    # clean environment, exactly as a downstream consumer would install it from
+    # PyPI, and NOT inside the Home Assistant test environment (whose pinned
+    # dependency set would mask what a standalone install actually resolves).
+    name: Vendored library (${{ matrix.lib }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        lib: [aiogardenasmart, aiohusqvarna]
+    defaults:
+      run:
+        working-directory: ${{ matrix.lib }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        working-directory: .
+        # `aiohusqvarna` depends on `aiogardenasmart`. Install both from the tree
+        # so we test the source we are about to ship — never a release that pip
+        # would otherwise pull from PyPI.
+        run: |
+          pip install -e ./aiogardenasmart -e ./aiohusqvarna
+          pip install -e "./${{ matrix.lib }}[dev]"
+
+      - name: Ruff
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Run mypy
+        run: mypy src/
+
+      - name: Run tests
+        run: pytest -q
+
   test:
     name: Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest

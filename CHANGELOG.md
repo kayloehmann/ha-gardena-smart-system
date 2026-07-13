@@ -4,6 +4,12 @@ All notable changes to the Gardena Smart System integration for Home Assistant.
 
 ## [Unreleased]
 
+### Changed
+- **The vendored libraries are now actually verified in CI.** `aiogardenasmart` and `aiohusqvarna` each ship their own test-suite, but no CI job ever ran them: the root pytest run is scoped to `testpaths = ["tests"]`, and the lint/mypy jobs are scoped to `custom_components/` + `tests/`. Both libraries were therefore untested, unlinted and un-typechecked in CI — while being published to PyPI and pinned in `manifest.json`. A new `libs` job runs ruff, mypy and pytest for each library in a **clean, standalone environment** (not inside the Home Assistant test environment, whose pinned dependency set would mask what a standalone install actually resolves).
+
+### Fixed
+- **The library test-suites were broken and nobody could tell.** Because nothing ran them, it went unnoticed that `aioresponses` 0.7.9 (its latest release) is incompatible with `aiohttp` 3.14 — which is what Home Assistant ships: `aiohttp` made `stream_writer` a required argument of `ClientResponse.__init__`, so every mocked request raised `TypeError`. `aioresponses` declares `aiohttp<4.0,>=3.8`, so pip resolves the broken combination happily. Upstream has open PRs ([#288](https://github.com/pnuckowski/aioresponses/pull/288), [#292](https://github.com/pnuckowski/aioresponses/pull/292)) but no release, so both suites carry a small, signature-guarded compatibility shim in `tests/conftest.py`. The shim turns itself into a no-op as soon as a fixed `aioresponses` is released. Pinning `aiohttp<3.14` for tests was rejected on purpose: it would test the libraries against an aiohttp that Home Assistant does not run. No runtime behaviour changed — this is test/CI scaffolding only.
+
 ## [2.1.2] - 2026-07-13
 
 ### Fixed
