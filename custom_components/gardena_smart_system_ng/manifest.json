@@ -16,5 +16,5 @@
     "gardena-smart-local-api==0.0.11"
   ],
   "single_config_entry": false,
-  "version": "2.1.1"
+  "version": "2.1.2"
 }

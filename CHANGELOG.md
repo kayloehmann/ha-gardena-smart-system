@@ -4,11 +4,29 @@ All notable changes to the Gardena Smart System integration for Home Assistant.
 
 ## [Unreleased]
 
+## [2.1.2] - 2026-07-13
+
 ### Fixed
-- **Automower setup failed on a clean install: `aioautomower` was never installed.** The Automower code imported a vendored library named `aioautomower`, but that name was missing from `manifest.json`'s `requirements` — so Home Assistant never installed it. CI hid the bug, because CI installs the vendored library from the working tree (`pip install -e ./aioautomower`); real HACS users got `ModuleNotFoundError` when setting up an Automower entry. Worse, `aioautomower` is also the name of an **unrelated, established PyPI package** (the one Home Assistant's core `husqvarna_automower` integration uses), with a completely different API — so simply adding `aioautomower` to the requirements would have installed the *wrong* library and produced a confusing `ImportError` instead. The vendored library is therefore renamed to **`aiohusqvarna`**, published to PyPI in its own right (like `aiogardenasmart`), and pinned in `manifest.json`. Gardena-only setups were never affected: the Automower imports are all lazy and only run for Automower entries.
+- **"Detected blocking call to import_module" at startup (#47).** `async_setup_entry` picked its coordinator class with a plain `from .coordinator import GardenaCoordinator` (or `.automower_coordinator`) executed *inside* the async function — i.e. on the event loop. The first import of `.coordinator` pulls in `.local_channel`, whose `gardena_smart_local_api` import triggers pydantic's lazy submodule loading, which does blocking file I/O (`import_module`/`listdir`/`read_text`). Home Assistant's blocking-call detector caught exactly that chain. Both deferred imports now go through `homeassistant.helpers.importlib.async_import_module`, which imports on HA's dedicated import executor thread (with a cheap `sys.modules` fast path for subsequent config entries). The same anti-pattern in `config_flow.py`'s Automower credential test was fixed alongside it.
+- **Automower setup failed on a clean install: `aioautomower` was never installed.** The Automower code imported a vendored library named `aioautomower`, but that name was missing from `manifest.json`'s `requirements` — so Home Assistant never installed it. CI hid the bug, because CI installs the vendored library from the working tree (`pip install -e ./aioautomower`); real HACS users got `ModuleNotFoundError` when setting up an Automower entry. Worse, `aioautomower` is also the name of an **unrelated, established PyPI package** (the one Home Assistant's core `husqvarna_automower` integration uses), with a completely different API — so simply adding `aioautomower` to the requirements would have installed the *wrong* library and produced a confusing `ImportError` instead. The vendored library is therefore renamed to **[`aiohusqvarna`](https://pypi.org/project/aiohusqvarna/)**, published to PyPI in its own right (like `aiogardenasmart`), and pinned in `manifest.json`. Gardena-only setups were never affected: the Automower imports are all lazy and only run for Automower entries.
 
 ### Changed
 - The CI library-version-sync check now covers **every** vendored library, and fails if a vendored library is missing from `manifest.json` entirely — the gap that let the above ship unnoticed.
+
+## [2.1.1] - 2026-07-03
+
+### Fixed
+- **Local commands no longer consume the cloud API quota (#45).** Command throttling and API-quota accounting ran in the shared command-retry engine, *before* the local/cloud routing decision — so a command carried over the local gateway still counted against the monthly cloud budget, and was **blocked** once that budget was exhausted. Throttling and quota accounting now apply to the **cloud path only**: a locally routed command consumes no quota, is not rate-limited, and works even with an exhausted cloud budget. Cloud commands still count exactly once per attempt (retries included). The Automower path is unchanged. Local state/monitoring never used cloud quota; this closes the gap for local *commands* too.
+
+## [2.1.0] - 2026-07-03
+
+### Added
+- **Local GARDENA smart Gateway access (preview).** The integration can now talk to the GARDENA smart Gateway directly over the LAN, alongside the cloud. When enabled **and reachable**, local state takes precedence over the cloud and commands are sent locally first, with the cloud as an automatic fallback — lower latency, and monitoring/control keep working through a cloud or internet outage. Built on the official [`gardena-smart-local-api`](https://github.com/cloudless-garden/gardena-smart-local-api) (GARDENA GmbH). Enable under Settings → Devices & Services → Gardena → *Configure*; requires a one-time `websocketd` activation on the gateway and TCP 8443 reachability.
+- **Local gateway connected** — connectivity binary sensor.
+- **Last command via** (`local` / `cloud`) — per-device diagnostic sensor.
+
+### Notes
+- The gateway sends no initial state snapshot, so the cloud still provides the initial device state after a restart; local access is a live-update + command **overlay**, not a full cloud replacement.
 
 ## [2.0.5] - 2026-05-30
 
