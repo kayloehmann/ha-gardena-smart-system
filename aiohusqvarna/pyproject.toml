@@ -6,12 +6,29 @@ build-backend = "hatchling.build"
 name = "aiohusqvarna"
 version = "0.1.0"
 description = "Async Python client for the Husqvarna Automower Connect API v1"
+readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.12"
+keywords = ["husqvarna", "automower", "gardena", "homeassistant", "asyncio"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Home Automation",
+    "Typing :: Typed",
+]
 dependencies = [
     "aiohttp>=3.14.1",
     "aiogardenasmart>=0.1.9",
 ]
+
+[project.urls]
+Homepage = "https://github.com/kayloehmann/ha-gardena-smart-system"
+Source = "https://github.com/kayloehmann/ha-gardena-smart-system/tree/main/aiohusqvarna"
+Issues = "https://github.com/kayloehmann/ha-gardena-smart-system/issues"
 
 [project.optional-dependencies]
 dev = [
