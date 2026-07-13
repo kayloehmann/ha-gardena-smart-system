@@ -17,6 +17,7 @@ except ImportError:
     )
 
 from custom_components.gardena_smart_system_ng.const import (
+    API_TYPE_AUTOMOWER,
     API_TYPE_GARDENA,
     CONF_API_TYPE,
     CONF_CLIENT_ID,
@@ -121,6 +122,90 @@ class TestSetupEntry:
             await hass.async_block_till_done()
 
         assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY
+
+
+class TestSetupEntryUsesImportExecutor:
+    """Regression test for #47 ("Detected blocking call").
+
+    The coordinator submodules are imported lazily (only the branch actually
+    used by a given config entry pulls in its client library), which used to
+    be a plain `from .coordinator import GardenaCoordinator` executed inside
+    the async `async_setup_entry` — i.e. on the event loop. CPython's import
+    machinery does blocking file I/O to resolve a module the first time it's
+    imported in the process, which is exactly what HA's blocking-call
+    detector caught. The fix routes these imports through HA's dedicated
+    import executor via `homeassistant.helpers.importlib.async_import_module`
+    instead. These tests assert that mechanism is actually used, not just
+    that setup still happens to work.
+    """
+
+    async def test_gardena_setup_routes_coordinator_import_through_executor(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry: object,
+        mock_api: object,
+    ) -> None:
+        from homeassistant.helpers.importlib import (
+            async_import_module as real_async_import_module,
+        )
+
+        with patch(
+            "custom_components.gardena_smart_system_ng.async_import_module",
+            AsyncMock(wraps=real_async_import_module),
+        ) as mock_import:
+            mock_config_entry.add_to_hass(hass)
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert mock_config_entry.state is ConfigEntryState.LOADED
+        mock_import.assert_awaited_once_with(
+            hass, "custom_components.gardena_smart_system_ng.coordinator"
+        )
+
+    async def test_automower_setup_routes_coordinator_import_through_executor(
+        self,
+        hass: HomeAssistant,
+    ) -> None:
+        from homeassistant.helpers.importlib import (
+            async_import_module as real_async_import_module,
+        )
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={**ENTRY_DATA, CONF_API_TYPE: API_TYPE_AUTOMOWER},
+            title="Mower",
+            version=2,
+        )
+        entry.add_to_hass(hass)
+
+        with (
+            patch(
+                "custom_components.gardena_smart_system_ng.async_import_module",
+                AsyncMock(wraps=real_async_import_module),
+            ) as mock_import,
+            patch(
+                "custom_components.gardena_smart_system_ng.automower_coordinator.AutomowerClient"
+            ) as mock_client_cls,
+            patch(
+                "custom_components.gardena_smart_system_ng.automower_coordinator.GardenaAuth",
+                return_value=AsyncMock(),
+            ),
+            patch(
+                "custom_components.gardena_smart_system_ng.automower_coordinator.AutomowerWebSocket"
+            ) as mock_ws_cls,
+        ):
+            mock_client = AsyncMock()
+            mock_client.async_get_mowers = AsyncMock(return_value={})
+            mock_client_cls.return_value = mock_client
+            mock_ws_cls.return_value = AsyncMock()
+
+            await hass.config_entries.async_setup(entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert entry.state is ConfigEntryState.LOADED
+        mock_import.assert_awaited_once_with(
+            hass, "custom_components.gardena_smart_system_ng.automower_coordinator"
+        )
 
 
 class TestUnloadEntry:

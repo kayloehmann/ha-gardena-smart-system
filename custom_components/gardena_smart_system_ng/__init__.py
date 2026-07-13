@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.importlib import async_import_module
 
 from .base_coordinator import BaseSmartSystemCoordinator
 from .const import (
@@ -19,6 +20,10 @@ from .const import (
     DOMAIN,
     GARDENA_PLATFORMS,
 )
+
+if TYPE_CHECKING:
+    from .automower_coordinator import AutomowerCoordinator
+    from .coordinator import GardenaCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,9 +37,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: GardenaConfigEntry) -> b
     api_type = entry.data.get(CONF_API_TYPE, API_TYPE_GARDENA)
 
     if api_type == API_TYPE_AUTOMOWER:
-        from .automower_coordinator import AutomowerCoordinator
-
-        am_coordinator = AutomowerCoordinator(hass, entry, session)
+        # These submodules are imported lazily (only the branch actually used
+        # by this config entry pulls in its client library) so a first-time
+        # import can still happen here, on the event loop. CPython's import
+        # machinery does blocking file I/O (stat/open/read) to resolve it, so
+        # it's routed through HA's dedicated import executor instead of a
+        # plain `from .automower_coordinator import AutomowerCoordinator`.
+        # See https://github.com/kayloehmann/ha-gardena-smart-system/issues/47
+        automower_coordinator_module = await async_import_module(
+            hass, f"{__name__}.automower_coordinator"
+        )
+        automower_coordinator_cls = cast(
+            "type[AutomowerCoordinator]",
+            automower_coordinator_module.AutomowerCoordinator,
+        )
+        am_coordinator = automower_coordinator_cls(hass, entry, session)
         await am_coordinator.api_budget.async_load()
         # Load persisted rate-limit state BEFORE first refresh — otherwise a
         # restart while the kill-switch is engaged would still issue an API
@@ -44,9 +61,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: GardenaConfigEntry) -> b
         entry.runtime_data = am_coordinator
         await hass.config_entries.async_forward_entry_setups(entry, AUTOMOWER_PLATFORMS)
     else:
-        from .coordinator import GardenaCoordinator
-
-        gd_coordinator = GardenaCoordinator(hass, entry, session)
+        # Same reasoning as above: `.coordinator` imports `.local_channel`,
+        # whose `gardena_smart_local_api` import triggers pydantic's lazy
+        # submodule loading — the exact import_module/listdir/read_text
+        # blocking calls reported in #47.
+        coordinator_module = await async_import_module(hass, f"{__name__}.coordinator")
+        coordinator_cls = cast("type[GardenaCoordinator]", coordinator_module.GardenaCoordinator)
+        gd_coordinator = coordinator_cls(hass, entry, session)
         await gd_coordinator.api_budget.async_load()
         await gd_coordinator.rate_limit_state.async_load()
         await gd_coordinator.async_config_entry_first_refresh()

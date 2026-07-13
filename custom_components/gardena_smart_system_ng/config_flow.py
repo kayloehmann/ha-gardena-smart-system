@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 import aiohttp
 import voluptuous as vol
@@ -20,7 +20,9 @@ from homeassistant.config_entries import (
     ConfigFlowResult,
     OptionsFlow,
 )
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.importlib import async_import_module
 from homeassistant.helpers.selector import (
     BooleanSelector,
     NumberSelector,
@@ -35,6 +37,9 @@ from homeassistant.helpers.selector import (
 )
 
 from aiogardenasmart import GardenaAuth, GardenaClient
+
+if TYPE_CHECKING:
+    from aioautomower import AutomowerClient
 
 from .base_coordinator import async_reset_api_budget_store, async_reset_rate_limit_state_store
 from .const import (
@@ -175,7 +180,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
                 # Validate Automower API access
                 session = async_get_clientsession(self.hass)
                 error = await self._async_test_automower(
-                    session, self._client_id, self._client_secret
+                    self.hass, session, self._client_id, self._client_secret
                 )
                 if error:
                     errors["base"] = error
@@ -232,7 +237,9 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
             api_type = entry.data.get(CONF_API_TYPE, API_TYPE_GARDENA)
 
             if api_type == API_TYPE_AUTOMOWER:
-                error = await self._async_test_automower(session, client_id, client_secret)
+                error = await self._async_test_automower(
+                    self.hass, session, client_id, client_secret
+                )
             else:
                 _, error = await self._async_test_gardena(session, client_id, client_secret)
 
@@ -288,7 +295,9 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
             api_type = entry.data.get(CONF_API_TYPE, API_TYPE_GARDENA)
 
             if api_type == API_TYPE_AUTOMOWER:
-                error = await self._async_test_automower(session, client_id, client_secret)
+                error = await self._async_test_automower(
+                    self.hass, session, client_id, client_secret
+                )
                 if not error:
                     if client_id != entry.data.get(CONF_CLIENT_ID):
                         await async_reset_api_budget_store(self.hass, entry.entry_id)
@@ -471,6 +480,7 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     async def _async_test_automower(
+        hass: HomeAssistant,
         session: aiohttp.ClientSession,
         client_id: str,
         client_secret: str,
@@ -480,25 +490,26 @@ class GardenaSmartSystemConfigFlow(ConfigFlow, domain=DOMAIN):
         Always revokes the access token before returning so that repeated
         reauth/reconfigure attempts do not leave dangling tokens on the
         Husqvarna auth server.
-        """
-        from aioautomower.exceptions import (
-            AutomowerAuthenticationError,
-            AutomowerConnectionError,
-            AutomowerForbiddenError,
-            AutomowerRateLimitError,
-        )
 
-        from aioautomower import AutomowerClient
+        `aioautomower` may be imported for the first time in this process
+        right here (only users who pick the Automower branch ever trigger
+        it), so — like the deferred coordinator imports in ``__init__.py``
+        (see #47) — it's routed through HA's import executor instead of a
+        plain module-level/in-line import that would run on the event loop.
+        """
+        aioautomower_exceptions = await async_import_module(hass, "aioautomower.exceptions")
+        aioautomower_module = await async_import_module(hass, "aioautomower")
+        automower_client_cls = cast("type[AutomowerClient]", aioautomower_module.AutomowerClient)
 
         automower_error_map: dict[type[Exception], str] = {
-            AutomowerAuthenticationError: "invalid_auth",
-            AutomowerForbiddenError: "automower_not_connected",
-            AutomowerRateLimitError: "rate_limited",
-            AutomowerConnectionError: "cannot_connect",
+            aioautomower_exceptions.AutomowerAuthenticationError: "invalid_auth",
+            aioautomower_exceptions.AutomowerForbiddenError: "automower_not_connected",
+            aioautomower_exceptions.AutomowerRateLimitError: "rate_limited",
+            aioautomower_exceptions.AutomowerConnectionError: "cannot_connect",
         }
 
         auth = GardenaAuth(client_id, client_secret, session)
-        client = AutomowerClient(auth, session)
+        client = automower_client_cls(auth, session)
         try:
             try:
                 await client.async_get_mowers()
