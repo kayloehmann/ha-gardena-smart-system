@@ -47,6 +47,42 @@ async def test_automower_credential_test_swallows_revoke_error(
         patch("aioautomower.AutomowerClient", return_value=client),
     ):
         error = await GardenaSmartSystemConfigFlow._async_test_automower(
-            async_get_clientsession(hass), "id", "secret"
+            hass, async_get_clientsession(hass), "id", "secret"
         )
     assert error == ""  # revoke failure is logged, not raised
+
+
+async def test_automower_credential_test_routes_import_through_executor(
+    hass: HomeAssistant,
+) -> None:
+    """Regression test for #47 ("Detected blocking call").
+
+    `aioautomower` (and its `.exceptions` submodule) may be imported for the
+    first time in this process inside `_async_test_automower` — the same
+    anti-pattern as the deferred coordinator imports in `__init__.py`. This
+    asserts the fix (routing through
+    `homeassistant.helpers.importlib.async_import_module`) is actually used.
+    """
+    from homeassistant.helpers.importlib import (
+        async_import_module as real_async_import_module,
+    )
+
+    auth = MagicMock()
+    auth.async_revoke_token = AsyncMock()
+    client = MagicMock()
+    client.async_get_mowers = AsyncMock(return_value=[])
+    with (
+        patch(f"{_CF}.GardenaAuth", return_value=auth),
+        patch("aioautomower.AutomowerClient", return_value=client),
+        patch(
+            f"{_CF}.async_import_module",
+            AsyncMock(wraps=real_async_import_module),
+        ) as mock_import,
+    ):
+        error = await GardenaSmartSystemConfigFlow._async_test_automower(
+            hass, async_get_clientsession(hass), "id", "secret"
+        )
+
+    assert error == ""
+    mock_import.assert_any_await(hass, "aioautomower")
+    mock_import.assert_any_await(hass, "aioautomower.exceptions")
