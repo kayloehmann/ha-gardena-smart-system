@@ -1,4 +1,4 @@
-"""Shared test fixtures and API response payloads for aioautomower tests."""
+"""Shared test fixtures and API response payloads for aiohusqvarna tests."""
 
 from __future__ import annotations
 

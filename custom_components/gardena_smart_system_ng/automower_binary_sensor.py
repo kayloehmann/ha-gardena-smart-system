@@ -6,7 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import cast
 
-from aioautomower.const import MowerState
+from aiohusqvarna.const import MowerState
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -16,7 +16,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from aioautomower import AutomowerDevice
+from aiohusqvarna import AutomowerDevice
 
 from . import GardenaConfigEntry
 from .automower_coordinator import AutomowerCoordinator

@@ -38,7 +38,7 @@ from .conftest import (
 
 _PATCH_AUTH = "custom_components.gardena_smart_system_ng.config_flow.GardenaAuth"
 _PATCH_CLIENT = "custom_components.gardena_smart_system_ng.config_flow.GardenaClient"
-_PATCH_AM_CLIENT = "aioautomower.AutomowerClient"
+_PATCH_AM_CLIENT = "aiohusqvarna.AutomowerClient"
 
 
 async def _init_user_step(hass: HomeAssistant) -> dict:
@@ -197,7 +197,7 @@ class TestApiTypeStep:
         assert result["data"][CONF_API_TYPE] == API_TYPE_AUTOMOWER
 
     async def test_automower_forbidden_shows_error(self, hass: HomeAssistant) -> None:
-        from aioautomower.exceptions import AutomowerForbiddenError
+        from aiohusqvarna.exceptions import AutomowerForbiddenError
 
         result = await _init_user_step(hass)
         result = await _submit_credentials(hass, result["flow_id"])

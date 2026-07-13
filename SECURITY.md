@@ -6,7 +6,7 @@ This policy covers:
 
 - The `gardena_smart_system_ng` custom component under `custom_components/`.
 - The vendored `aiogardenasmart` library under `aiogardenasmart/`.
-- The vendored `aioautomower` library under `aioautomower/`.
+- The vendored `aiohusqvarna` library under `aiohusqvarna/`.
 
 Out of scope: the Husqvarna Smart System / Authentication API itself, Home Assistant core, HACS, and any local MQTT broker used by the optional MQTT bridge.
 
@@ -64,6 +64,6 @@ When the MQTT bridge is enabled in options, the integration publishes device sta
 
 ## Dependencies
 
-The integration pins specific versions of the vendored `aiogardenasmart` and `aioautomower` libraries, and transitively `aiohttp`. Security-relevant CVEs in those dependencies will trigger a patch release.
+The integration pins specific versions of the vendored `aiogardenasmart` and `aiohusqvarna` libraries, and transitively `aiohttp`. Security-relevant CVEs in those dependencies will trigger a patch release.
 
 The `CHANGELOG.md` lists all releases; entries that address a security issue are marked **Security**.

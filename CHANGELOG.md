@@ -2,6 +2,14 @@
 
 All notable changes to the Gardena Smart System integration for Home Assistant.
 
+## [Unreleased]
+
+### Fixed
+- **Automower setup failed on a clean install: `aioautomower` was never installed.** The Automower code imported a vendored library named `aioautomower`, but that name was missing from `manifest.json`'s `requirements` — so Home Assistant never installed it. CI hid the bug, because CI installs the vendored library from the working tree (`pip install -e ./aioautomower`); real HACS users got `ModuleNotFoundError` when setting up an Automower entry. Worse, `aioautomower` is also the name of an **unrelated, established PyPI package** (the one Home Assistant's core `husqvarna_automower` integration uses), with a completely different API — so simply adding `aioautomower` to the requirements would have installed the *wrong* library and produced a confusing `ImportError` instead. The vendored library is therefore renamed to **`aiohusqvarna`**, published to PyPI in its own right (like `aiogardenasmart`), and pinned in `manifest.json`. Gardena-only setups were never affected: the Automower imports are all lazy and only run for Automower entries.
+
+### Changed
+- The CI library-version-sync check now covers **every** vendored library, and fails if a vendored library is missing from `manifest.json` entirely — the gap that let the above ship unnoticed.
+
 ## [2.0.5] - 2026-05-30
 
 ### Fixed

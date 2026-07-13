@@ -7,7 +7,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from aioautomower.exceptions import (
+from aiohusqvarna.exceptions import (
     AutomowerAuthenticationError,
     AutomowerConnectionError,
     AutomowerException,
@@ -18,7 +18,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from aioautomower import AutomowerDevice
+from aiohusqvarna import AutomowerDevice
 
 from .automower_coordinator import AutomowerCoordinator
 from .const import (

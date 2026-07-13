@@ -5,7 +5,7 @@ include = [
     "custom_components/**/*.py",
     "tests/**/*.py",
     "aiogardenasmart/**/*.py",
-    "aioautomower/**/*.py",
+    "aiohusqvarna/**/*.py",
 ]
 
 [tool.ruff.lint]

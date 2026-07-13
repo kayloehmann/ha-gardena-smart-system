@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "aioautomower"
+name = "aiohusqvarna"
 version = "0.1.0"
 description = "Async Python client for the Husqvarna Automower Connect API v1"
 license = { text = "Apache-2.0" }
@@ -24,7 +24,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/aioautomower"]
+packages = ["src/aiohusqvarna"]
 
 [tool.mypy]
 strict = true
