@@ -3,14 +3,11 @@ when:
 
 steps:
   quality:
-    image: python:3.13-slim
+    image: ghcr.io/astral-sh/uv:python3.13-bookworm
     environment:
       CAIO_IMPL: thread
     commands:
-      - apt-get update
-      - apt-get install -y --no-install-recommends build-essential
-      - python -m pip install --disable-pip-version-check -e ./aiogardenasmart -e ./aiohusqvarna
-      - python -m pip install --disable-pip-version-check ruff mypy pytest pytest-asyncio pytest-cov pytest-homeassistant-custom-component gardena-smart-local-api==0.0.11
+      - uv pip install --system --no-cache -e ./aiogardenasmart -e ./aiohusqvarna ruff mypy pytest pytest-asyncio pytest-cov pytest-homeassistant-custom-component gardena-smart-local-api==0.0.11
       - ruff check custom_components/ tests/ aiogardenasmart/ aiohusqvarna/
       - ruff format --check custom_components/ tests/ aiogardenasmart/ aiohusqvarna/
       - mypy custom_components/gardena_smart_system_ng/
