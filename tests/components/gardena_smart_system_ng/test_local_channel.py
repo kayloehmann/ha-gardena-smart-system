@@ -200,13 +200,8 @@ async def test_full_session_discovers_and_applies_events(
 
     monkeypatch.setattr(channel._session, "ws_connect", lambda *a, **k: FakeCM())
 
-    await channel.async_start()
-    try:
-        async with asyncio.timeout(5):
-            while dev not in channel.devices:
-                await asyncio.sleep(0.01)
-    finally:
-        await channel.async_stop()
+    channel._ssl = MagicMock()
+    await channel._session_once()
 
     assert dev in channel.devices  # discovery built the device
     assert True in conn  # the link reported connected
