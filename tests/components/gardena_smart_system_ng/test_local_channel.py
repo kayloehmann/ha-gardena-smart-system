@@ -201,11 +201,12 @@ async def test_full_session_discovers_and_applies_events(
     monkeypatch.setattr(channel._session, "ws_connect", lambda *a, **k: FakeCM())
 
     await channel.async_start()
-    for _ in range(20):  # pump the loop until discovery has built the device
-        await asyncio.sleep(0.01)
-        if dev in channel.devices:
-            break
-    await channel.async_stop()
+    try:
+        async with asyncio.timeout(5):
+            while dev not in channel.devices:
+                await asyncio.sleep(0.01)
+    finally:
+        await channel.async_stop()
 
     assert dev in channel.devices  # discovery built the device
     assert True in conn  # the link reported connected
