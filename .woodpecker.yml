@@ -1,0 +1,13 @@
+when:
+  - event: [push, pull_request, manual]
+
+steps:
+  quality:
+    image: python:3.13-slim
+    commands:
+      - python -m pip install --disable-pip-version-check -e ./aiogardenasmart -e ./aiohusqvarna
+      - python -m pip install --disable-pip-version-check ruff mypy pytest pytest-asyncio pytest-cov pytest-homeassistant-custom-component gardena-smart-local-api==0.0.11
+      - ruff check custom_components/ tests/ aiogardenasmart/ aiohusqvarna/
+      - ruff format --check custom_components/ tests/ aiogardenasmart/ aiohusqvarna/
+      - mypy custom_components/gardena_smart_system_ng/
+      - pytest -q
