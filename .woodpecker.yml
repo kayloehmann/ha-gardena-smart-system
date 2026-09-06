@@ -4,6 +4,8 @@ when:
 steps:
   quality:
     image: python:3.13-slim
+    environment:
+      CAIO_IMPL: thread
     commands:
       - apt-get update
       - apt-get install -y --no-install-recommends build-essential
